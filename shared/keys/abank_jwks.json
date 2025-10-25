@@ -1,0 +1,10 @@
+{
+  "keys": [{
+    "kid": "abank-2025",
+    "kty": "RSA",
+    "use": "sig",
+    "alg": "RS256",
+    "n": "placeholder_modulus_will_be_loaded_from_pem",
+    "e": "AQAB"
+  }]
+}

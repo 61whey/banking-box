@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products Management - HackAPI 2025</title>
+    <link rel="stylesheet" href="../client/theme-styles.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg-primary);
+            min-height: 100vh;
+        }
+
+        .header {
+            background: var(--bg-secondary);
+            padding: 20px 40px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            color: var(--text-primary);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-primary);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 40px;
+        }
+
+        .section {
+            background: var(--bg-secondary);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            margin-bottom: 30px;
+        }
+
+        .section h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+        }
+
+        .products-grid {
+            display: grid;
+            gap: 20px;
+        }
+
+        .product-card {
+            background: var(--bg-primary);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s;
+        }
+
+        .product-card:hover {
+            box-shadow: var(--shadow-hover);
+        }
+
+        .product-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .product-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .product-type {
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            background: #e7f3ff;
+            color: #1e88e5;
+        }
+
+        body.dark .product-type {
+            background: #1e3a5f;
+            color: #64b5f6;
+        }
+
+        .product-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .detail-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .detail-value input {
+            width: 100%;
+            padding: 6px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .product-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .btn-success {
+            background: #2ecc71;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #27ae60;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        body.dark .status-active {
+            background: #1e4620;
+            color: #4ade80;
+        }
+
+        body.dark .status-inactive {
+            background: #4a1e1e;
+            color: #f87171;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h3 {
+            color: var(--text-primary);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        .theme-toggle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            font-size: 20px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+
+        .empty {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+            background: var(--bg-primary);
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1>👔 Banker Portal</h1>
+            <div class="header-actions">
+                <button class="btn btn-primary" onclick="openCreateModal()">+ Создать продукт</button>
+                <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+                <button class="btn btn-secondary" onclick="logout()">Выйти</button>
+            </div>
+        </div>
+        <nav style="display: flex; gap: 30px; border-bottom: 2px solid var(--border-color);">
+            <a href="clients.html" style="padding: 10px 0; color: var(--text-secondary); text-decoration: none; border-bottom: 3px solid transparent; font-weight: 500;">👥 Клиенты</a>
+            <a href="products.html" style="padding: 10px 0; color: #667eea; text-decoration: none; border-bottom: 3px solid #667eea; font-weight: 500;">📦 Продукты</a>
+            <a href="consents.html" style="padding: 10px 0; color: var(--text-secondary); text-decoration: none; border-bottom: 3px solid transparent; font-weight: 500;">🔐 Согласия</a>
+            <a href="monitoring.html" style="padding: 10px 0; color: var(--text-secondary); text-decoration: none; border-bottom: 3px solid transparent; font-weight: 500;">📊 Мониторинг</a>
+        </nav>
+    </div>
+
+    <div class="container">
+        <div class="section">
+            <h2>Список продуктов</h2>
+            <div id="products-container" class="products-grid">
+                <div class="loading">Загрузка продуктов...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Product Modal -->
+    <div id="createModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Создать новый продукт</h3>
+                <button class="close-btn" onclick="closeCreateModal()">&times;</button>
+            </div>
+            <form id="createForm" onsubmit="createProduct(event)">
+                <div class="form-group">
+                    <label>Тип продукта</label>
+                    <select id="productType" required>
+                        <option value="deposit">Депозит</option>
+                        <option value="loan">Кредит</option>
+                        <option value="card">Карта</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Название</label>
+                    <input type="text" id="productName" required>
+                </div>
+                <div class="form-group">
+                    <label>Процентная ставка (%)</label>
+                    <input type="number" step="0.01" id="interestRate" required>
+                </div>
+                <div class="form-group">
+                    <label>Минимальная сумма (₽)</label>
+                    <input type="number" id="minAmount" value="0">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Создать</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Theme management
+        function toggleTheme() {
+            const body = document.body;
+            const button = document.querySelector('.theme-toggle');
+            
+            if (body.classList.contains('dark')) {
+                body.classList.remove('dark');
+                button.textContent = '🌙';
+                localStorage.setItem('theme', 'light');
+            } else {
+                body.classList.add('dark');
+                button.textContent = '☀️';
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark');
+            document.querySelector('.theme-toggle').textContent = '☀️';
+        }
+
+        // Check authentication
+        const token = localStorage.getItem('banker_token');
+        if (!token) {
+            window.location.href = 'index.html';
+        }
+
+        // Get base URL
+        function getBaseUrl() {
+            const port = window.location.port;
+            return `http://localhost:${port}`;
+        }
+
+        // Load products
+        async function loadProducts() {
+            try {
+                const baseUrl = getBaseUrl();
+                const response = await fetch(`${baseUrl}/banker/products`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) throw new Error('Failed to load products');
+
+                const data = await response.json();
+                displayProducts(data.products);
+            } catch (error) {
+                console.error('Error loading products:', error);
+                document.getElementById('products-container').innerHTML = 
+                    '<div class="empty">❌ Ошибка загрузки продуктов</div>';
+            }
+        }
+
+        // Display products
+        function displayProducts(products) {
+            const container = document.getElementById('products-container');
+            
+            if (products.length === 0) {
+                container.innerHTML = '<div class="empty">Нет продуктов. Создайте первый!</div>';
+                return;
+            }
+
+            container.innerHTML = products.map(product => `
+                <div class="product-card">
+                    <div class="product-header">
+                        <div>
+                            <div class="product-name">${product.name}</div>
+                            <span class="product-type">${getProductTypeLabel(product.type)}</span>
+                        </div>
+                        <span class="status-badge ${product.is_active ? 'status-active' : 'status-inactive'}">
+                            ${product.is_active ? 'Активен' : 'Неактивен'}
+                        </span>
+                    </div>
+                    <div class="product-details">
+                        <div class="detail-item">
+                            <div class="detail-label">Процентная ставка</div>
+                            <div class="detail-value">
+                                <input type="number" step="0.01" 
+                                       value="${product.interest_rate || 0}" 
+                                       onchange="updateProduct('${product.product_id}', 'interest_rate', this.value)">
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Минимальная сумма</div>
+                            <div class="detail-value">
+                                <input type="number" 
+                                       value="${product.min_amount || 0}" 
+                                       onchange="updateProduct('${product.product_id}', 'min_amount', this.value)">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="product-actions">
+                        ${product.is_active ? 
+                            `<button class="btn btn-sm btn-danger" onclick="toggleProductStatus('${product.product_id}', false)">
+                                Деактивировать
+                            </button>` :
+                            `<button class="btn btn-sm btn-success" onclick="toggleProductStatus('${product.product_id}', true)">
+                                Активировать
+                            </button>`
+                        }
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Get product type label
+        function getProductTypeLabel(type) {
+            const labels = {
+                'deposit': 'Депозит',
+                'loan': 'Кредит',
+                'card': 'Карта'
+            };
+            return labels[type] || type;
+        }
+
+        // Update product
+        async function updateProduct(productId, field, value) {
+            try {
+                const baseUrl = getBaseUrl();
+                const updateData = { [field]: parseFloat(value) };
+                
+                const response = await fetch(`${baseUrl}/banker/products/${productId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updateData)
+                });
+
+                if (!response.ok) throw new Error('Failed to update');
+
+                // Show success (optional)
+                console.log('Product updated successfully');
+            } catch (error) {
+                console.error('Error updating product:', error);
+                alert('Ошибка обновления продукта');
+                loadProducts(); // Reload to restore original value
+            }
+        }
+
+        // Toggle product status
+        async function toggleProductStatus(productId, isActive) {
+            try {
+                const baseUrl = getBaseUrl();
+                const response = await fetch(`${baseUrl}/banker/products/${productId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ is_active: isActive })
+                });
+
+                if (!response.ok) throw new Error('Failed to update');
+
+                loadProducts(); // Reload products
+            } catch (error) {
+                console.error('Error toggling status:', error);
+                alert('Ошибка изменения статуса');
+            }
+        }
+
+        // Modal functions
+        function openCreateModal() {
+            document.getElementById('createModal').classList.add('active');
+        }
+
+        function closeCreateModal() {
+            document.getElementById('createModal').classList.remove('active');
+            document.getElementById('createForm').reset();
+        }
+
+        // Create product
+        async function createProduct(event) {
+            event.preventDefault();
+
+            const productType = document.getElementById('productType').value;
+            const productName = document.getElementById('productName').value;
+            const interestRate = parseFloat(document.getElementById('interestRate').value);
+            const minAmount = parseFloat(document.getElementById('minAmount').value);
+
+            try {
+                const baseUrl = getBaseUrl();
+                const response = await fetch(`${baseUrl}/banker/products?product_type=${productType}&name=${encodeURIComponent(productName)}&interest_rate=${interestRate}&min_amount=${minAmount}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) throw new Error('Failed to create product');
+
+                closeCreateModal();
+                loadProducts();
+            } catch (error) {
+                console.error('Error creating product:', error);
+                alert('Ошибка создания продукта');
+            }
+        }
+
+        // Logout
+        function logout() {
+            localStorage.removeItem('banker_token');
+            localStorage.removeItem('banker_role');
+            window.location.href = 'index.html';
+        }
+
+        // Load products on page load
+        loadProducts();
+    </script>
+
+    <!-- Bank Switcher Component -->
+    <div style="position: fixed; bottom: 20px; right: 20px; background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; width: 200px;">
+        <div style="font-size: 12px; color: #666; margin-bottom: 10px; font-weight: 600;">Перейти в другой банк:</div>
+        <div style="display: flex; gap: 10px; flex-direction: column;">
+            <a href="http://localhost:8001/banker/" 
+               style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; text-decoration: none; color: #667eea; border: 1px solid #667eea; border-radius: 5px; font-size: 13px; transition: all 0.2s;">
+                <span>🏦 Virtual Bank</span>
+            </a>
+            <a href="http://localhost:8002/banker/" 
+               style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; text-decoration: none; color: #e74c3c; border: 1px solid #e74c3c; border-radius: 5px; font-size: 13px; transition: all 0.2s;">
+                <span>🏦 Awesome Bank</span>
+            </a>
+            <a href="http://localhost:8003/banker/" 
+               style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; text-decoration: none; color: #27ae60; border: 1px solid #27ae60; border-radius: 5px; font-size: 13px; transition: all 0.2s;">
+                <span>🏦 Smart Bank</span>
+            </a>
+        </div>
+    </div>
+</body>
+</html>
+

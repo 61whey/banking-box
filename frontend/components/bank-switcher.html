@@ -1,0 +1,65 @@
+<!-- Компонент для переключения между банками -->
+<div id="bankSwitcher" style="position: fixed; bottom: 20px; right: 20px; background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000;">
+    <div style="font-size: 12px; color: #666; margin-bottom: 10px; font-weight: 600;">Перейти в другой банк:</div>
+    <div style="display: flex; gap: 10px; flex-direction: column;">
+        <a href="http://localhost:8001/client/" 
+           style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; text-decoration: none; color: #667eea; border: 1px solid #667eea; border-radius: 5px; font-size: 14px; transition: all 0.2s;"
+           onmouseover="this.style.background='#667eea'; this.style.color='white'"
+           onmouseout="this.style.background=''; this.style.color='#667eea'">
+            <span style="font-size: 20px;">🏦</span>
+            <span>Virtual Bank</span>
+        </a>
+        <a href="http://localhost:8002/client/" 
+           style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; text-decoration: none; color: #e74c3c; border: 1px solid #e74c3c; border-radius: 5px; font-size: 14px; transition: all 0.2s;"
+           onmouseover="this.style.background='#e74c3c'; this.style.color='white'"
+           onmouseout="this.style.background=''; this.style.color='#e74c3c'">
+            <span style="font-size: 20px;">🏦</span>
+            <span>Awesome Bank</span>
+        </a>
+        <a href="http://localhost:8003/client/" 
+           style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; text-decoration: none; color: #27ae60; border: 1px solid #27ae60; border-radius: 5px; font-size: 14px; transition: all 0.2s;"
+           onmouseover="this.style.background='#27ae60'; this.style.color='white'"
+           onmouseout="this.style.background=''; this.style.color='#27ae60'">
+            <span style="font-size: 20px;">🏦</span>
+            <span>Smart Bank</span>
+        </a>
+    </div>
+    <div style="text-align: center; margin-top: 10px; font-size: 11px; color: #999;">
+        Текущий банк: <span id="currentBankName" style="font-weight: 600;"></span>
+    </div>
+</div>
+
+<script>
+    // Определить текущий банк и выделить
+    (function() {
+        const port = window.location.port;
+        let currentBank = '';
+        
+        const banks = {
+            '8001': { name: 'VBank', fullName: 'Virtual Bank', color: '#667eea' },
+            '8002': { name: 'ABank', fullName: 'Awesome Bank', color: '#e74c3c' },
+            '8003': { name: 'SBank', fullName: 'Smart Bank', color: '#27ae60' }
+        };
+        
+        currentBank = banks[port] || banks['8001'];
+        
+        document.getElementById('currentBankName').textContent = currentBank.fullName;
+        document.getElementById('currentBankName').style.color = currentBank.color;
+        
+        // Выделить текущий банк
+        const links = document.querySelectorAll('#bankSwitcher a');
+        links.forEach(link => {
+            if (link.href.includes(`:${port}/`)) {
+                link.style.opacity = '0.5';
+                link.style.pointerEvents = 'none';
+                link.style.background = currentBank.color;
+                link.style.color = 'white';
+                link.innerHTML += ' <span style="font-size: 10px;">✓ Вы здесь</span>';
+            }
+        });
+        
+        // Установить цвет темы банка
+        document.documentElement.style.setProperty('--bank-color', currentBank.color);
+    })();
+</script>
+
