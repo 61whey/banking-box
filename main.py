@@ -11,7 +11,7 @@ from pathlib import Path
 from .config import config
 from .database import engine
 from .models import Base
-from .api import accounts, auth, consents, payments, admin, products, well_known, banker, product_agreements, ssa_registration
+from .api import accounts, auth, consents, payments, admin, products, well_known, banker, product_agreements
 
 
 @asynccontextmanager
@@ -68,7 +68,6 @@ app.include_router(product_agreements.router)
 app.include_router(banker.router)
 app.include_router(admin.router)
 app.include_router(well_known.router)
-app.include_router(ssa_registration.router)
 
 # Mount static files (frontend)
 frontend_path = Path(__file__).parent / "frontend"
