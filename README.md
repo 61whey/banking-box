@@ -125,6 +125,18 @@ VALUES
 
 ### 1. Зарегистрируй банк в Directory Service
 
+**Вариант A: Графический интерфейс (рекомендуется)** 🖱️
+
+1. Откройте [Directory UI](https://open.bankingapi.ru/directory/participant/login.html)
+2. Войдите с учетными данными команды
+3. Добавьте банк через форму:
+   - Organization ID: `mybank`
+   - Organization Name: `My Awesome Bank`
+   - JWKS Endpoint: `https://api.mybank.com/.well-known/jwks.json`
+   - API Base URL: `https://api.mybank.com`
+
+**Вариант B: Через API** 🔧
+
 ```bash
 curl -X POST http://directory.hackapi.tech/banks \
   -H "Content-Type: application/json" \
@@ -181,8 +193,7 @@ bank-in-a-box/
 │   ├── banker.py           # Banker API
 │   ├── admin.py            # Admin API
 │   ├── auth.py             # Авторизация
-│   ├── well_known.py       # JWKS endpoint
-│   └── ssa_registration.py # Directory регистрация
+│   └── well_known.py       # JWKS endpoint
 │
 ├── services/               # Бизнес-логика
 │   ├── auth_service.py     # JWT + RS256
