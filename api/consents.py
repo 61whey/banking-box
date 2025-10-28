@@ -233,101 +233,6 @@ async def authorize_consent(
         raise HTTPException(404, str(e))
 
 
-@router.get("/{consent_id}", response_model=ConsentResponse)
-async def get_account_access_consents_consent_id(
-    consent_id: str,
-    x_fapi_interaction_id: Optional[str] = Header(None, alias="x-fapi-interaction-id"),
-    current_bank: Optional[dict] = Depends(get_current_bank),
-    db: AsyncSession = Depends(get_db)
-):
-    """
-    Получение ресурса согласия
-    
-    OpenBanking Russia Account-Consents API v2.1
-    GET /account-consents/{consentId}
-    """
-    # Сначала проверяем в Consent (если уже авторизован)
-    result = await db.execute(
-        select(Consent).where(Consent.consent_id == consent_id)
-    )
-    consent = result.scalar_one_or_none()
-    
-    if consent:
-        consent_data = ConsentData(
-            consentId=consent.consent_id,
-            status="Authorized",
-            creationDateTime=consent.creation_date_time.isoformat() + "Z",
-            statusUpdateDateTime=consent.status_update_date_time.isoformat() + "Z",
-            permissions=consent.permissions,
-            expirationDateTime=consent.expiration_date_time.isoformat() + "Z" if consent.expiration_date_time else None
-        )
-        
-        return ConsentResponse(
-            data=consent_data,
-            links={
-                "self": f"/account-consents/{consent_id}"
-            },
-            meta={}
-        )
-    
-    # Если нет в Consent, проверяем ConsentRequest (ожидает авторизации)
-    request_result = await db.execute(
-        select(ConsentRequest).where(ConsentRequest.request_id == consent_id)
-    )
-    consent_request = request_result.scalar_one_or_none()
-    
-    if not consent_request:
-        raise HTTPException(404, "Consent not found")
-    
-    consent_data = ConsentData(
-        consentId=consent_id,
-        status="AwaitingAuthorization",
-        creationDateTime=consent_request.created_at.isoformat() + "Z",
-        statusUpdateDateTime=consent_request.created_at.isoformat() + "Z",
-        permissions=consent_request.permissions,
-        expirationDateTime=(datetime.utcnow() + timedelta(days=90)).isoformat() + "Z"
-    )
-    
-    return ConsentResponse(
-        data=consent_data,
-        links={
-            "self": f"/account-consents/{consent_id}"
-        },
-        meta={}
-    )
-
-
-@router.delete("/{consent_id}", status_code=204)
-async def delete_account_access_consents_consent_id(
-    consent_id: str,
-    x_fapi_interaction_id: Optional[str] = Header(None, alias="x-fapi-interaction-id"),
-    current_bank: Optional[dict] = Depends(get_current_bank),
-    db: AsyncSession = Depends(get_db)
-):
-    """
-    Удаление ресурса согласия
-    
-    OpenBanking Russia Account-Consents API v2.1
-    DELETE /account-consents/{consentId}
-    """
-    result = await db.execute(
-        select(Consent).where(Consent.consent_id == consent_id)
-    )
-    consent = result.scalar_one_or_none()
-    
-    if not consent:
-        raise HTTPException(404, "Consent not found")
-    
-    # Удалить (или изменить статус на Revoked)
-    consent.status = "Revoked"
-    consent.status_update_date_time = datetime.utcnow()
-    await db.commit()
-    
-    return None  # 204 No Content
-
-
-
-
 # === Клиентские endpoints (для собственных клиентов) ===
 
 @router.get("/requests", tags=["Internal: Consents"], include_in_schema=False)
@@ -488,6 +393,103 @@ async def revoke_consent(
         "status": "Revoked",
         "revoked_at": datetime.utcnow().isoformat()
     }
+
+
+@router.get("/{consent_id}", response_model=ConsentResponse)
+async def get_account_access_consents_consent_id(
+    consent_id: str,
+    x_fapi_interaction_id: Optional[str] = Header(None, alias="x-fapi-interaction-id"),
+    current_bank: Optional[dict] = Depends(get_current_bank),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Получение ресурса согласия
+    
+    OpenBanking Russia Account-Consents API v2.1
+    GET /account-consents/{consentId}
+    """
+    # Сначала проверяем в Consent (если уже авторизован)
+    result = await db.execute(
+        select(Consent).where(Consent.consent_id == consent_id)
+    )
+    consent = result.scalar_one_or_none()
+    
+    if consent:
+        consent_data = ConsentData(
+            consentId=consent.consent_id,
+            status="Authorized",
+            creationDateTime=consent.creation_date_time.isoformat() + "Z",
+            statusUpdateDateTime=consent.status_update_date_time.isoformat() + "Z",
+            permissions=consent.permissions,
+            expirationDateTime=consent.expiration_date_time.isoformat() + "Z" if consent.expiration_date_time else None
+        )
+        
+        return ConsentResponse(
+            data=consent_data,
+            links={
+                "self": f"/account-consents/{consent_id}"
+            },
+            meta={}
+        )
+    
+    # Если нет в Consent, проверяем ConsentRequest (ожидает авторизации)
+    request_result = await db.execute(
+        select(ConsentRequest).where(ConsentRequest.request_id == consent_id)
+    )
+    consent_request = request_result.scalar_one_or_none()
+    
+    if not consent_request:
+        raise HTTPException(404, "Consent not found")
+    
+    consent_data = ConsentData(
+        consentId=consent_id,
+        status="AwaitingAuthorization",
+        creationDateTime=consent_request.created_at.isoformat() + "Z",
+        statusUpdateDateTime=consent_request.created_at.isoformat() + "Z",
+        permissions=consent_request.permissions,
+        expirationDateTime=(datetime.utcnow() + timedelta(days=90)).isoformat() + "Z"
+    )
+    
+    return ConsentResponse(
+        data=consent_data,
+        links={
+            "self": f"/account-consents/{consent_id}"
+        },
+        meta={}
+    )
+
+
+@router.delete("/{consent_id}", status_code=204)
+async def delete_account_access_consents_consent_id(
+    consent_id: str,
+    x_fapi_interaction_id: Optional[str] = Header(None, alias="x-fapi-interaction-id"),
+    current_bank: Optional[dict] = Depends(get_current_bank),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Удаление ресурса согласия
+    
+    OpenBanking Russia Account-Consents API v2.1
+    DELETE /account-consents/{consentId}
+    """
+    result = await db.execute(
+        select(Consent).where(Consent.consent_id == consent_id)
+    )
+    consent = result.scalar_one_or_none()
+    
+    if not consent:
+        raise HTTPException(404, "Consent not found")
+    
+    # Удалить (или изменить статус на Revoked)
+    consent.status = "Revoked"
+    consent.status_update_date_time = datetime.utcnow()
+    await db.commit()
+    
+    return None  # 204 No Content
+
+
+
+
 
 
 
