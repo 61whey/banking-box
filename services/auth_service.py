@@ -60,7 +60,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None, u
         return encoded_jwt
 
 
-def verify_token(token: str, bank_code: Optional[str] = None) -> dict:
+async def verify_token(token: str, bank_code: Optional[str] = None) -> dict:
     """Проверка JWT токена (HS256 или RS256)"""
     try:
         # Сначала пробуем HS256
@@ -73,7 +73,7 @@ def verify_token(token: str, bank_code: Optional[str] = None) -> dict:
         # Если не получилось и указан bank_code, пробуем RS256
         if bank_code:
             try:
-                payload = verify_rs256_token(token, bank_code)
+                payload = await verify_rs256_token(token, bank_code)
                 return payload
             except Exception:
                 pass
@@ -135,7 +135,7 @@ async def get_current_client(
     Dependency для получения текущего клиента из JWT токена
     """
     token = credentials.credentials
-    payload = verify_token(token)
+    payload = await verify_token(token)
     
     if payload.get("type") != "client":
         return None
@@ -159,7 +159,7 @@ async def get_current_bank(
     token = credentials.credentials
     # Для team токенов нужен bank_code для проверки RS256 подписи
     # Токен подписан текущим банком, поэтому используем config.BANK_CODE
-    payload = verify_token(token, bank_code=config.BANK_CODE)
+    payload = await verify_token(token, bank_code=config.BANK_CODE)
     
     # Принимаем и "bank" и "team" токены (team = токен банка для команды)
     if payload.get("type") not in ["bank", "team"]:
@@ -182,7 +182,7 @@ async def get_optional_client(
         return None
     
     try:
-        payload = verify_token(credentials.credentials)
+        payload = await verify_token(credentials.credentials)
         if payload.get("type") == "client":
             return {
                 "client_id": payload.get("sub"),
