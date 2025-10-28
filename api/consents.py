@@ -63,18 +63,25 @@ class ConsentRequestBody(BaseModel):
     requesting_bank_name: str = "Test Bank"
 
 
-@router.post("/request")
+@router.post("/request", tags=["🚀 Hackathon Quickstart"])
 async def request_consent(
     body: ConsentRequestBody,
     x_requesting_bank: Optional[str] = Header(None, alias="x-requesting-bank"),
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Запрос согласия от другого банка
+    ## 🚀 Быстрое создание согласия (только для хакатона!)
     
-    Не из стандарта OpenBanking, но нужно для межбанкового взаимодействия
+    **⚠️ ВНИМАНИЕ: Это НЕ стандартный OpenBanking Russia endpoint!**
     
-    В sandbox: можно вызывать без токена для тестирования
+    Упрощённый способ получить согласие в один шаг без OAuth редиректов.
+    
+    ### Для изучения стандарта используйте:
+    - `POST /account-consents` — создание consent resource (АФТ)
+    - `POST /account-consents/{id}/authorize` — авторизация
+    - `GET /account-consents/{id}` — проверка статуса
+    
+    ### ⚠️ В production используйте OAuth 2.0 Authorization Code Flow
     """
     # В sandbox режиме: разрешаем запросы для тестирования
     requesting_bank = x_requesting_bank or body.requesting_bank
@@ -278,7 +285,7 @@ async def revoke_consent(
 
 # === OpenBanking Russia стандартные endpoints ===
 
-@router.post("", response_model=ConsentResponse, status_code=201)
+@router.post("", response_model=ConsentResponse, status_code=201, tags=["📖 Standard OBRU v2.1"])
 async def create_account_access_consents(
     request: ConsentCreateRequest,
     x_fapi_interaction_id: Optional[str] = Header(None, alias="x-fapi-interaction-id"),
@@ -286,27 +293,45 @@ async def create_account_access_consents(
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Создание ресурса согласия на доступ к счету
+    ## 📖 Создание ресурса согласия (OpenBanking Russia v2.1)
     
-    OpenBanking Russia Account-Consents API v2.1
-    POST /account-consents
+    **Стандартный endpoint из спецификации АФТ.**
+    
+    ### ⚠️ Для быстрого старта используйте `POST /account-consents/request`
+    
+    Этот endpoint показывает правильный OpenBanking Russia flow.
     """
-    # В sandbox: создаем согласие сразу в статусе AwaitingAuthorization
-    # В production: потребуется redirect на authorization сервер
     
+    # Получить requesting_bank из токена или заголовка
+    requesting_bank = x_fapi_interaction_id or (current_bank.get("client_id") if current_bank else "unknown")
+    requesting_bank_name = f"App {requesting_bank}"
+    
+    # Создать consent request в БД
     consent_id = f"ac-{uuid.uuid4().hex[:12]}"
     
     # Рассчитать expiration
     if request.data.expirationDateTime:
         expiration = datetime.fromisoformat(request.data.expirationDateTime.replace("Z", ""))
     else:
-        expiration = datetime.utcnow() + timedelta(days=90)  # По умолчанию 90 дней
+        expiration = datetime.utcnow() + timedelta(days=90)
+    
+    consent_request = ConsentRequest(
+        request_id=consent_id,
+        client_id=None,  # будет заполнен при авторизации
+        requesting_bank=requesting_bank,
+        requesting_bank_name=requesting_bank_name,
+        permissions=request.data.permissions,
+        reason="Consent resource created via standard endpoint",
+        status="pending"
+    )
+    db.add(consent_request)
+    await db.commit()
     
     now = datetime.utcnow()
     
     consent_data = ConsentData(
         consentId=consent_id,
-        status="AwaitingAuthorization",  # Ожидает авторизации клиентом
+        status="AwaitingAuthorization",
         creationDateTime=now.isoformat() + "Z",
         statusUpdateDateTime=now.isoformat() + "Z",
         permissions=request.data.permissions,
@@ -322,7 +347,51 @@ async def create_account_access_consents(
     )
 
 
-@router.get("/{consent_id}", response_model=ConsentResponse)
+@router.post("/{consent_id}/authorize", tags=["🧪 Sandbox Helper"])
+async def authorize_consent(
+    consent_id: str,
+    action: str = "approve",
+    current_client: dict = Depends(get_current_client),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    ## 🧪 Упрощённая авторизация consent (только для sandbox)
+    
+    **В production это происходит через OAuth redirect.**
+    
+    Для sandbox: клиент может авторизовать consent напрямую через API.
+    """
+    if not current_client:
+        raise HTTPException(401, "Client authentication required")
+    
+    try:
+        status, consent = await ConsentService.authorize_consent_by_id(
+            db=db,
+            consent_id=consent_id,
+            client_person_id=current_client["client_id"],
+            action=action
+        )
+        
+        if consent:
+            return {
+                "consentId": consent.consent_id,
+                "status": status,
+                "message": "Consent authorized successfully",
+                "permissions": consent.permissions,
+                "expiresAt": consent.expiration_date_time.isoformat() + "Z" if consent.expiration_date_time else None
+            }
+        else:
+            return {
+                "consentId": consent_id,
+                "status": status,
+                "message": "Consent rejected"
+            }
+            
+    except ValueError as e:
+        raise HTTPException(404, str(e))
+
+
+@router.get("/{consent_id}", response_model=ConsentResponse, tags=["📖 Standard OBRU v2.1"])
 async def get_account_access_consents_consent_id(
     consent_id: str,
     x_fapi_interaction_id: Optional[str] = Header(None, alias="x-fapi-interaction-id"),
@@ -335,28 +404,54 @@ async def get_account_access_consents_consent_id(
     OpenBanking Russia Account-Consents API v2.1
     GET /account-consents/{consentId}
     """
+    # Сначала проверяем в Consent (если уже авторизован)
     result = await db.execute(
         select(Consent).where(Consent.consent_id == consent_id)
     )
     consent = result.scalar_one_or_none()
     
-    if not consent:
+    if consent:
+        consent_data = ConsentData(
+            consentId=consent.consent_id,
+            status="Authorized",
+            creationDateTime=consent.creation_date_time.isoformat() + "Z",
+            statusUpdateDateTime=consent.status_update_date_time.isoformat() + "Z",
+            permissions=consent.permissions,
+            expirationDateTime=consent.expiration_date_time.isoformat() + "Z" if consent.expiration_date_time else None
+        )
+        
+        return ConsentResponse(
+            data=consent_data,
+            links={
+                "self": f"/account-consents/{consent_id}"
+            },
+            meta={}
+        )
+    
+    # Если нет в Consent, проверяем ConsentRequest (ожидает авторизации)
+    request_result = await db.execute(
+        select(ConsentRequest).where(ConsentRequest.request_id == consent_id)
+    )
+    consent_request = request_result.scalar_one_or_none()
+    
+    if not consent_request:
         raise HTTPException(404, "Consent not found")
     
     consent_data = ConsentData(
-        consentId=consent.consent_id,
-        status=consent.status,
-        creationDateTime=consent.creation_date_time.isoformat() + "Z",
-        statusUpdateDateTime=consent.status_update_date_time.isoformat() + "Z",
-        permissions=consent.permissions,
-        expirationDateTime=consent.expiration_date_time.isoformat() + "Z" if consent.expiration_date_time else None
+        consentId=consent_id,
+        status="AwaitingAuthorization",
+        creationDateTime=consent_request.created_at.isoformat() + "Z",
+        statusUpdateDateTime=consent_request.created_at.isoformat() + "Z",
+        permissions=consent_request.permissions,
+        expirationDateTime=(datetime.utcnow() + timedelta(days=90)).isoformat() + "Z"
     )
     
     return ConsentResponse(
         data=consent_data,
         links={
             "self": f"/account-consents/{consent_id}"
-        }
+        },
+        meta={}
     )
 
 
