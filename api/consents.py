@@ -53,9 +53,81 @@ class ConsentResponse(BaseModel):
 
 
 
+
+# === Межбанковские endpoints (для других банков) ===
+
+class ConsentRequestBody(BaseModel):
+    """Body для запроса согласия"""
+    client_id: str
+    permissions: List[str]
+    reason: str = ""
+    requesting_bank: str = "test_bank"
+    requesting_bank_name: str = "Test Bank"
+
+
+@router.post("/request", tags=["Hackathon Quickstart"])
+async def request_consent(
+    body: ConsentRequestBody,
+    x_requesting_bank: Optional[str] = Header(None, alias="x-requesting-bank"),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    ## 🚀 Быстрое создание согласия (только для хакатона!)
+    
+    **⚠️ ВНИМАНИЕ: Это НЕ стандартный OpenBanking Russia endpoint!**
+    
+    Упрощённый способ получить согласие в один шаг без OAuth редиректов.
+    
+    ### Для изучения стандарта используйте:
+    - `POST /account-consents` — создание consent resource (АФТ)
+    - `POST /account-consents/{id}/authorize` — авторизация
+    - `GET /account-consents/{id}` — проверка статуса
+    
+    ### ⚠️ В production используйте OAuth 2.0 Authorization Code Flow
+    """
+    # В sandbox режиме: разрешаем запросы для тестирования
+    requesting_bank = x_requesting_bank or body.requesting_bank
+    requesting_bank_name = body.requesting_bank_name
+    
+    try:
+        consent_request, consent = await ConsentService.create_consent_request(
+            db=db,
+            client_person_id=body.client_id,
+            requesting_bank=requesting_bank,
+            requesting_bank_name=requesting_bank_name,
+            permissions=body.permissions,
+            reason=body.reason
+        )
+        
+        if consent:
+            # Автоодобрено
+            return {
+                "request_id": consent_request.request_id,
+                "consent_id": consent.consent_id,
+                "status": "approved",
+                "message": "Согласие одобрено автоматически",
+                "created_at": consent_request.created_at.isoformat(),
+                "auto_approved": True
+            }
+        else:
+            # Требуется одобрение
+            return {
+                "request_id": consent_request.request_id,
+                "status": "pending",
+                "message": "Запрос отправлен на одобрение",
+                "created_at": consent_request.created_at.isoformat(),
+                "auto_approved": False
+            }
+        
+    except ValueError as e:
+        raise HTTPException(404, str(e))
+
+
+
+
 # === OpenBanking Russia стандартные endpoints ===
 
-@router.post("", response_model=ConsentResponse, status_code=201, tags=["📖 Standard OBRU v2.1"])
+@router.post("", response_model=ConsentResponse, status_code=201, tags=["Standard OBRU v2.1"])
 async def create_account_access_consents(
     request: ConsentCreateRequest,
     x_fapi_interaction_id: Optional[str] = Header(None, alias="x-fapi-interaction-id"),
@@ -117,7 +189,7 @@ async def create_account_access_consents(
     )
 
 
-@router.post("/{consent_id}/authorize", tags=["🧪 Sandbox Helper"])
+@router.post("/{consent_id}/authorize", tags=["Sandbox Helper"])
 async def authorize_consent(
     consent_id: str,
     action: str = "approve",
@@ -161,7 +233,7 @@ async def authorize_consent(
         raise HTTPException(404, str(e))
 
 
-@router.get("/{consent_id}", response_model=ConsentResponse, tags=["📖 Standard OBRU v2.1"])
+@router.get("/{consent_id}", response_model=ConsentResponse, tags=["Standard OBRU v2.1"])
 async def get_account_access_consents_consent_id(
     consent_id: str,
     x_fapi_interaction_id: Optional[str] = Header(None, alias="x-fapi-interaction-id"),
@@ -255,79 +327,10 @@ async def delete_account_access_consents_consent_id(
 
 
 
-# === Межбанковские endpoints (для других банков) ===
-
-class ConsentRequestBody(BaseModel):
-    """Body для запроса согласия"""
-    client_id: str
-    permissions: List[str]
-    reason: str = ""
-    requesting_bank: str = "test_bank"
-    requesting_bank_name: str = "Test Bank"
-
-
-@router.post("/request", tags=["🚀 Hackathon Quickstart"])
-async def request_consent(
-    body: ConsentRequestBody,
-    x_requesting_bank: Optional[str] = Header(None, alias="x-requesting-bank"),
-    db: AsyncSession = Depends(get_db)
-):
-    """
-    ## 🚀 Быстрое создание согласия (только для хакатона!)
-    
-    **⚠️ ВНИМАНИЕ: Это НЕ стандартный OpenBanking Russia endpoint!**
-    
-    Упрощённый способ получить согласие в один шаг без OAuth редиректов.
-    
-    ### Для изучения стандарта используйте:
-    - `POST /account-consents` — создание consent resource (АФТ)
-    - `POST /account-consents/{id}/authorize` — авторизация
-    - `GET /account-consents/{id}` — проверка статуса
-    
-    ### ⚠️ В production используйте OAuth 2.0 Authorization Code Flow
-    """
-    # В sandbox режиме: разрешаем запросы для тестирования
-    requesting_bank = x_requesting_bank or body.requesting_bank
-    requesting_bank_name = body.requesting_bank_name
-    
-    try:
-        consent_request, consent = await ConsentService.create_consent_request(
-            db=db,
-            client_person_id=body.client_id,
-            requesting_bank=requesting_bank,
-            requesting_bank_name=requesting_bank_name,
-            permissions=body.permissions,
-            reason=body.reason
-        )
-        
-        if consent:
-            # Автоодобрено
-            return {
-                "request_id": consent_request.request_id,
-                "consent_id": consent.consent_id,
-                "status": "approved",
-                "message": "Согласие одобрено автоматически",
-                "created_at": consent_request.created_at.isoformat(),
-                "auto_approved": True
-            }
-        else:
-            # Требуется одобрение
-            return {
-                "request_id": consent_request.request_id,
-                "status": "pending",
-                "message": "Запрос отправлен на одобрение",
-                "created_at": consent_request.created_at.isoformat(),
-                "auto_approved": False
-            }
-        
-    except ValueError as e:
-        raise HTTPException(404, str(e))
-
-
 
 # === Клиентские endpoints (для собственных клиентов) ===
 
-@router.get("/requests")
+@router.get("/requests", tags=["Internal"])
 async def get_consent_requests(
     current_client: dict = Depends(get_current_client),
     db: AsyncSession = Depends(get_db)
@@ -379,7 +382,7 @@ class SignConsentBody(BaseModel):
     signature: str = "password"
 
 
-@router.post("/sign")
+@router.post("/sign", tags=["Internal"])
 async def sign_consent(
     body: SignConsentBody,
     current_client: dict = Depends(get_current_client),
@@ -421,7 +424,7 @@ async def sign_consent(
         raise HTTPException(404, str(e))
 
 
-@router.get("/my-consents")
+@router.get("/my-consents", tags=["Internal"])
 async def get_my_consents(
     current_client: dict = Depends(get_current_client),
     db: AsyncSession = Depends(get_db)
@@ -461,7 +464,7 @@ async def get_my_consents(
     }
 
 
-@router.delete("/my-consents/{consent_id}")
+@router.delete("/my-consents/{consent_id}", tags=["Internal"])
 async def revoke_consent(
     consent_id: str,
     current_client: dict = Depends(get_current_client),
