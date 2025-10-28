@@ -103,12 +103,13 @@
         }
         .consent-card {
             padding: 20px;
-            border: 1px solid #eee;
+            border: 1px solid var(--border-color);
             border-radius: 8px;
             margin-bottom: 15px;
+            background: var(--bg-card);
         }
-        .consent-card.active { border-left: 4px solid #2ecc71; }
-        .consent-card.pending { border-left: 4px solid #f39c12; }
+        .consent-card.active { border-left: 4px solid var(--success-color); }
+        .consent-card.pending { border-left: 4px solid var(--warning-color); }
         .consent-card.revoked { border-left: 4px solid #95a5a6; }
         .consent-header {
             display: flex;
@@ -116,16 +117,16 @@
             align-items: start;
             margin-bottom: 15px;
         }
-        .bank-info { font-size: 18px; font-weight: 600; color: #333; }
+        .bank-info { font-size: 18px; font-weight: 600; color: var(--text-primary); }
         .status-badge {
             padding: 4px 12px;
             border-radius: 4px;
             font-size: 12px;
             font-weight: 600;
         }
-        .status-active { background: #d4edda; color: #155724; }
-        .status-pending { background: #fff3cd; color: #856404; }
-        .status-revoked { background: #f8d7da; color: #721c24; }
+        .status-active { background: rgba(46, 204, 113, 0.2); color: var(--success-color); border: 1px solid var(--success-color); }
+        .status-pending { background: rgba(243, 156, 18, 0.2); color: var(--warning-color); border: 1px solid var(--warning-color); }
+        .status-revoked { background: rgba(149, 165, 166, 0.2); color: #95a5a6; border: 1px solid #95a5a6; }
         .permissions {
             margin: 10px 0;
             display: flex;
@@ -133,14 +134,19 @@
             gap: 8px;
         }
         .permission-tag {
-            background: #e7f3ff;
-            color: #0066cc;
+            background: rgba(102, 126, 234, 0.15);
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
             padding: 4px 10px;
             border-radius: 4px;
             font-size: 13px;
         }
-        .reason { color: #666; font-size: 14px; font-style: italic; margin: 10px 0; }
-        .metadata { color: #999; font-size: 12px; margin-top: 10px; }
+        body.dark .permission-tag {
+            background: rgba(102, 126, 234, 0.25);
+            color: #a5b4fc;
+        }
+        .reason { color: var(--text-secondary); font-size: 14px; font-style: italic; margin: 10px 0; }
+        .metadata { color: var(--text-secondary); font-size: 12px; margin-top: 10px; }
         .actions {
             display: flex;
             gap: 10px;
@@ -152,20 +158,21 @@
             border-radius: 5px;
             cursor: pointer;
             font-size: 14px;
+            transition: all 0.2s;
         }
-        .btn-approve { background: #2ecc71; color: white; }
-        .btn-approve:hover { background: #27ae60; }
-        .btn-reject { background: #e74c3c; color: white; }
-        .btn-reject:hover { background: #c0392b; }
+        .btn-approve { background: var(--success-color); color: white; }
+        .btn-approve:hover { background: #27ae60; opacity: 0.9; }
+        .btn-reject { background: var(--danger-color); color: white; }
+        .btn-reject:hover { background: #c0392b; opacity: 0.9; }
         .btn-revoke { background: #95a5a6; color: white; }
-        .btn-revoke:hover { background: #7f8c8d; }
-        .loading { text-align: center; padding: 40px; color: #666; }
+        .btn-revoke:hover { background: #7f8c8d; opacity: 0.9; }
+        .loading { text-align: center; padding: 40px; color: var(--text-secondary); }
         .empty {
             text-align: center;
             padding: 60px 20px;
-            color: #999;
+            color: var(--text-secondary);
         }
-        .empty-icon { font-size: 48px; margin-bottom: 10px; }
+        .empty-icon { font-size: 48px; margin-bottom: 10px; opacity: 0.5; }
     </style>
 </head>
 <body>
@@ -423,9 +430,21 @@
     <!-- Bank Switcher Component (встроен) -->
     <div style="position: fixed; bottom: 20px; right: 20px; background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; width: 200px;">
         <div style="font-size: 12px; color: #666; margin-bottom: 10px; font-weight: 600;">Перейти в другой банк:</div>
-        <a href="http://localhost:8001/client/" style="display: block; padding: 8px; margin-bottom: 8px; text-decoration: none; color: #667eea; border: 1px solid #667eea; border-radius: 5px; font-size: 13px; text-align: center;">🏦 Virtual Bank</a>
-        <a href="http://localhost:8002/client/" style="display: block; padding: 8px; margin-bottom: 8px; text-decoration: none; color: #e74c3c; border: 1px solid #e74c3c; border-radius: 5px; font-size: 13px; text-align: center;">🏦 Awesome Bank</a>
-        <a href="http://localhost:8003/client/" style="display: block; padding: 8px; text-decoration: none; color: #27ae60; border: 1px solid #27ae60; border-radius: 5px; font-size: 13px; text-align: center;">🏦 Smart Bank</a>
+        <div id="bankSwitcher"></div>
+        <script>
+            (function() {
+                const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                const getBankUrl = (code, port) => isDev ? `http://localhost:${port}` : `https://${code}.open.bankingapi.ru`;
+                const banks = [
+                    { code: 'vbank', name: 'Virtual Bank', port: '8001', color: '#667eea' },
+                    { code: 'abank', name: 'Awesome Bank', port: '8002', color: '#e74c3c' },
+                    { code: 'sbank', name: 'Smart Bank', port: '8003', color: '#27ae60' }
+                ];
+                document.getElementById('bankSwitcher').innerHTML = banks.map(b => 
+                    `<a href="${getBankUrl(b.code, b.port)}/client/" style="display: block; padding: 8px; margin-bottom: 8px; text-decoration: none; color: ${b.color}; border: 1px solid ${b.color}; border-radius: 5px; font-size: 13px; text-align: center;">🏦 ${b.name}</a>`
+                ).join('');
+            })();
+        </script>
     </div>
 </body>
 </html>
