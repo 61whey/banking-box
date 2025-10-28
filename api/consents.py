@@ -1,6 +1,17 @@
 """
 Account-Consents API - Управление согласиями
 OpenBanking Russia v2.1 compatible
+
+---
+
+**📊 Наглядные диаграммы:**  
+Посмотрите sequence diagrams на landing странице: [Как работают согласия](/#consent-flow)
+
+Два варианта flow:
+- ✅ Автоматическое одобрение (VBank, ABank, SBank) - 3 запроса
+- 🔐 Ручное одобрение банкиром (SmartBank) - реалистичный production flow
+
+---
 """
 from fastapi import APIRouter, Depends, HTTPException, Header
 from pydantic import BaseModel, Field
