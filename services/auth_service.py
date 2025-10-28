@@ -157,9 +157,8 @@ async def get_current_bank(
     - type="team" - токен команды (bank-token, выданный банком)
     """
     token = credentials.credentials
-    # Для team токенов нужен bank_code для проверки RS256 подписи
-    # Токен подписан текущим банком, поэтому используем config.BANK_CODE
-    payload = await verify_token(token, bank_code=config.BANK_CODE)
+    # Team токены используют HS256, bank_code не нужен
+    payload = await verify_token(token)
     
     # Принимаем и "bank" и "team" токены (team = токен банка для команды)
     if payload.get("type") not in ["bank", "team"]:
