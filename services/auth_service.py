@@ -156,8 +156,12 @@ async def get_current_bank(
     - type="bank" - межбанковый токен
     - type="team" - токен команды (bank-token, выданный банком)
     """
+    from ..config import config
+    
     token = credentials.credentials
-    payload = verify_token(token)
+    # Для team токенов нужен bank_code для проверки RS256 подписи
+    # Токен подписан текущим банком, поэтому используем config.BANK_CODE
+    payload = verify_token(token, bank_code=config.BANK_CODE)
     
     # Принимаем и "bank" и "team" токены (team = токен банка для команды)
     if payload.get("type") not in ["bank", "team"]:
