@@ -16,7 +16,7 @@ from ..services.auth_service import get_current_client, get_current_bank, get_op
 from ..services.consent_service import ConsentService
 
 
-router = APIRouter(prefix="/account-consents", tags=["Account-Consents"])
+router = APIRouter(prefix="/account-consents", tags=["01 OpenBanking: Account-Consents"])
 
 
 # === Pydantic Models (OpenBanking Russia format) ===
@@ -65,7 +65,7 @@ class ConsentRequestBody(BaseModel):
     requesting_bank_name: str = "Test Bank"
 
 
-@router.post("/request", tags=["Hackathon Quickstart"])
+@router.post("/request")
 async def request_consent(
     body: ConsentRequestBody,
     x_requesting_bank: Optional[str] = Header(None, alias="x-requesting-bank"),
@@ -127,7 +127,7 @@ async def request_consent(
 
 # === OpenBanking Russia стандартные endpoints ===
 
-@router.post("", response_model=ConsentResponse, status_code=201, tags=["Standard OBRU v2.1"])
+@router.post("", response_model=ConsentResponse, status_code=201)
 async def create_account_access_consents(
     request: ConsentCreateRequest,
     x_fapi_interaction_id: Optional[str] = Header(None, alias="x-fapi-interaction-id"),
@@ -189,7 +189,7 @@ async def create_account_access_consents(
     )
 
 
-@router.post("/{consent_id}/authorize", tags=["Sandbox Helper"])
+@router.post("/{consent_id}/authorize")
 async def authorize_consent(
     consent_id: str,
     action: str = "approve",
@@ -233,7 +233,7 @@ async def authorize_consent(
         raise HTTPException(404, str(e))
 
 
-@router.get("/{consent_id}", response_model=ConsentResponse, tags=["Standard OBRU v2.1"])
+@router.get("/{consent_id}", response_model=ConsentResponse)
 async def get_account_access_consents_consent_id(
     consent_id: str,
     x_fapi_interaction_id: Optional[str] = Header(None, alias="x-fapi-interaction-id"),
