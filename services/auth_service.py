@@ -151,16 +151,22 @@ async def get_current_bank(
 ) -> Optional[dict]:
     """
     Dependency для получения текущего банка из JWT токена (межбанковские запросы)
+    
+    Принимает:
+    - type="bank" - межбанковый токен
+    - type="team" - токен команды (bank-token, выданный банком)
     """
     token = credentials.credentials
     payload = verify_token(token)
     
-    if payload.get("type") != "bank":
+    # Принимаем и "bank" и "team" токены (team = токен банка для команды)
+    if payload.get("type") not in ["bank", "team"]:
         return None
     
     return {
-        "bank_code": payload.get("sub"),
-        "type": "bank"
+        "bank_code": payload.get("sub"),  # для team это client_id (team200)
+        "client_id": payload.get("client_id"),  # для team токенов
+        "type": payload.get("type")
     }
 
 
