@@ -156,8 +156,6 @@ async def get_current_bank(
     - type="bank" - межбанковый токен
     - type="team" - токен команды (bank-token, выданный банком)
     """
-    from ..config import config
-    
     token = credentials.credentials
     # Для team токенов нужен bank_code для проверки RS256 подписи
     # Токен подписан текущим банком, поэтому используем config.BANK_CODE
