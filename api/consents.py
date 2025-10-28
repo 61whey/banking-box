@@ -17,8 +17,6 @@ from ..services.consent_service import ConsentService
 
 
 router = APIRouter(prefix="/account-consents", tags=["01 OpenBanking: Account-Consents"])
-# Отдельный router для Internal endpoints (чтобы не попадали в OpenBanking секцию)
-internal_router = APIRouter(prefix="/account-consents", tags=["Internal: Consents"])
 
 
 # === Pydantic Models (OpenBanking Russia format) ===
@@ -332,7 +330,7 @@ async def delete_account_access_consents_consent_id(
 
 # === Клиентские endpoints (для собственных клиентов) ===
 
-@internal_router.get("/requests")
+@router.get("/requests", tags=["Internal: Consents"], include_in_schema=False)
 async def get_consent_requests(
     current_client: dict = Depends(get_current_client),
     db: AsyncSession = Depends(get_db)
@@ -384,7 +382,7 @@ class SignConsentBody(BaseModel):
     signature: str = "password"
 
 
-@internal_router.post("/sign")
+@router.post("/sign", tags=["Internal: Consents"], include_in_schema=False)
 async def sign_consent(
     body: SignConsentBody,
     current_client: dict = Depends(get_current_client),
@@ -426,7 +424,7 @@ async def sign_consent(
         raise HTTPException(404, str(e))
 
 
-@internal_router.get("/my-consents")
+@router.get("/my-consents", tags=["Internal: Consents"], include_in_schema=False)
 async def get_my_consents(
     current_client: dict = Depends(get_current_client),
     db: AsyncSession = Depends(get_db)
@@ -466,7 +464,7 @@ async def get_my_consents(
     }
 
 
-@internal_router.delete("/my-consents/{consent_id}")
+@router.delete("/my-consents/{consent_id}", tags=["Internal: Consents"], include_in_schema=False)
 async def revoke_consent(
     consent_id: str,
     current_client: dict = Depends(get_current_client),

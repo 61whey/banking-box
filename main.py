@@ -67,7 +67,6 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(accounts.router)
 app.include_router(consents.router)
-app.include_router(consents.internal_router)  # Internal endpoints для клиентов
 app.include_router(payments.router)
 app.include_router(products.router)
 app.include_router(product_agreements.router)
