@@ -24,6 +24,11 @@ wheels/
 venv/
 ENV/
 env/
+env.bak/
+.venv
+.venv.*
+venv.bak/
+
 
 # Environment variables
 .env
@@ -55,3 +60,15 @@ htmlcov/
 # Docker
 docker-compose.override.yml
 
+# Temporary files
+**/tmp*
+
+# Drawio tmp files
+**/*.drawio.bkp
+**/*.drawio.dtmp
+
+# Agents
+CLAUDE.md
+.claude
+.cursor
+.cursorrules
