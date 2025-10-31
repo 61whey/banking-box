@@ -10,9 +10,9 @@ from decimal import Decimal
 from datetime import datetime, timedelta
 import uuid
 
-from ..database import get_db
-from ..models import ProductAgreement, Product, Client, Account, BankCapital, Transaction
-from ..services.auth_service import get_current_client
+from database import get_db
+from models import ProductAgreement, Product, Client, Account, BankCapital, Transaction
+from services.auth_service import get_current_client
 
 router = APIRouter(prefix="/product-agreements", tags=["Product Agreements"])
 

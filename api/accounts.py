@@ -11,10 +11,10 @@ from pydantic import BaseModel
 from decimal import Decimal
 import uuid
 
-from ..database import get_db
-from ..models import Account, Client, Transaction, BankCapital
-from ..services.auth_service import get_current_client, get_optional_client
-from ..services.consent_service import ConsentService
+from database import get_db
+from models import Account, Client, Transaction, BankCapital
+from services.auth_service import get_current_client, get_optional_client
+from services.consent_service import ConsentService
 
 
 router = APIRouter(prefix="/accounts", tags=["Accounts"])

@@ -6,9 +6,9 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from ..database import get_db
-from ..models import Client
-from ..services.auth_service import create_access_token, hash_password, verify_password, get_current_client
+from database import get_db
+from models import Client
+from services.auth_service import create_access_token, hash_password, verify_password, get_current_client
 
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
@@ -85,7 +85,7 @@ async def create_bank_token(bank_code: str, shared_secret: str = "hackapi-2025-b
     
     Использует JWT RS256 с приватным ключом банка
     """
-    from ..config import config
+    from config import config
     
     # В sandbox: простая проверка секрета
     if shared_secret != "hackapi-2025-bank-secret":
@@ -120,7 +120,7 @@ async def banker_login(username: str = "admin", password: str = "admin"):
     if username != "admin" or password != "admin":
         raise HTTPException(401, "Invalid credentials")
     
-    from ..config import config
+    from config import config
     
     # Создать токен банкира
     banker_token = create_access_token(

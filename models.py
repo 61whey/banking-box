@@ -237,3 +237,122 @@ class KeyRateHistory(Base):
     changed_by = Column(String(100))  # admin
     created_at = Column(DateTime, default=datetime.utcnow)
 
+
+class CustomerLead(Base):
+    """Лид - потенциальный клиент"""
+    __tablename__ = "customer_leads"
+    
+    id = Column(Integer, primary_key=True)
+    customer_lead_id = Column(String(100), unique=True, nullable=False)
+    full_name = Column(String(255), nullable=False)
+    phone = Column(String(50))
+    email = Column(String(255))
+    interested_products = Column(ARRAY(String))
+    source = Column(String(50))
+    estimated_income = Column(Numeric(15, 2))
+    notes = Column(Text)
+    status = Column(String(50), default="pending")  # pending, contacted, converted, rejected
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class ProductOffer(Base):
+    """Персональное предложение продукта"""
+    __tablename__ = "product_offers"
+    
+    id = Column(Integer, primary_key=True)
+    offer_id = Column(String(100), unique=True, nullable=False)
+    customer_lead_id = Column(String(100))
+    product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
+    personalized_rate = Column(Numeric(5, 2))
+    personalized_amount = Column(Numeric(15, 2))
+    personalized_term_months = Column(Integer)
+    status = Column(String(50), default="pending")  # pending, sent, viewed, accepted, rejected
+    valid_until = Column(DateTime)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    sent_at = Column(DateTime)
+    viewed_at = Column(DateTime)
+    responded_at = Column(DateTime)
+    
+    product = relationship("Product")
+
+
+class ProductOfferConsent(Base):
+    """Согласие на персональное предложение"""
+    __tablename__ = "product_offer_consents"
+    
+    id = Column(Integer, primary_key=True)
+    consent_id = Column(String(100), unique=True, nullable=False)
+    customer_lead_id = Column(String(100))
+    client_id = Column(Integer, ForeignKey("clients.id"))
+    permissions = Column(ARRAY(String), nullable=False)
+    status = Column(String(50), default="active")  # active, revoked, expired
+    expires_at = Column(DateTime)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    client = relationship("Client")
+
+
+class ProductApplication(Base):
+    """Заявка на банковский продукт"""
+    __tablename__ = "product_applications"
+    
+    id = Column(Integer, primary_key=True)
+    application_id = Column(String(100), unique=True, nullable=False)
+    client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
+    product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
+    requested_amount = Column(Numeric(15, 2), nullable=False)
+    requested_term_months = Column(Integer)
+    application_data = Column(Text)  # JSON данные
+    status = Column(String(50), default="pending")  # pending, under_review, approved, rejected
+    decision = Column(String(50))  # approved, rejected
+    decision_reason = Column(Text)
+    approved_amount = Column(Numeric(15, 2))
+    approved_rate = Column(Numeric(5, 2))
+    submitted_at = Column(DateTime, default=datetime.utcnow)
+    reviewed_at = Column(DateTime)
+    decision_at = Column(DateTime)
+    
+    client = relationship("Client")
+    product = relationship("Product")
+
+
+class VRPConsent(Base):
+    """Согласие на периодические переводы (VRP)"""
+    __tablename__ = "vrp_consents"
+    
+    id = Column(Integer, primary_key=True)
+    consent_id = Column(String(100), unique=True, nullable=False)
+    client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
+    account_id = Column(Integer, ForeignKey("accounts.id"), nullable=False)
+    status = Column(String(50), default="Authorised")  # Authorised, Rejected, Revoked
+    max_individual_amount = Column(Numeric(15, 2), nullable=False)
+    max_amount_period = Column(Numeric(15, 2))
+    period_type = Column(String(20))  # day, week, month, year
+    max_payments_count = Column(Integer)
+    valid_until = Column(DateTime)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    client = relationship("Client")
+    account = relationship("Account")
+
+
+class VRPPayment(Base):
+    """Периодический платеж с переменными реквизитами (VRP)"""
+    __tablename__ = "vrp_payments"
+    
+    id = Column(Integer, primary_key=True)
+    payment_id = Column(String(100), unique=True, nullable=False)
+    vrp_consent_id = Column(String(100), nullable=False)
+    account_id = Column(Integer, ForeignKey("accounts.id"), nullable=False)
+    amount = Column(Numeric(15, 2), nullable=False)
+    destination_account = Column(String(255), nullable=False)
+    destination_bank = Column(String(100))
+    description = Column(Text)
+    status = Column(String(50), default="Pending")  # Pending, AcceptedSettlementInProcess, AcceptedSettlementCompleted, Rejected
+    is_recurring = Column(Boolean, default=True)
+    recurrence_frequency = Column(String(20))  # daily, weekly, monthly
+    created_at = Column(DateTime, default=datetime.utcnow)
+    executed_at = Column(DateTime)
+    
+    account = relationship("Account")
+

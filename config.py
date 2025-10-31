@@ -3,10 +3,17 @@
 Команды кастомизируют эти параметры
 """
 from pydantic_settings import BaseSettings
+from pydantic import ConfigDict
 
 
 class BankConfig(BaseSettings):
     """Настройки банка"""
+    
+    model_config = ConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore"
+    )
     
     # === ИДЕНТИФИКАЦИЯ БАНКА (КАСТОМИЗИРУЙ!) ===
     BANK_CODE: str = "vbank"
@@ -28,10 +35,6 @@ class BankConfig(BaseSettings):
     # === REGISTRY (для федеративной архитектуры) ===
     REGISTRY_URL: str = "http://localhost:3000"
     PUBLIC_URL: str = "http://localhost:8001"
-    
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
 
 
 # Singleton instance
