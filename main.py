@@ -8,10 +8,10 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
 
-from .config import config
-from .database import engine
-from .models import Base
-from .api import (
+from config import config
+from database import engine
+from models import Base
+from api import (
     accounts, auth, consents, payments, admin, products, well_known, 
     banker, product_agreements,
     product_applications, customer_leads, product_offers, product_offer_consents,
