@@ -423,19 +423,8 @@ paths:
       summary: Список транзакций по счёту
       operationId: listTransactionsByAccount
       parameters:
-
-    FapiAuthDate:
-      name: x-fapi-auth-date
-      in: header
-      required: false
-      description: Время аутентификации PSU у СП/ППУ (HTTP-date, RFC 7231).
-      schema: { type: string, example: 'Sun, 15 Sep 2019 11:22:31 GMT' }
-    FapiCustomerIp:
-      name: x-fapi-customer-ip-address
-      in: header
-      required: false
-      description: IP-адрес пользователя.
-      schema: { type: string }
+        - $ref: '#/components/parameters/FapiAuthDate'
+        - $ref: '#/components/parameters/FapiCustomerIp'
         - $ref: '#/components/parameters/Accept'
         - $ref: '#/components/parameters/FapiInteractionId'
         - $ref: '#/components/parameters/PageNumber'
