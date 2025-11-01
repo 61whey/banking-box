@@ -162,19 +162,8 @@ paths:
       operationId: createAccountConsent
       description: Создаёт ресурс согласия (AwaitingAuthorisation). Требуется токен **client_credentials** со scope `accounts`.
       parameters:
-
-    FapiAuthDate:
-      name: x-fapi-auth-date
-      in: header
-      required: false
-      description: Время аутентификации PSU у СП/ППУ (HTTP-date, RFC 7231).
-      schema: { type: string, example: 'Sun, 15 Sep 2019 11:22:31 GMT' }
-    FapiCustomerIp:
-      name: x-fapi-customer-ip-address
-      in: header
-      required: false
-      description: IP-адрес пользователя.
-      schema: { type: string }
+        - $ref: '#/components/parameters/FapiAuthDate'
+        - $ref: '#/components/parameters/FapiCustomerIp'
         - $ref: '#/components/parameters/Accept'
         - $ref: '#/components/parameters/FapiInteractionId'
         - $ref: '#/components/parameters/JwsSignature'
@@ -211,19 +200,8 @@ paths:
       summary: Получить согласие на доступ к счёту
       operationId: getAccountConsent
       parameters:
-
-    FapiAuthDate:
-      name: x-fapi-auth-date
-      in: header
-      required: false
-      description: Время аутентификации PSU у СП/ППУ (HTTP-date, RFC 7231).
-      schema: { type: string, example: 'Sun, 15 Sep 2019 11:22:31 GMT' }
-    FapiCustomerIp:
-      name: x-fapi-customer-ip-address
-      in: header
-      required: false
-      description: IP-адрес пользователя.
-      schema: { type: string }
+        - $ref: '#/components/parameters/FapiAuthDate'
+        - $ref: '#/components/parameters/FapiCustomerIp'
         - $ref: '#/components/parameters/Accept'
         - $ref: '#/components/parameters/FapiInteractionId'
         - name: consentId
@@ -255,19 +233,8 @@ paths:
       summary: Удалить согласие
       operationId: deleteAccountConsent
       parameters:
-
-    FapiAuthDate:
-      name: x-fapi-auth-date
-      in: header
-      required: false
-      description: Время аутентификации PSU у СП/ППУ (HTTP-date, RFC 7231).
-      schema: { type: string, example: 'Sun, 15 Sep 2019 11:22:31 GMT' }
-    FapiCustomerIp:
-      name: x-fapi-customer-ip-address
-      in: header
-      required: false
-      description: IP-адрес пользователя.
-      schema: { type: string }
+        - $ref: '#/components/parameters/FapiAuthDate'
+        - $ref: '#/components/parameters/FapiCustomerIp'
         - $ref: '#/components/parameters/Accept'
         - $ref: '#/components/parameters/FapiInteractionId'
         - name: consentId
@@ -297,19 +264,8 @@ paths:
       summary: Получить поручение на извлечение данных по согласию
       operationId: getRetrievalGrant
       parameters:
-
-    FapiAuthDate:
-      name: x-fapi-auth-date
-      in: header
-      required: false
-      description: Время аутентификации PSU у СП/ППУ (HTTP-date, RFC 7231).
-      schema: { type: string, example: 'Sun, 15 Sep 2019 11:22:31 GMT' }
-    FapiCustomerIp:
-      name: x-fapi-customer-ip-address
-      in: header
-      required: false
-      description: IP-адрес пользователя.
-      schema: { type: string }
+        - $ref: '#/components/parameters/FapiAuthDate'
+        - $ref: '#/components/parameters/FapiCustomerIp'
         - $ref: '#/components/parameters/Accept'
         - $ref: '#/components/parameters/FapiInteractionId'
         - name: consentId
@@ -341,19 +297,8 @@ paths:
       summary: Список счетов, доступных по авторизованному согласию
       operationId: listAccounts
       parameters:
-
-    FapiAuthDate:
-      name: x-fapi-auth-date
-      in: header
-      required: false
-      description: Время аутентификации PSU у СП/ППУ (HTTP-date, RFC 7231).
-      schema: { type: string, example: 'Sun, 15 Sep 2019 11:22:31 GMT' }
-    FapiCustomerIp:
-      name: x-fapi-customer-ip-address
-      in: header
-      required: false
-      description: IP-адрес пользователя.
-      schema: { type: string }
+        - $ref: '#/components/parameters/FapiAuthDate'
+        - $ref: '#/components/parameters/FapiCustomerIp'
         - $ref: '#/components/parameters/Accept'
         - $ref: '#/components/parameters/FapiInteractionId'
         - $ref: '#/components/parameters/PageNumber'
@@ -382,19 +327,8 @@ paths:
       summary: Детали счёта
       operationId: getAccountById
       parameters:
-
-    FapiAuthDate:
-      name: x-fapi-auth-date
-      in: header
-      required: false
-      description: Время аутентификации PSU у СП/ППУ (HTTP-date, RFC 7231).
-      schema: { type: string, example: 'Sun, 15 Sep 2019 11:22:31 GMT' }
-    FapiCustomerIp:
-      name: x-fapi-customer-ip-address
-      in: header
-      required: false
-      description: IP-адрес пользователя.
-      schema: { type: string }
+        - $ref: '#/components/parameters/FapiAuthDate'
+        - $ref: '#/components/parameters/FapiCustomerIp'
         - $ref: '#/components/parameters/Accept'
         - $ref: '#/components/parameters/FapiInteractionId'
         - name: accountId
@@ -426,19 +360,8 @@ paths:
       summary: Баланс по счёту
       operationId: getAccountBalances
       parameters:
-
-    FapiAuthDate:
-      name: x-fapi-auth-date
-      in: header
-      required: false
-      description: Время аутентификации PSU у СП/ППУ (HTTP-date, RFC 7231).
-      schema: { type: string, example: 'Sun, 15 Sep 2019 11:22:31 GMT' }
-    FapiCustomerIp:
-      name: x-fapi-customer-ip-address
-      in: header
-      required: false
-      description: IP-адрес пользователя.
-      schema: { type: string }
+        - $ref: '#/components/parameters/FapiAuthDate'
+        - $ref: '#/components/parameters/FapiCustomerIp'
         - $ref: '#/components/parameters/Accept'
         - $ref: '#/components/parameters/FapiInteractionId'
         - name: accountId
@@ -470,19 +393,8 @@ paths:
       summary: Баланс по всем авторизованным счетам
       operationId: listBalances
       parameters:
-
-    FapiAuthDate:
-      name: x-fapi-auth-date
-      in: header
-      required: false
-      description: Время аутентификации PSU у СП/ППУ (HTTP-date, RFC 7231).
-      schema: { type: string, example: 'Sun, 15 Sep 2019 11:22:31 GMT' }
-    FapiCustomerIp:
-      name: x-fapi-customer-ip-address
-      in: header
-      required: false
-      description: IP-адрес пользователя.
-      schema: { type: string }
+        - $ref: '#/components/parameters/FapiAuthDate'
+        - $ref: '#/components/parameters/FapiCustomerIp'
         - $ref: '#/components/parameters/Accept'
         - $ref: '#/components/parameters/FapiInteractionId'
         - $ref: '#/components/parameters/PageNumber'
@@ -559,19 +471,8 @@ paths:
       summary: Список транзакций по всем авторизованным счетам
       operationId: listAllTransactions
       parameters:
-
-    FapiAuthDate:
-      name: x-fapi-auth-date
-      in: header
-      required: false
-      description: Время аутентификации PSU у СП/ППУ (HTTP-date, RFC 7231).
-      schema: { type: string, example: 'Sun, 15 Sep 2019 11:22:31 GMT' }
-    FapiCustomerIp:
-      name: x-fapi-customer-ip-address
-      in: header
-      required: false
-      description: IP-адрес пользователя.
-      schema: { type: string }
+        - $ref: '#/components/parameters/FapiAuthDate'
+        - $ref: '#/components/parameters/FapiCustomerIp'
         - $ref: '#/components/parameters/Accept'
         - $ref: '#/components/parameters/FapiInteractionId'
         - $ref: '#/components/parameters/PageNumber'
@@ -606,19 +507,8 @@ paths:
       operationId: createPaymentConsent
       description: Создаёт ресурс согласия на проведение платежа (AwaitingAuthorisation). Требуется токен **client_credentials** со scope `payments`.
       parameters:
-
-    FapiAuthDate:
-      name: x-fapi-auth-date
-      in: header
-      required: false
-      description: Время аутентификации PSU у СП/ППУ (HTTP-date, RFC 7231).
-      schema: { type: string, example: 'Sun, 15 Sep 2019 11:22:31 GMT' }
-    FapiCustomerIp:
-      name: x-fapi-customer-ip-address
-      in: header
-      required: false
-      description: IP-адрес пользователя.
-      schema: { type: string }
+        - $ref: '#/components/parameters/FapiAuthDate'
+        - $ref: '#/components/parameters/FapiCustomerIp'
         - $ref: '#/components/parameters/Accept'
         - $ref: '#/components/parameters/FapiInteractionId'
         - $ref: '#/components/parameters/IdempotencyKey'
@@ -656,19 +546,8 @@ paths:
       summary: Получить согласие на проведение платежа
       operationId: getPaymentConsent
       parameters:
-
-    FapiAuthDate:
-      name: x-fapi-auth-date
-      in: header
-      required: false
-      description: Время аутентификации PSU у СП/ППУ (HTTP-date, RFC 7231).
-      schema: { type: string, example: 'Sun, 15 Sep 2019 11:22:31 GMT' }
-    FapiCustomerIp:
-      name: x-fapi-customer-ip-address
-      in: header
-      required: false
-      description: IP-адрес пользователя.
-      schema: { type: string }
+        - $ref: '#/components/parameters/FapiAuthDate'
+        - $ref: '#/components/parameters/FapiCustomerIp'
         - $ref: '#/components/parameters/Accept'
         - $ref: '#/components/parameters/FapiInteractionId'
         - name: consentId
@@ -702,19 +581,8 @@ paths:
       operationId: createPayment
       description: Подтверждает инициирование платежа по авторизованному consentId.
       parameters:
-
-    FapiAuthDate:
-      name: x-fapi-auth-date
-      in: header
-      required: false
-      description: Время аутентификации PSU у СП/ППУ (HTTP-date, RFC 7231).
-      schema: { type: string, example: 'Sun, 15 Sep 2019 11:22:31 GMT' }
-    FapiCustomerIp:
-      name: x-fapi-customer-ip-address
-      in: header
-      required: false
-      description: IP-адрес пользователя.
-      schema: { type: string }
+        - $ref: '#/components/parameters/FapiAuthDate'
+        - $ref: '#/components/parameters/FapiCustomerIp'
         - $ref: '#/components/parameters/Accept'
         - $ref: '#/components/parameters/FapiInteractionId'
         - $ref: '#/components/parameters/IdempotencyKey'
@@ -751,19 +619,8 @@ paths:
       summary: Получить платёж
       operationId: getPaymentById
       parameters:
-
-    FapiAuthDate:
-      name: x-fapi-auth-date
-      in: header
-      required: false
-      description: Время аутентификации PSU у СП/ППУ (HTTP-date, RFC 7231).
-      schema: { type: string, example: 'Sun, 15 Sep 2019 11:22:31 GMT' }
-    FapiCustomerIp:
-      name: x-fapi-customer-ip-address
-      in: header
-      required: false
-      description: IP-адрес пользователя.
-      schema: { type: string }
+        - $ref: '#/components/parameters/FapiAuthDate'
+        - $ref: '#/components/parameters/FapiCustomerIp'
         - $ref: '#/components/parameters/Accept'
         - $ref: '#/components/parameters/FapiInteractionId'
         - name: paymentId
@@ -799,19 +656,8 @@ paths:
       operationId: createVrpConsent
       description: DRAFT. По материалам AFT «под утверждением». Набор полей может измениться.
       parameters:
-
-    FapiAuthDate:
-      name: x-fapi-auth-date
-      in: header
-      required: false
-      description: Время аутентификации PSU у СП/ППУ (HTTP-date, RFC 7231).
-      schema: { type: string, example: 'Sun, 15 Sep 2019 11:22:31 GMT' }
-    FapiCustomerIp:
-      name: x-fapi-customer-ip-address
-      in: header
-      required: false
-      description: IP-адрес пользователя.
-      schema: { type: string }
+        - $ref: '#/components/parameters/FapiAuthDate'
+        - $ref: '#/components/parameters/FapiCustomerIp'
         - $ref: '#/components/parameters/Accept'
         - $ref: '#/components/parameters/FapiInteractionId'
         - $ref: '#/components/parameters/IdempotencyKey'
@@ -846,19 +692,8 @@ paths:
       summary: Получить согласие VRP (draft)
       operationId: getVrpConsent
       parameters:
-
-    FapiAuthDate:
-      name: x-fapi-auth-date
-      in: header
-      required: false
-      description: Время аутентификации PSU у СП/ППУ (HTTP-date, RFC 7231).
-      schema: { type: string, example: 'Sun, 15 Sep 2019 11:22:31 GMT' }
-    FapiCustomerIp:
-      name: x-fapi-customer-ip-address
-      in: header
-      required: false
-      description: IP-адрес пользователя.
-      schema: { type: string }
+        - $ref: '#/components/parameters/FapiAuthDate'
+        - $ref: '#/components/parameters/FapiCustomerIp'
         - $ref: '#/components/parameters/Accept'
         - $ref: '#/components/parameters/FapiInteractionId'
         - name: consentId
