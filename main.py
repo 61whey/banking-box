@@ -96,7 +96,8 @@ Authorization: Bearer <your_token>
     version=config.API_VERSION,
     lifespan=lifespan,
     openapi_tags=openapi_tags,
-    swagger_ui_parameters={"tagsSorter": "alpha", "operationsSorter": "alpha"}
+    swagger_ui_parameters={"tagsSorter": "alpha", "operationsSorter": "alpha"},
+    docs_url=None  # Отключаем автоматическую генерацию /docs
 )
 
 # CORS - разрешить запросы между всеми банками
@@ -124,6 +125,43 @@ app.add_middleware(
 
 # Add API logging middleware
 app.add_middleware(APILoggingMiddleware)
+
+
+# Кастомная страница Swagger (опционально с аналитикой для production)
+@app.get("/docs", include_in_schema=False)
+async def custom_swagger_ui_html():
+    """Swagger UI с возможностью интеграции аналитики"""
+    return HTMLResponse(content=f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{config.BANK_NAME} API - Swagger UI</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css">
+</head>
+<body>
+    <div id="swagger-ui"></div>
+    <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+    <script>
+        window.onload = () => {{
+            window.ui = SwaggerUIBundle({{
+                url: '/openapi.json',
+                dom_id: '#swagger-ui',
+                deepLinking: true,
+                presets: [
+                    SwaggerUIBundle.presets.apis,
+                    SwaggerUIBundle.SwaggerUIStandalonePreset
+                ],
+                tagsSorter: 'alpha',
+                operationsSorter: 'alpha'
+            }});
+        }};
+    </script>
+</body>
+</html>
+    """)
+
 
 # Include routers
 app.include_router(auth.router)
