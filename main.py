@@ -116,6 +116,7 @@ allowed_origins = [
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,  # Все банки + прокси (dev + prod)
+    allow_origin_regex=r"http://localhost:\d+",  # Разрешить localhost с любым портом для разработки команд
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
