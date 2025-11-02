@@ -42,7 +42,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    command: python run.py
     volumes:
       - ./shared/keys:/app/shared/keys:ro
     restart: unless-stopped

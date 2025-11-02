@@ -26,7 +26,9 @@ BANK_NAME=My Awesome Bank     # название
 SECRET_KEY=RANDOM_STRING      # сгенерируй случайную строку!
 ```
 
-## Шаг 3: Запустить через Docker
+## Шаг 3: Запустить
+
+### Вариант A: Через Docker (рекомендуется)
 
 ```bash
 # Запустить
@@ -37,6 +39,16 @@ docker compose ps
 
 # Посмотреть логи
 docker compose logs -f bank
+```
+
+### Вариант B: Локально (для разработки)
+
+```bash
+# Установить зависимости
+pip install -r requirements.txt
+
+# Запустить
+python run.py
 ```
 
 **Ожидаемый вывод:**

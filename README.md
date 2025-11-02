@@ -77,7 +77,10 @@ createdb mybank_db
 cp .env.example .env
 
 # 4. Запустить
-python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+python run.py
+
+# Альтернативно (если настроен как пакет):
+# python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 ## ⚙️ Кастомизация

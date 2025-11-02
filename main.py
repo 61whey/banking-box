@@ -8,15 +8,30 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
 
-from .config import config
-from .database import engine
-from .models import Base
-from .api import (
-    accounts, auth, consents, payments, admin, products, well_known, 
-    banker, product_agreements,
-    product_applications, customer_leads, product_offers, product_offer_consents,
-    vrp_consents, vrp_payments
-)
+try:
+    # Попытка относительного импорта (для пакетного режима)
+    from .config import config
+    from .database import engine
+    from .models import Base
+    from .middleware import APILoggingMiddleware
+    from .api import (
+        accounts, auth, consents, payments, admin, products, well_known, 
+        banker, product_agreements, product_agreement_consents,
+        product_applications, customer_leads, product_offers, product_offer_consents,
+        vrp_consents, vrp_payments, interbank, payment_consents
+    )
+except ImportError:
+    # Абсолютный импорт (для прямого запуска)
+    from config import config
+    from database import engine
+    from models import Base
+    from middleware import APILoggingMiddleware
+    from api import (
+        accounts, auth, consents, payments, admin, products, well_known, 
+        banker, product_agreements, product_agreement_consents,
+        product_applications, customer_leads, product_offers, product_offer_consents,
+        vrp_consents, vrp_payments, interbank, payment_consents
+    )
 
 
 @asynccontextmanager
@@ -38,38 +53,86 @@ async def lifespan(app: FastAPI):
 
 
 # Create FastAPI app
+openapi_tags = [
+    {"name": "🚀 Start Here", "description": "Начните отсюда — получите токен для работы с API"},
+    {"name": "01 OpenBanking: Account-Consents", "description": "OpenBanking Russia v2.1 — согласия на доступ"},
+    {"name": "02 OpenBanking: Accounts", "description": "OpenBanking Russia v2.1 — счета и балансы"},
+    {"name": "03 OpenBanking: Payment-Consents", "description": "OpenBanking Russia — согласия на платежи"},
+    {"name": "03 OpenBanking: Payments", "description": "OpenBanking Russia — разовые платежи"},
+    {"name": "04 OpenBanking: VRP Consents", "description": "Согласия на периодические переводы"},
+    {"name": "05 OpenBanking: VRP Payments", "description": "Периодические платежи с переменными реквизитами"},
+    {"name": "06 OpenBanking: Products", "description": "Каталог банковских продуктов"},
+    {"name": "07 OpenBanking: Customer Leads", "description": "Лидогенерация и управление потенциальными клиентами"},
+    {"name": "08 OpenBanking: Product Offers", "description": "Персональные предложения по продуктам"},
+    {"name": "09 OpenBanking: Product Offer Consents", "description": "Согласия на персональные предложения"},
+    {"name": "10 OpenBanking: Product Applications", "description": "Заявки клиентов на банковские продукты"},
+    {"name": "11 OpenBanking: Product Agreements", "description": "Договоры с продуктами (депозиты/кредиты/карты)"},
+    {"name": "Internal: Auth", "description": "Внутренняя аутентификация (для UI банка)"},
+    {"name": "Internal: Banker", "description": "Управление продуктами банка"},
+    {"name": "Internal: Admin", "description": "Админ-панель и метрики"},
+    {"name": "Interbank API", "description": "Межбанковские переводы (bank-to-bank)"},
+    {"name": "Technical: Well-Known", "description": "JWKS — публичные ключи для проверки JWT"},
+]
+
 app = FastAPI(
     title=f"{config.BANK_NAME} API",
-    description=f"OpenBanking Russia v{config.API_VERSION} compatible API",
+    description=f"""
+# {config.BANK_NAME} API
+
+OpenBanking Russia v2.1 совместимый API для разработки финансовых приложений.
+
+## Как начать работу
+
+**Шаг 1:** Получите токен через `POST /auth/bank-token` (раздел "🚀 Start Here")
+
+**Шаг 2:** Используйте токен во всех запросах:
+```
+Authorization: Bearer <your_token>
+```
+
+**Шаг 3:** Вызывайте API (Большенство API требуют согласия для межбанковых запросов):
+
+    """,
     version=config.API_VERSION,
-    lifespan=lifespan
+    lifespan=lifespan,
+    openapi_tags=openapi_tags,
+    swagger_ui_parameters={"tagsSorter": "alpha", "operationsSorter": "alpha"}
 )
 
 # CORS - разрешить запросы между всеми банками
 # Для мультибанковых приложений нужно разрешить cross-origin запросы
 allowed_origins = [
-    "http://localhost:8001",  # VBank
-    "http://localhost:8002",  # ABank
-    "http://localhost:8003",  # SBank
-    "http://localhost",       # Прокси
-    "http://localhost:3000",  # Directory
+    "http://localhost:8001",  # VBank (dev)
+    "http://localhost:8002",  # ABank (dev)
+    "http://localhost:8003",  # SBank (dev)
+    "http://localhost",       # Прокси (dev)
+    "http://localhost:3000",  # Directory (dev)
+    "https://vbank.open.bankingapi.ru",  # VBank (prod)
+    "https://abank.open.bankingapi.ru",  # ABank (prod)
+    "https://sbank.open.bankingapi.ru",  # SBank (prod)
+    "https://open.bankingapi.ru",  # Landing (prod)
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,  # Все банки + прокси
+    allow_origins=allowed_origins,  # Все банки + прокси (dev + prod)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# Add API logging middleware
+app.add_middleware(APILoggingMiddleware)
+
 # Include routers
 app.include_router(auth.router)
 app.include_router(accounts.router)
 app.include_router(consents.router)
+app.include_router(payment_consents.router)
 app.include_router(payments.router)
 app.include_router(products.router)
 app.include_router(product_agreements.router)
+app.include_router(product_agreement_consents.router)
 app.include_router(product_applications.router)
 app.include_router(customer_leads.router)
 app.include_router(product_offers.router)
@@ -78,6 +141,7 @@ app.include_router(vrp_consents.router)
 app.include_router(vrp_payments.router)
 app.include_router(banker.router)
 app.include_router(admin.router)
+app.include_router(interbank.router)
 app.include_router(well_known.router)
 
 # Mount static files (frontend)
@@ -85,19 +149,6 @@ frontend_path = Path(__file__).parent / "frontend"
 if frontend_path.exists():
     app.mount("/client", StaticFiles(directory=str(frontend_path / "client"), html=True), name="client")
     app.mount("/banker", StaticFiles(directory=str(frontend_path / "banker"), html=True), name="banker")
-
-# Mount admin panel (from root)
-# Try both relative and absolute paths
-admin_panel_path = Path(__file__).parent.parent / "admin-panel"
-if not admin_panel_path.exists():
-    # Fallback to absolute path in Docker
-    admin_panel_path = Path("/app/admin-panel")
-
-if admin_panel_path.exists():
-    print(f"Mounting admin panel from: {admin_panel_path}")
-    app.mount("/admin", StaticFiles(directory=str(admin_panel_path), html=True), name="admin")
-else:
-    print(f"Warning: admin-panel directory not found at {admin_panel_path}")
 
 
 @app.get("/")

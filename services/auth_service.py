@@ -193,6 +193,29 @@ async def get_optional_client(
     return None
 
 
+async def get_current_banker(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+) -> Optional[dict]:
+    """
+    Получить текущего банкира из токена
+    Возвращает None если не авторизован или не банкир
+    """
+    if not credentials:
+        return None
+    
+    try:
+        payload = await verify_token(credentials.credentials)
+        if payload.get("type") == "banker":
+            return {
+                "username": payload.get("sub"),
+                "type": "banker"
+            }
+    except:
+        return None
+    
+    return None
+
+
 def hash_password(password: str) -> str:
     """Хеширование пароля"""
     return pwd_context.hash(password)
