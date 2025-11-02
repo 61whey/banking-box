@@ -128,10 +128,10 @@ app.add_middleware(
 app.add_middleware(APILoggingMiddleware)
 
 
-# Кастомная страница Swagger (опционально с аналитикой для production)
+# Кастомная страница Swagger
 @app.get("/docs", include_in_schema=False)
 async def custom_swagger_ui_html():
-    """Swagger UI с возможностью интеграции аналитики"""
+    """Swagger UI"""
     return HTMLResponse(content=f"""
 <!DOCTYPE html>
 <html>
