@@ -20,10 +20,13 @@ Container_Boundary(backend, "Backend API") {
     Component(payments_api, "Payments API", "Endpoint", "POST /payments\nGET /payments")
     Component(products_api, "Products API", "Endpoint", "GET /products\nPUT /products/{id}")
     
-    Component(banker_api, "Banker API", "Endpoint", "GET /banker/clients\nGET /banker/consents")
-    Component(admin_api, "Admin API", "Endpoint", "GET /admin/teams\nPUT /admin/teams/{id}/suspend\nDELETE /admin/teams/{id}")
+    Component(banker_api, "Banker API", "Endpoint", "GET /banker/clients\nGET /banker/consents\nPUT /banker/products/{id}")
+    Component(admin_api, "Admin API", "Endpoint", "GET /admin/capital\nGET /admin/stats\nGET /admin/transfers\nGET /admin/payments")
+    Component(teams_api, "Teams API", "Endpoint", "GET /admin/teams\nPUT /admin/teams/{id}/suspend")
     
     Component(multibank_api, "Multibank Proxy", "Endpoint", "POST /multibank/bank-token\nPOST /multibank/request-consent\nPOST /multibank/accounts-with-consent\nPOST /multibank/balances-with-consent")
+    
+    Component(jwks_api, "JWKS", "Endpoint", "GET /.well-known/jwks.json\nПубличные ключи RS256")
 }
 
 Container_Boundary(services, "Services") {
@@ -34,7 +37,8 @@ Container_Boundary(services, "Services") {
 
 ContainerDb(db, "PostgreSQL", "Database", "• clients\n• accounts\n• consents\n• payments\n• teams\n• tokens")
 
-System_Ext(external_banks, "Внешние банки", "ABank, VBank, SBank")
+System_Ext(directory, "е-Каталог", "Федеративная инфраструктура")
+System_Ext(other_banks, "Другие банки участников", "Федеративная сеть")
 
 ' Frontend -> API Router
 Rel(client_ui, api_router, "REST API")
@@ -49,7 +53,9 @@ Rel(api_router, payments_api, "Route")
 Rel(api_router, products_api, "Route")
 Rel(api_router, banker_api, "Route")
 Rel(api_router, admin_api, "Route")
+Rel(api_router, teams_api, "Route")
 Rel(api_router, multibank_api, "Route")
+Rel(api_router, jwks_api, "Route")
 
 ' Authentication
 Rel(api_router, auth_service, "Validate token")
@@ -69,10 +75,19 @@ Rel(payment_service, db, "Store payments")
 Rel(accounts_api, db, "Query accounts")
 Rel(products_api, db, "Query/Update products")
 Rel(banker_api, db, "Query clients")
-Rel(admin_api, db, "Manage teams")
+Rel(admin_api, db, "Read stats")
+Rel(teams_api, db, "Manage teams")
 
 ' Multibank
 Rel(client_ui, multibank_api, "Мультибанк запросы")
-Rel(multibank_api, external_banks, "OpenBanking Flow\n1. Bank Token\n2. Consent Request\n3. Accounts\n4. Balances")
+Rel(multibank_api, other_banks, "OpenBanking Flow\n1. Bank Token\n2. Consent Request\n3. Accounts\n4. Balances")
+Rel(multibank_api, auth_service, "Generate RS256 JWT")
+
+' е-Каталог мониторинг
+Rel(directory, admin_api, "Опрос банков\nGET /admin/*")
+
+' JWKS Federation
+Rel(other_banks, jwks_api, "Получение публичных ключей")
+Rel(jwks_api, auth_service, "Load RSA keys")
 
 @enduml

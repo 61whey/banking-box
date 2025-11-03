@@ -67,9 +67,8 @@ plantuml -tpng bank-structure.puml bank-components.puml
 - **Multibank Proxy** - проксирование запросов к внешним банкам
 
 ### Внешние системы
-- **ABank** - https://abank.open.bankingapi.ru
-- **VBank** - https://vbank.open.bankingapi.ru
-- **SBank** - https://sbank.open.bankingapi.ru
+- **е-Каталог (Directory Service)** - федеративная инфраструктура, мониторинг банков
+- **Другие банки участников** - федеративная сеть OpenBanking
 
 ## OpenBanking Flow
 
@@ -82,11 +81,20 @@ Multibank Proxy реализует полный OpenBanking Russia Flow:
 
 ## История изменений
 
-**2025-11-03** - Обновление архитектуры:
+**2025-11-03** - Добавлен е-Каталог и федеративная архитектура:
+- ✅ Добавлен е-Каталог (Directory Service) - мониторинг банков
+- ✅ Показан опрос банков через Admin API (capital, stats, transfers, payments)
+- ✅ Добавлен JWKS endpoint для RS256 федеративной авторизации
+- ✅ Обновлены Admin API endpoints для мониторинга
+- ✅ Заменены конкретные банки на "Другие банки участников"
+- ✅ Разделены Admin API и Teams API
+- ✅ Developer Portal сохранен (регистрация команд)
+
+**2025-11-02** - Обновление архитектуры:
 - ✅ Добавлен Multibank Proxy
 - ✅ Добавлен Developer Portal
-- ✅ Добавлены внешние банки (ABank, VBank, SBank)
+- ✅ Добавлены внешние банки
 - ✅ Добавлен Admin API для управления командами
 - ✅ Обновлен список endpoints
 
-**2024-11-02** - Первая версия диаграмм
+**2024-11-01** - Первая версия диаграмм
