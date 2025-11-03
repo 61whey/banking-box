@@ -1,6 +1,6 @@
--- ABank - создание таблиц и тестовые данные
+-- Bank-in-a-Box - создание таблиц и тестовые данные
 
--- Создание таблиц (те же что в vbank)
+-- Создание таблиц
 CREATE TABLE IF NOT EXISTS clients (
     id SERIAL PRIMARY KEY,
     person_id VARCHAR(100) UNIQUE,

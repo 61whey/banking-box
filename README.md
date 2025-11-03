@@ -94,14 +94,9 @@ git clone https://github.com/GalkinTech/bank-in-a-box.git
 cd bank-in-a-box
 
 # 2. Создать конфигурацию
-cat > .env << EOF
-TEAM_CLIENT_ID=team200
-TEAM_CLIENT_SECRET=your_secret_key_here
-BANK_CODE=mybank
-BANK_NAME=My Awesome Bank
-SECRET_KEY=$(openssl rand -hex 32)
-EOF
+cp .env.example .env
 # Отредактируй .env - укажи название своего банка и team credentials
+# SECRET_KEY можно сгенерировать: openssl rand -hex 32
 
 # 3. Запустить
 docker compose up -d
