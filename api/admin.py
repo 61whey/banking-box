@@ -16,12 +16,6 @@ from models import BankCapital, InterbankTransfer, Payment, Account, BankSetting
 router = APIRouter(prefix="/admin", tags=["Internal: Admin"], include_in_schema=False)
 
 
-class KeyRateUpdate(BaseModel):
-    """Обновление ключевой ставки"""
-    rate: float
-    changed_by: str = "admin"
-
-
 @router.get("/capital")
 async def get_capital(
     db: AsyncSession = Depends(get_db)
@@ -194,54 +188,8 @@ async def get_key_rate(db: AsyncSession = Depends(get_db)):
     }
 
 
-@router.put("/key-rate")
-async def update_key_rate(
-    update: KeyRateUpdate,
-    db: AsyncSession = Depends(get_db)
-):
-    """
-    Изменить ключевую ставку ЦБ
-    """
-    # Валидация ставки
-    if update.rate < 0 or update.rate > 100:
-        raise HTTPException(400, "Rate must be between 0 and 100")
-    
-    # Обновить в BankSettings
-    result = await db.execute(
-        select(BankSettings).where(BankSettings.key == "key_rate")
-    )
-    setting = result.scalar_one_or_none()
-    
-    if setting:
-        setting.value = str(update.rate)
-        setting.updated_at = datetime.utcnow()
-    else:
-        setting = BankSettings(
-            key="key_rate",
-            value=str(update.rate)
-        )
-        db.add(setting)
-    
-    # Добавить в историю
-    history = KeyRateHistory(
-        rate=Decimal(str(update.rate)),
-        effective_from=datetime.utcnow(),
-        changed_by=update.changed_by
-    )
-    db.add(history)
-    
-    await db.commit()
-    
-    return {
-        "data": {
-            "rate": update.rate,
-            "effective_from": history.effective_from.isoformat(),
-            "changed_by": update.changed_by
-        },
-        "meta": {
-            "message": "Key rate updated successfully"
-        }
-    }
+# Изменение ключевой ставки доступно только через е-Каталог (главному админу)
+# Endpoint PUT /admin/key-rate удален для участников хакатона
 
 
 @router.get("/key-rate/history")
