@@ -341,7 +341,7 @@ class ConsentService:
             return False
         
         # Отозвать
-        consent.status = "revoked"
+        consent.status = "Revoked"  # OpenBanking формат с заглавной буквы
         consent.status_update_date_time = datetime.utcnow()
         consent.revoked_at = datetime.utcnow()
         

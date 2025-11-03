@@ -5,6 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Согласия</title>
     <link rel="stylesheet" href="theme-styles.css">
+    
+    <!-- Yandex.Metrika counter -->
+    <script type="text/javascript">
+        (function(m,e,t,r,i,k,a){
+            m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+            m[i].l=1*new Date();
+            for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+            k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+        })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=105080093', 'ym');
+
+        ym(105080093, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", accurateTrackBounce:true, trackLinks:true});
+    </script>
+    <noscript><div><img src="https://mc.yandex.ru/watch/105080093" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+    <!-- /Yandex.Metrika counter -->
+    
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
@@ -335,9 +350,10 @@
                             ${c.permissions.map(p => `<span class="permission-tag">${p}</span>`).join('')}
                         </div>
                         <div class="metadata">
-                            Подписано: ${c.signed_at ? new Date(c.signed_at).toLocaleString('ru-RU') : 'N/A'}<br>
-                            Истекает: ${c.expires_at ? new Date(c.expires_at).toLocaleString('ru-RU') : 'N/A'}
-                            ${c.last_accessed ? `<br>Последний доступ: ${new Date(c.last_accessed).toLocaleString('ru-RU')}` : ''}
+                            <strong>ID:</strong> <code style="background: rgba(102, 126, 234, 0.1); padding: 2px 6px; border-radius: 3px; font-size: 11px;">${c.consent_id}</code><br>
+                            Подписано: ${c.signed_at ? new Date(c.signed_at).toLocaleString('ru-RU', {timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone}) : 'N/A'}<br>
+                            Истекает: ${c.expires_at ? new Date(c.expires_at).toLocaleString('ru-RU', {timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone}) : 'N/A'}
+                            ${c.last_accessed ? `<br>Последний доступ: ${new Date(c.last_accessed).toLocaleString('ru-RU', {timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone})}` : ''}
                         </div>
                         <div class="actions">
                             <button class="btn-revoke" onclick="revokeConsent('${c.consent_id}')">
@@ -356,7 +372,8 @@
                             ${c.permissions.map(p => `<span class="permission-tag">${p}</span>`).join('')}
                         </div>
                         <div class="metadata">
-                            Отозвано: ${c.revoked_at ? new Date(c.revoked_at).toLocaleString('ru-RU') : 'N/A'}
+                            <strong>ID:</strong> <code style="background: rgba(149, 165, 166, 0.1); padding: 2px 6px; border-radius: 3px; font-size: 11px;">${c.consent_id}</code><br>
+                            Отозвано: ${c.revoked_at ? new Date(c.revoked_at).toLocaleString('ru-RU', {timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone}) : 'N/A'}
                         </div>
                     </div>
                 `)
@@ -426,6 +443,16 @@
         Promise.all([loadPendingRequests(), loadActiveConsents()]);
     </script>
     <script src="theme-switcher.js"></script>
+    
+    <!-- Feedback Widget -->
+    <script src="/static/feedback-widget.js"></script>
+    <script>
+        initFeedbackWidget({
+            bankCode: bankCode,
+            uiType: 'client',
+            participantLogin: clientId
+        });
+    </script>
     
     <!-- Bank Switcher Component (встроен) -->
     <div style="position: fixed; bottom: 20px; right: 20px; background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; width: 200px;">
