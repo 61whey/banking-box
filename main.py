@@ -55,45 +55,20 @@ async def lifespan(app: FastAPI):
 
 # Create FastAPI app
 openapi_tags = [
-    {"name": "🚀 Start Here", "description": "Начните отсюда — получите токен для работы с API"},
-    {"name": "01 OpenBanking: Account-Consents", "description": "OpenBanking Russia v2.1 — согласия на доступ"},
-    {"name": "02 OpenBanking: Accounts", "description": "OpenBanking Russia v2.1 — счета и балансы"},
-    {"name": "03 OpenBanking: Payment-Consents", "description": "OpenBanking Russia — согласия на платежи"},
-    {"name": "03 OpenBanking: Payments", "description": "OpenBanking Russia — разовые платежи"},
-    {"name": "04 OpenBanking: VRP Consents", "description": "Согласия на периодические переводы"},
-    {"name": "05 OpenBanking: VRP Payments", "description": "Периодические платежи с переменными реквизитами"},
-    {"name": "06 OpenBanking: Products", "description": "Каталог банковских продуктов"},
-    {"name": "07 OpenBanking: Customer Leads", "description": "Лидогенерация и управление потенциальными клиентами"},
-    {"name": "08 OpenBanking: Product Offers", "description": "Персональные предложения по продуктам"},
-    {"name": "09 OpenBanking: Product Offer Consents", "description": "Согласия на персональные предложения"},
-    {"name": "10 OpenBanking: Product Applications", "description": "Заявки клиентов на банковские продукты"},
-    {"name": "11 OpenBanking: Product Agreements", "description": "Договоры с продуктами (депозиты/кредиты/карты)"},
-    {"name": "Internal: Auth", "description": "Внутренняя аутентификация (для UI банка)"},
-    {"name": "Internal: Banker", "description": "Управление продуктами банка"},
-    {"name": "Internal: Admin", "description": "Админ-панель и метрики"},
-    {"name": "Interbank API", "description": "Межбанковские переводы (bank-to-bank)"},
+    {"name": "0 Аутентификация вызывающей системы", "description": "Получите токен для работы с API"},
+    {"name": "1 Согласия на доступ к счетам", "description": "Создание и управление согласиями для доступа к данным клиентов"},
+    {"name": "2 Счета и балансы", "description": "Просмотр счетов, балансов и истории транзакций"},
+    {"name": "3 Согласия на переводы", "description": "Согласия для совершения платежей от имени клиента"},
+    {"name": "4 Переводы", "description": "Создание платежей и проверка их статуса"},
+    {"name": "5 Каталог продуктов", "description": "Депозиты, кредиты, карты — каталог банковских продуктов"},
+    {"name": "6 Согласия на управление договорами", "description": "Согласия на открытие/закрытие продуктов от имени клиента"},
+    {"name": "7 Договоры с продуктами", "description": "Открытие и закрытие депозитов, кредитов и карт"},
     {"name": "Technical: Well-Known", "description": "JWKS — публичные ключи для проверки JWT"},
 ]
 
 app = FastAPI(
     title=f"{config.BANK_NAME} API",
-    description=f"""
-# {config.BANK_NAME} API
-
-OpenBanking Russia v2.1 совместимый API для разработки финансовых приложений.
-
-## Как начать работу
-
-**Шаг 1:** Получите токен через `POST /auth/bank-token` (раздел "🚀 Start Here")
-
-**Шаг 2:** Используйте токен во всех запросах:
-```
-Authorization: Bearer <your_token>
-```
-
-**Шаг 3:** Вызывайте API (Большенство API требуют согласия для межбанковых запросов):
-
-    """,
+    description="",
     version=config.API_VERSION,
     lifespan=lifespan,
     openapi_tags=openapi_tags,
@@ -128,10 +103,10 @@ app.add_middleware(
 app.add_middleware(APILoggingMiddleware)
 
 
-# Кастомная страница Swagger
+# Кастомная страница Swagger с Яндекс.Метрикой
 @app.get("/docs", include_in_schema=False)
 async def custom_swagger_ui_html():
-    """Swagger UI"""
+    """Swagger UI с встроенной Яндекс.Метрикой"""
     return HTMLResponse(content=f"""
 <!DOCTYPE html>
 <html>
@@ -140,6 +115,23 @@ async def custom_swagger_ui_html():
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{config.BANK_NAME} API - Swagger UI</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css">
+    
+    <!-- Yandex.Metrika counter -->
+    <script type="text/javascript">
+        (function(m,e,t,r,i,k,a){{
+            m[i]=m[i]||function(){{(m[i].a=m[i].a||[]).push(arguments)}};
+            m[i].l=1*new Date();
+            for (var j = 0; j < document.scripts.length; j++) {{if (document.scripts[j].src === r) {{ return; }}}}
+            k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+        }})(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=105080093', 'ym');
+
+        ym(105080093, 'init', {{ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", accurateTrackBounce:true, trackLinks:true}});
+        
+        // Отслеживаем просмотр документации
+        setTimeout(function(){{ ym(105080093, 'reachGoal', 'docs_viewed', {{bank: '{config.BANK_CODE}'}}); }}, 1000);
+    </script>
+    <noscript><div><img src="https://mc.yandex.ru/watch/105080093" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+    <!-- /Yandex.Metrika counter -->
 </head>
 <body>
     <div id="swagger-ui"></div>
@@ -158,6 +150,16 @@ async def custom_swagger_ui_html():
                 operationsSorter: 'alpha'
             }});
         }};
+    </script>
+    
+    <!-- Feedback Widget -->
+    <script src="/static/feedback-widget.js"></script>
+    <script>
+        initFeedbackWidget({{
+            bankCode: '{config.BANK_CODE}',
+            uiType: 'docs',
+            participantLogin: null
+        }});
     </script>
 </body>
 </html>
@@ -189,6 +191,8 @@ frontend_path = Path(__file__).parent / "frontend"
 if frontend_path.exists():
     app.mount("/client", StaticFiles(directory=str(frontend_path / "client"), html=True), name="client")
     app.mount("/banker", StaticFiles(directory=str(frontend_path / "banker"), html=True), name="banker")
+    # Mount static files (for feedback-widget.js and other shared assets)
+    app.mount("/static", StaticFiles(directory=str(frontend_path)), name="static")
 
 
 @app.get("/")
