@@ -87,7 +87,8 @@ allowed_origins = [
     "https://vbank.open.bankingapi.ru",  # VBank (prod)
     "https://abank.open.bankingapi.ru",  # ABank (prod)
     "https://sbank.open.bankingapi.ru",  # SBank (prod)
-    "https://open.bankingapi.ru",  # Landing (prod)
+    "https://open.bankingapi.ru",  # HackAPI Platform
+    "https://www.open.bankingapi.ru",  # HackAPI Platform (www)
 ]
 
 app.add_middleware(
