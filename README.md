@@ -22,18 +22,17 @@
 ### Детальная схема компонентов
 ![Bank Components](./docs/diagrams/bank-components.svg)
 
-### Схема базы данных
-Посмотреть структуру таблиц можно в файле [`shared/database/init.sql`](./shared/database/init.sql)
+### Схема базы данных (ER-диаграмма)
+![Database Schema](./docs/diagrams/database-schema.svg)
 
 **Основные таблицы:**
-- `clients` - клиенты банка
-- `accounts` - счета клиентов
-- `transactions` - история транзакций
-- `payments` - платежи и переводы
-- `consents` - согласия на доступ к данным
-- `teams` - команды участников (для хакатона)
-- `products` - финансовые продукты
-- `product_agreements` - договоры с продуктами
+- **Клиенты и счета**: `clients`, `accounts`, `transactions`
+- **Платежи**: `payments`, `interbank_transfers`
+- **Согласия**: `consent_requests`, `consents`, `payment_consent_requests`, `payment_consents`
+- **Продукты**: `products`, `product_agreements`
+- **Система**: `teams`, `bank_capital`, `notifications`
+
+Подробная структура таблиц: [`shared/database/init.sql`](./shared/database/init.sql)
 
 📁 Исходные PlantUML файлы и инструкции: [`docs/diagrams/`](./docs/diagrams/)
 
