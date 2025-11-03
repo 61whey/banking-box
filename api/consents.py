@@ -428,9 +428,17 @@ async def get_account_access_consents_consent_id(
     consent = result.scalar_one_or_none()
     
     if consent:
+        # Маппинг статусов из БД в OpenBanking формат
+        status_mapping = {
+            "active": "Authorized",
+            "Revoked": "Revoked",
+            "expired": "Expired",
+            "rejected": "Rejected"
+        }
+        
         consent_data = ConsentData(
             consentId=consent.consent_id,
-            status="Authorized",
+            status=status_mapping.get(consent.status, "Authorized"),  # используем реальный статус из БД
             creationDateTime=consent.creation_date_time.isoformat() + "Z",
             statusUpdateDateTime=consent.status_update_date_time.isoformat() + "Z",
             permissions=consent.permissions,
