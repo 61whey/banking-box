@@ -87,6 +87,15 @@ CREATE TABLE IF NOT EXISTS bank_capital (
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS teams (
+    id SERIAL PRIMARY KEY,
+    client_id VARCHAR(100) UNIQUE NOT NULL,
+    client_secret VARCHAR(255) NOT NULL,
+    team_name VARCHAR(255),
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
 -- Клиенты команды team200 (для работы на хакатоне)
 INSERT INTO clients (person_id, client_type, full_name, segment, birth_year, monthly_income) VALUES
 ('team200-1', 'individual', 'Участник команды №1', 'employee', 1995, 100000),
@@ -203,3 +212,8 @@ INSERT INTO bank_settings (key, value) VALUES
 ('key_rate', '7.50'),
 ('auto_approve_consents', 'true')
 ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
+
+-- Команда team200 (пример для документации)
+INSERT INTO teams (client_id, client_secret, team_name, is_active) VALUES 
+('team200', '5OAaa4DYzYKfnOU6zbR34ic5qMm7VSMB', 'Команда 200 (пример)', true)
+ON CONFLICT (client_id) DO NOTHING;
