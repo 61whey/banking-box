@@ -252,12 +252,13 @@
 
                 const data = await response.json();
 
-                // Save token
+                // Save token and username
                 localStorage.setItem('banker_token', data.access_token);
                 localStorage.setItem('banker_role', data.role);
+                localStorage.setItem('banker_login', data.username || username);
 
-                // Redirect to products page
-                window.location.href = 'products.html';
+                // Redirect to monitoring page
+                window.location.href = 'monitoring.html';
 
             } catch (error) {
                 errorDiv.textContent = error.message || 'Ошибка авторизации';

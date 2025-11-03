@@ -11,8 +11,8 @@ import uuid
 import httpx
 import logging
 
-from ..models import Account, Payment, InterbankTransfer, BankCapital, Client, Transaction
-from ..config import config
+from models import Account, Payment, InterbankTransfer, BankCapital, Client, Transaction
+from config import config
 
 logger = logging.getLogger(__name__)
 

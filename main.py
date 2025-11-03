@@ -31,7 +31,7 @@ except ImportError:
         accounts, auth, consents, payments, admin, products, well_known, 
         banker, product_agreements, product_agreement_consents,
         product_applications, customer_leads, product_offers, product_offer_consents,
-        vrp_consents, vrp_payments, interbank, payment_consents
+        vrp_consents, vrp_payments, interbank, payment_consents, multibank_proxy
     )
 
 
@@ -157,6 +157,7 @@ app.include_router(vrp_payments.router)
 app.include_router(banker.router)
 app.include_router(admin.router)
 app.include_router(interbank.router)
+app.include_router(multibank_proxy.router)
 app.include_router(well_known.router)
 
 # Mount static files (frontend)
@@ -166,7 +167,7 @@ if frontend_path.exists():
     app.mount("/banker", StaticFiles(directory=str(frontend_path / "banker"), html=True), name="banker")
 
 
-@app.get("/")
+@app.get("/", summary="Информация о банке")
 async def root():
     """Root endpoint"""
     return {
@@ -177,7 +178,21 @@ async def root():
     }
 
 
-@app.get("/health")
+@app.get("/developer.html", response_class=HTMLResponse, include_in_schema=False)
+async def developer_page():
+    """
+    Публичная страница регистрации команды
+    
+    Доступна всем без авторизации для самостоятельной регистрации команд
+    """
+    from pathlib import Path
+    developer_file = Path(__file__).parent / "frontend" / "developer.html"
+    if developer_file.exists():
+        return developer_file.read_text(encoding='utf-8')
+    return "<h1>404 - Developer page not found</h1>"
+
+
+@app.get("/health", summary="Проверка работоспособности")
 async def health():
     """Health check endpoint"""
     return {

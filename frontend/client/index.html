@@ -47,19 +47,30 @@
             margin-top: 10px;
         }
         button:hover { background: #5568d3; }
+        button.secondary {
+            background: #6c757d;
+            margin-top: 5px;
+        }
+        button.secondary:hover { background: #5a6268; }
         .error { color: #e74c3c; font-size: 14px; margin-top: 10px; }
-        .hint { font-size: 12px; color: #999; margin-top: 10px; }
+        .hint { 
+            font-size: 12px; 
+            color: #999; 
+            margin-top: 15px; 
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="bank-name" id="bankName">Bank</div>
+        <div class="bank-name" id="bankName">Загрузка...</div>
         <h1>Вход в личный кабинет</h1>
         
         <form id="loginForm">
             <div class="form-group">
                 <label>ID клиента</label>
-                <input type="text" id="username" placeholder="cli-vb-001" required>
+                <input type="text" id="username" placeholder="team200-1" required>
             </div>
             
             <div class="form-group">
@@ -68,13 +79,10 @@
             </div>
             
             <button type="submit">Войти</button>
+            <button type="button" class="secondary" id="randomLogin">🎲 Войти как случайный клиент</button>
             
-            <div class="hint">
-                Тестовые клиенты:<br>
-                VBank: cli-vb-001, cli-vb-002<br>
-                ABank: cli-ab-001, cli-ab-002<br>
-                SBank: cli-sb-001, cli-sb-002<br>
-                Пароль для всех: password
+            <div class="hint" id="clientsHint">
+                Загрузка тестовых клиентов...
             </div>
             
             <div class="error" id="error" style="display: none;"></div>
@@ -82,25 +90,59 @@
     </div>
 
     <script>
-        // Определяем банк по URL (порт или хост)
-        let bankCode = 'vbank';
-        const port = window.location.port;
-        
-        if (port === '8001') bankCode = 'vbank';
-        else if (port === '8002') bankCode = 'abank';
-        else if (port === '8003') bankCode = 'sbank';
-        
-        const bankNames = {
-            'vbank': 'Virtual Bank',
-            'abank': 'Awesome Bank',
-            'sbank': 'Smart Bank'
-        };
-        
-        document.getElementById('bankName').textContent = bankNames[bankCode];
-        
         // API base URL
         const apiBase = window.location.origin;
+        let testClients = [];
         
+        // Загрузить информацию о банке
+        async function loadBankInfo() {
+            try {
+                const response = await fetch(`${apiBase}/`);
+                const data = await response.json();
+                document.getElementById('bankName').textContent = data.bank;
+            } catch (error) {
+                document.getElementById('bankName').textContent = 'Bank';
+            }
+        }
+        
+        // Загрузить список тестовых клиентов
+        async function loadTestClients() {
+            try {
+                // Пытаемся получить список клиентов через banker API (если доступно)
+                // В реальном банке этого не должно быть, но для демо удобно
+                const hintDiv = document.getElementById('clientsHint');
+                hintDiv.innerHTML = `
+                    <strong>Команда team200:</strong><br>
+                    team200-1, team200-2, team200-3, team200-4, team200-5<br>
+                    team200-6, team200-7, team200-8, team200-9, team200-10<br>
+                    <br><strong>Demo клиенты:</strong><br>
+                    demo-client-001, demo-client-002, demo-client-003<br>
+                    <br>Пароль для всех: <code>password</code>
+                `;
+                
+                testClients = [
+                    'team200-1', 'team200-2', 'team200-3', 'team200-4', 'team200-5',
+                    'team200-6', 'team200-7', 'team200-8', 'team200-9', 'team200-10',
+                    'demo-client-001', 'demo-client-002', 'demo-client-003'
+                ];
+            } catch (error) {
+                console.error('Could not load test clients:', error);
+            }
+        }
+        
+        // Вход под случайным клиентом
+        document.getElementById('randomLogin').addEventListener('click', () => {
+            if (testClients.length > 0) {
+                const randomClient = testClients[Math.floor(Math.random() * testClients.length)];
+                document.getElementById('username').value = randomClient;
+                document.getElementById('password').value = 'password';
+                
+                // Автоматически отправить форму
+                document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+            }
+        });
+        
+        // Обработка формы входа
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -123,10 +165,9 @@
                 
                 const data = await response.json();
                 
-                // Сохранить токен и bankCode
+                // Сохранить токен
                 localStorage.setItem('access_token', data.access_token);
                 localStorage.setItem('client_id', data.client_id);
-                localStorage.setItem('bank_code', bankCode);
                 
                 // Перейти на dashboard
                 window.location.href = 'dashboard.html';
@@ -136,8 +177,11 @@
                 errorDiv.style.display = 'block';
             }
         });
+        
+        // Инициализация при загрузке
+        loadBankInfo();
+        loadTestClients();
     </script>
     <script src="theme-switcher.js"></script>
 </body>
 </html>
-

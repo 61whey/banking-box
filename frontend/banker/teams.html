@@ -3,548 +3,453 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Управление командами - Banker Panel</title>
+    <title>Команды - Banker Portal</title>
+    <style id="sidebar-styles"></style>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .header {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            margin-bottom: 30px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        h1 {
-            color: #333;
-            margin-bottom: 10px;
-        }
-
-        .subtitle {
-            color: #666;
-            font-size: 14px;
-        }
-
-        .nav {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-            flex-wrap: wrap;
-        }
-
-        .nav a {
-            padding: 10px 20px;
-            background: #f5f5f5;
-            color: #333;
-            text-decoration: none;
-            border-radius: 5px;
-            font-size: 14px;
-            transition: background 0.3s;
-        }
-
-        .nav a:hover, .nav a.active {
-            background: #667eea;
-            color: white;
-        }
-
-        .card {
-            background: white;
-            border-radius: 10px;
-            padding: 30px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        .card h2 {
-            color: #333;
-            margin-bottom: 20px;
-            font-size: 20px;
-        }
-
-        .upload-section {
-            border: 2px dashed #ddd;
-            border-radius: 10px;
-            padding: 40px;
-            text-align: center;
-            margin-bottom: 20px;
-            transition: border-color 0.3s;
-        }
-
-        .upload-section:hover {
-            border-color: #667eea;
-        }
-
-        .upload-section.dragover {
-            border-color: #667eea;
-            background: #f0f4ff;
-        }
-
-        input[type="file"] {
-            display: none;
-        }
-
-        .upload-btn {
-            background: #667eea;
-            color: white;
-            padding: 12px 30px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background 0.3s;
-        }
-
-        .upload-btn:hover {
-            background: #5568d3;
-        }
-
-        .upload-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-
-        .file-info {
-            margin: 20px 0;
-            padding: 15px;
-            background: #f5f5f5;
-            border-radius: 5px;
-            display: none;
-        }
-
-        .file-info.show {
-            display: block;
-        }
-
-        .submit-btn {
-            background: #10b981;
-            color: white;
-            padding: 12px 30px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            margin-top: 10px;
-            transition: background 0.3s;
-        }
-
-        .submit-btn:hover {
-            background: #059669;
-        }
-
-        .submit-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-
-        th {
-            background: #f5f5f5;
-            font-weight: 600;
-            color: #333;
-        }
-
-        tr:hover {
-            background: #f9f9f9;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-
-        .badge-success {
-            background: #d1fae5;
-            color: #065f46;
-        }
-
-        .badge-warning {
-            background: #fed7aa;
-            color: #92400e;
-        }
-
-        .message {
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            display: none;
-        }
-
-        .message.show {
-            display: block;
-        }
-
-        .message.success {
-            background: #d1fae5;
-            color: #065f46;
-            border: 1px solid #10b981;
-        }
-
-        .message.error {
-            background: #fee2e2;
-            color: #991b1b;
-            border: 1px solid #ef4444;
-        }
-
-        .stats {
+        /* Page-specific styles */
+        .teams-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 24px;
         }
 
-        .stat-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
+        .team-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+            transition: all 0.2s;
         }
 
-        .stat-card h3 {
-            font-size: 32px;
-            margin-bottom: 5px;
+        .team-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
-        .stat-card p {
-            opacity: 0.9;
+        .team-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .team-icon {
+            font-size: 36px;
+        }
+
+        .team-info h3 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .team-id {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-family: monospace;
+        }
+
+        .team-details {
+            margin: 16px 0;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            color: var(--text-secondary);
             font-size: 14px;
+        }
+
+        .detail-value {
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .credentials {
+            background: var(--bg-primary);
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 16px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .credentials-label {
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .credentials-value {
+            color: var(--text-primary);
+            word-break: break-all;
+        }
+
+        .copy-btn {
+            margin-top: 8px;
+            padding: 6px 12px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            width: 100%;
+        }
+
+        .copy-btn:hover {
+            opacity: 0.9;
         }
 
         .empty-state {
             text-align: center;
             padding: 60px 20px;
-            color: #999;
+            color: var(--text-muted);
+            grid-column: 1 / -1;
         }
 
-        .empty-state svg {
-            width: 80px;
-            height: 80px;
-            margin-bottom: 20px;
-            opacity: 0.3;
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
         }
 
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #999;
+        /* Button styles */
+        .btn-register {
+            padding: 10px 20px;
+            background: var(--success-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        .btn-register:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
         }
 
-        .spinner {
+
+        /* Team card actions */
+        .team-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .btn-action {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-suspend {
+            background: var(--warning-color);
+            color: white;
+        }
+
+        .btn-suspend:hover {
+            opacity: 0.9;
+        }
+
+        .btn-activate {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-activate:hover {
+            opacity: 0.9;
+        }
+
+        .btn-delete {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .btn-delete:hover {
+            opacity: 0.9;
+        }
+
+        .team-status {
             display: inline-block;
-            width: 40px;
-            height: 40px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 8px;
         }
 
-        .template-link {
-            margin-top: 20px;
-            padding: 15px;
-            background: #fffbeb;
-            border-radius: 5px;
-            border: 1px solid #fbbf24;
+        .status-active {
+            background: #d1fae5;
+            color: #065f46;
         }
 
-        .template-link a {
-            color: #92400e;
-            text-decoration: none;
-            font-weight: 500;
+        .status-inactive {
+            background: #fee2e2;
+            color: #991b1b;
         }
 
-        .template-link a:hover {
-            text-decoration: underline;
+        [data-theme="dark"] .status-active {
+            background: #064e3b;
+            color: #d1fae5;
+        }
+
+        [data-theme="dark"] .status-inactive {
+            background: #7f1d1d;
+            color: #fee2e2;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🏆 Управление командами участников</h1>
-            <p class="subtitle">Загрузка credentials участников хакатона</p>
-            
-            <div class="nav">
-                <a href="products.html">Продукты</a>
-                <a href="clients.html">Клиенты</a>
-                <a href="consents.html">Согласия</a>
-                <a href="monitoring.html">Мониторинг</a>
-                <a href="teams.html" class="active">Команды</a>
-            </div>
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="top-bar">
+            <div class="top-bar-title">Команды участников</div>
+            <a href="/developer.html" target="_blank" class="btn-register">
+                🔗 Страница регистрации
+            </a>
         </div>
 
-        <div id="message" class="message"></div>
-
-        <div class="stats" id="stats">
-            <div class="stat-card">
-                <h3 id="totalTeams">-</h3>
-                <p>Всего команд</p>
-            </div>
-            <div class="stat-card">
-                <h3 id="activeTeams">-</h3>
-                <p>Активных</p>
-            </div>
-        </div>
-
-        <div class="card">
-            <h2>📤 Загрузка команд из Excel</h2>
-            
-            <div class="upload-section" id="uploadZone">
-                <p style="margin-bottom: 20px; color: #666;">
-                    Перетащите Excel файл сюда или нажмите кнопку ниже
-                </p>
-                
-                <input type="file" id="fileInput" accept=".xlsx,.xls" />
-                <label for="fileInput">
-                    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
-                        Выбрать файл
-                    </button>
-                </label>
-
-                <div class="file-info" id="fileInfo">
-                    <strong>Выбран файл:</strong> <span id="fileName"></span><br>
-                    <small>Размер: <span id="fileSize"></span></small>
-                </div>
-
-                <button class="submit-btn" id="uploadBtn" style="display: none;">
-                    Загрузить команды
-                </button>
-            </div>
-
-            <div class="template-link">
-                <strong>📋 Формат файла:</strong><br>
-                Колонки: <code>ClientID</code>, <code>Password / Client_secret</code>; опционально <code>team_name</code><br>
-                Пример: team200, 5OAaa4DYzYKfnOU6zbR34ic5qMm7VSMB, "Test Team"
-            </div>
-        </div>
-
-        <div class="card">
-            <h2>👥 Список команд</h2>
-            <div id="teamsTableContainer">
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <p>Загрузка...</p>
+        <div class="content-area">
+            <div class="container">
+                <div class="teams-grid" id="teamsGrid">
+                    <div class="loading">Загрузка команд...</div>
                 </div>
             </div>
         </div>
-    </div>
+    </main>
+
+
+    <script type="module">
+        import { applyTheme, toggleTheme } from '../client/theme-switcher.js';
+        import { initSidebar, sidebarStyles } from './sidebar.js';
+
+        // Apply styles
+        document.getElementById('sidebar-styles').textContent = sidebarStyles;
+        
+        // Initialize sidebar
+        initSidebar('teams');
+        
+        // Apply theme
+        applyTheme();
+
+        // Setup theme toggle
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            toggleTheme();
+            const isDark = localStorage.getItem('theme') === 'dark';
+            document.getElementById('themeIcon').textContent = isDark ? '☀️' : '🌙';
+        });
+
+        // Update theme icon on load
+        const isDark = localStorage.getItem('theme') === 'dark';
+        document.getElementById('themeIcon').textContent = isDark ? '☀️' : '🌙';
+    </script>
 
     <script>
-        const API_BASE = window.location.origin;
-        let selectedFile = null;
-
-        // Получить токен банкира
-        function getBankerToken() {
-            const token = localStorage.getItem('banker_token');
-            if (!token) {
-                window.location.href = 'index.html';
-                throw new Error('Not authenticated');
-            }
-            return token;
+        // Check authentication
+        const token = localStorage.getItem('banker_token');
+        if (!token) {
+            window.location.href = 'index.html';
         }
 
-        // Загрузка списка команд
+        function getBaseUrl() {
+            const port = window.location.port;
+            return `http://localhost:${port}`;
+        }
+
+        // Load teams
         async function loadTeams() {
             try {
-                const token = getBankerToken();
-                const response = await fetch(`${API_BASE}/admin/teams`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
+                const baseUrl = getBaseUrl();
+                const response = await fetch(`${baseUrl}/admin/teams`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
-                const data = await response.json();
-                
-                // Обновить статистику
-                document.getElementById('totalTeams').textContent = data.teams.length;
-                document.getElementById('activeTeams').textContent = data.teams.length;
 
-                // Отобразить таблицу
-                const container = document.getElementById('teamsTableContainer');
-                
-                if (data.teams.length === 0) {
-                    container.innerHTML = `
-                        <div class="empty-state">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                            </svg>
-                            <h3>Нет загруженных команд</h3>
-                            <p>Загрузите Excel файл с credentials участников</p>
-                        </div>
-                    `;
-                } else {
-                    container.innerHTML = `
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Client ID</th>
-                                    <th>Название команды</th>
-                                    <th>Дата создания</th>
-                                    <th>Статус</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${data.teams.map(team => `
-                                    <tr>
-                                        <td><strong>${team.client_id}</strong></td>
-                                        <td>${team.team_name || '-'}</td>
-                                        <td>${new Date(team.created_at).toLocaleString('ru-RU')}</td>
-                                        <td><span class="badge badge-success">Активна</span></td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    `;
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
                 }
+
+                const data = await response.json();
+                renderTeams(data.teams || []);
             } catch (error) {
                 console.error('Error loading teams:', error);
-                showMessage('Ошибка загрузки списка команд', 'error');
+                document.getElementById('teamsGrid').innerHTML = 
+                    '<div class="error">❌ Ошибка загрузки команд: ' + error.message + '</div>';
             }
         }
 
-        // Обработка выбора файла
-        document.getElementById('fileInput').addEventListener('change', (e) => {
-            selectedFile = e.target.files[0];
-            if (selectedFile) {
-                document.getElementById('fileName').textContent = selectedFile.name;
-                document.getElementById('fileSize').textContent = formatBytes(selectedFile.size);
-                document.getElementById('fileInfo').classList.add('show');
-                document.getElementById('uploadBtn').style.display = 'inline-block';
+        // Render teams
+        function renderTeams(teams) {
+            const grid = document.getElementById('teamsGrid');
+
+            if (!teams || teams.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">👥</div>
+                        <h3>Нет зарегистрированных команд</h3>
+                        <p>Команды появятся после регистрации на <a href="/developer.html" target="_blank">/developer.html</a></p>
+                    </div>
+                `;
+                return;
             }
-        });
 
-        // Drag & Drop
-        const uploadZone = document.getElementById('uploadZone');
-        
-        uploadZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadZone.classList.add('dragover');
-        });
+            grid.innerHTML = teams.map(team => {
+                const isActive = team.is_active !== false;
+                const statusClass = isActive ? 'status-active' : 'status-inactive';
+                const statusText = isActive ? '✓ Активна' : '⊗ Приостановлена';
 
-        uploadZone.addEventListener('dragleave', () => {
-            uploadZone.classList.remove('dragover');
-        });
+                return `
+                    <div class="team-card">
+                        <div class="team-header">
+                            <div class="team-icon">👨‍💼</div>
+                            <div class="team-info">
+                                <h3>${team.team_name || team.client_id}</h3>
+                                <div class="team-id">${team.client_id}</div>
+                                <span class="team-status ${statusClass}">${statusText}</span>
+                            </div>
+                        </div>
 
-        uploadZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadZone.classList.remove('dragover');
-            
-            const files = e.dataTransfer.files;
-            if (files.length > 0 && (files[0].name.endsWith('.xlsx') || files[0].name.endsWith('.xls'))) {
-                selectedFile = files[0];
-                document.getElementById('fileName').textContent = selectedFile.name;
-                document.getElementById('fileSize').textContent = formatBytes(selectedFile.size);
-                document.getElementById('fileInfo').classList.add('show');
-                document.getElementById('uploadBtn').style.display = 'inline-block';
-            } else {
-                showMessage('Пожалуйста, выберите Excel файл (.xlsx или .xls)', 'error');
+                        <div class="team-details">
+                            <div class="detail-row">
+                                <span class="detail-label">Контактная информация</span>
+                                <span class="detail-value">${team.team_name}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Дата регистрации</span>
+                                <span class="detail-value">${team.created_at ? new Date(team.created_at).toLocaleDateString('ru-RU') : '—'}</span>
+                            </div>
+                        </div>
+
+                        <div class="credentials">
+                            <div class="credentials-label">Client ID:</div>
+                            <div class="credentials-value">${team.client_id}</div>
+                            <div class="credentials-label" style="margin-top:8px;">Client Secret:</div>
+                            <div class="credentials-value">••••••••••••</div>
+                            <button class="copy-btn" onclick="copyCredentials('${team.client_id}', '${team.client_secret}')">
+                                📋 Копировать учетные данные
+                            </button>
+                        </div>
+
+                        <div class="team-actions">
+                            ${isActive ? 
+                                `<button class="btn-action btn-suspend" onclick="suspendTeam('${team.client_id}')">⏸ Приостановить</button>` :
+                                `<button class="btn-action btn-activate" onclick="activateTeam('${team.client_id}')">▶ Активировать</button>`
+                            }
+                            <button class="btn-action btn-delete" onclick="deleteTeam('${team.client_id}')">🗑️ Удалить</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Suspend team
+        window.suspendTeam = async function(clientId) {
+            if (!confirm(`Приостановить команду ${clientId}? Они не смогут делать запросы к API.`)) {
+                return;
             }
-        });
-
-        // Загрузка файла
-        document.getElementById('uploadBtn').addEventListener('click', async () => {
-            if (!selectedFile) return;
-
-            const btn = document.getElementById('uploadBtn');
-            btn.disabled = true;
-            btn.textContent = 'Загрузка...';
-
-            const formData = new FormData();
-            formData.append('file', selectedFile);
 
             try {
-                const token = getBankerToken();
-                const response = await fetch(`${API_BASE}/admin/teams/upload`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: formData
+                const baseUrl = getBaseUrl();
+                const response = await fetch(`${baseUrl}/admin/teams/${clientId}/suspend`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
 
-                const result = await response.json();
-
-                if (response.ok && result.success) {
-                    showMessage(
-                        `✅ Успешно загружено! Добавлено: ${result.added}, Обновлено: ${result.updated}` +
-                        (result.errors.length > 0 ? `<br>Ошибки: ${result.errors.join('<br>')}` : ''),
-                        'success'
-                    );
-                    
-                    // Очистить форму
-                    selectedFile = null;
-                    document.getElementById('fileInput').value = '';
-                    document.getElementById('fileInfo').classList.remove('show');
-                    document.getElementById('uploadBtn').style.display = 'none';
-                    
-                    // Перезагрузить список
-                    await loadTeams();
-                } else {
-                    showMessage(`❌ Ошибка: ${result.detail || 'Неизвестная ошибка'}`, 'error');
+                if (!response.ok) {
+                    throw new Error('Ошибка приостановки');
                 }
+
+                alert('Команда приостановлена');
+                loadTeams();
             } catch (error) {
-                console.error('Upload error:', error);
-                showMessage('❌ Ошибка при загрузке файла', 'error');
-            } finally {
-                btn.disabled = false;
-                btn.textContent = 'Загрузить команды';
+                alert('Ошибка: ' + error.message);
             }
-        });
+        };
 
-        // Утилиты
-        function formatBytes(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-        }
+        // Activate team
+        window.activateTeam = async function(clientId) {
+            try {
+                const baseUrl = getBaseUrl();
+                const response = await fetch(`${baseUrl}/admin/teams/${clientId}/activate`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
 
-        function showMessage(text, type) {
-            const msg = document.getElementById('message');
-            msg.innerHTML = text;
-            msg.className = `message ${type} show`;
-            setTimeout(() => {
-                msg.classList.remove('show');
-            }, 5000);
-        }
+                if (!response.ok) {
+                    throw new Error('Ошибка активации');
+                }
 
-        // Инициализация
+                alert('Команда активирована');
+                loadTeams();
+            } catch (error) {
+                alert('Ошибка: ' + error.message);
+            }
+        };
+
+        // Delete team
+        window.deleteTeam = async function(clientId) {
+            if (!confirm(`УДАЛИТЬ команду ${clientId}? Это действие необратимо! Все тестовые клиенты команды также будут удалены.`)) {
+                return;
+            }
+
+            if (!confirm(`Вы уверены? Введите "${clientId}" для подтверждения.\n\n(Нажмите OK и введите в следующем окне)`)) {
+                return;
+            }
+
+            const confirmation = prompt(`Введите "${clientId}" для подтверждения удаления:`);
+            if (confirmation !== clientId) {
+                alert('Удаление отменено');
+                return;
+            }
+
+            try {
+                const baseUrl = getBaseUrl();
+                const response = await fetch(`${baseUrl}/admin/teams/${clientId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Ошибка удаления');
+                }
+
+                alert('Команда удалена');
+                loadTeams();
+            } catch (error) {
+                alert('Ошибка: ' + error.message);
+            }
+        };
+
+        // Copy credentials
+        window.copyCredentials = function(clientId, clientSecret) {
+            const text = `Client ID: ${clientId}\nClient Secret: ${clientSecret}`;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Учетные данные скопированы в буфер обмена');
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+            });
+        };
+
+        // Initial load
         loadTeams();
     </script>
 </body>
 </html>
-

@@ -1,17 +1,19 @@
 """
 Auth API - Авторизация клиентов
 """
-from fastapi import APIRouter, Depends, HTTPException, Form
+from typing import Optional
+from fastapi import APIRouter, Depends, HTTPException, Form, Query
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 
-from ..database import get_db
-from ..models import Client, Team
-from ..services.auth_service import create_access_token, hash_password, verify_password, get_current_client
+from config import config
+from database import get_db
+from models import Client, Team
+from services.auth_service import create_access_token, hash_password, verify_password, get_current_client
 
 
-router = APIRouter(prefix="/auth", tags=["Internal: Auth"])
+router = APIRouter(prefix="/auth")
 
 
 class LoginRequest(BaseModel):
@@ -25,7 +27,7 @@ class LoginResponse(BaseModel):
     client_id: str
 
 
-@router.post("/login", response_model=LoginResponse)
+@router.post("/login", response_model=LoginResponse, include_in_schema=False)
 async def login(
     request: LoginRequest,
     db: AsyncSession = Depends(get_db)
@@ -70,8 +72,8 @@ async def login(
     expected_password = None
     
     if request.username.startswith("demo-"):
-        # Demo клиенты: пароль = "demo"
-        expected_password = "demo"
+        # Demo клиенты: пароль = "password"
+        expected_password = "password"
     elif request.username.startswith("team"):
         # Командные клиенты: проверяем пароль из таблицы teams
         # Извлекаем номер команды из person_id (team010-1 → team010)
@@ -120,7 +122,7 @@ async def login(
     )
 
 
-@router.get("/me")
+@router.get("/me", include_in_schema=False)
 async def get_current_user(
     current_client: dict = Depends(get_current_client)
 ):
@@ -132,10 +134,10 @@ async def get_current_user(
     return current_client
 
 
-@router.post("/bank-token", tags=["🚀 Start Here"])
+@router.post("/bank-token", tags=["0 Аутентификация вызывающей системы"], include_in_schema=True, summary="Получить токен для доступа к API")
 async def create_bank_token(
-    client_id: str,
-    client_secret: str,
+    client_id: str = Query(..., description="ID команды от организаторов", example="team200"),
+    client_secret: str = Query(..., description="Secret команды от организаторов", example="5OAaa4DYzYKfnOU6zbR34ic5qMm7VSMB"),
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -192,7 +194,7 @@ async def create_bank_token(
     ```
     И создайте согласие: `POST /account-consents`
     """
-    from ..config import config
+    from config import config
     
     # Проверить credentials в базе
     result = await db.execute(
@@ -230,7 +232,7 @@ async def create_bank_token(
     }
 
 
-@router.post("/banker-login")
+@router.post("/banker-login", include_in_schema=False)
 async def banker_login(
     username: str = Form(...),
     password: str = Form(...)
@@ -240,25 +242,27 @@ async def banker_login(
     
     Для доступа к Banker UI и управления продуктами банка.
     """
-    # Проверка учетных данных (в sandbox - упрощенная схема)
-    if username != "hackapi_admin" or password != "HackAPI2025!Secure":
+    # Проверка учетных данных (для хакатона - упрощенная схема)
+    if username != "admin" or password != "admin":
         raise HTTPException(401, "Invalid credentials")
     
-    from ..config import config
+    from config import config
     
     # Создать токен банкира
     banker_token = create_access_token(
         data={
             "sub": "banker",
             "type": "banker",
-            "bank": config.BANK_CODE
+            "bank": config.BANK_CODE,
+            "username": username
         }
     )
     
     return {
         "access_token": banker_token,
         "token_type": "bearer",
-        "role": "banker"
+        "role": "banker",
+        "username": username
     }
 
 
@@ -268,7 +272,16 @@ class RandomClientResponse(BaseModel):
     password: str
 
 
-@router.get("/random-demo-client", response_model=RandomClientResponse)
+class TeamRegisterRequest(BaseModel):
+    """Регистрация команды для хакатона"""
+    team_name: str
+    client_id: str  # Предпочитаемый client_id (будет проверен на уникальность)
+    email: Optional[str] = None  # Опционально
+    contact_person: Optional[str] = None  # Опционально
+    telegram: Optional[str] = None  # Опционально
+
+
+@router.get("/random-demo-client", response_model=RandomClientResponse, include_in_schema=False)
 async def get_random_demo_client(db: AsyncSession = Depends(get_db)):
     """
     Получить случайного клиента для тестирования
@@ -290,4 +303,122 @@ async def get_random_demo_client(db: AsyncSession = Depends(get_db)):
         full_name=client.full_name,
         password="demo"
     )
+
+
+@router.post("/register-team", include_in_schema=False)
+async def register_team(
+    request: TeamRegisterRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Регистрация команды для участия в хакатоне
+    
+    Создает учетные данные для доступа к API банка:
+    - client_id для межбанковских запросов
+    - client_secret для аутентификации
+    - 10 тестовых клиентов для UI
+    
+    **Пример:**
+    ```json
+    {
+      "team_name": "Awesome Team",
+      "organisation_name": "Tech Corp",
+      "email": "team@example.com",
+      "contact_person": "John Doe"
+    }
+    ```
+    """
+    import secrets
+    import string
+    from datetime import datetime
+    import re
+    
+    # Validate client_id format
+    if not re.match(r'^team[0-9]+$', request.client_id):
+        raise HTTPException(400, "Client ID must match pattern: team<number> (e.g., team201)")
+    
+    client_id = request.client_id
+    
+    # Check if already exists
+    existing = await db.execute(
+        select(Team).where(Team.client_id == client_id)
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(400, f"Client ID '{client_id}' уже занят. Попробуйте другой.")
+    
+    # Generate secure client secret
+    client_secret = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(32))
+    
+    # Create team
+    # Формируем team_name с контактной информацией
+    team_info_parts = [request.team_name]
+    if request.email:
+        team_info_parts.append(f"📧 {request.email}")
+    if request.contact_person:
+        team_info_parts.append(f"👤 {request.contact_person}")
+    if request.telegram:
+        team_info_parts.append(f"📱 {request.telegram}")
+    
+    team_name_with_contacts = " | ".join(team_info_parts)
+    
+    new_team = Team(
+        client_id=client_id,
+        client_secret=client_secret,
+        team_name=team_name_with_contacts,  # Включаем всю контактную информацию
+        is_active=True,
+        created_at=datetime.utcnow()
+    )
+    db.add(new_team)
+    
+    # Create 10 test clients for this team
+    test_clients = []
+    for i in range(1, 11):
+        client = Client(
+            person_id=f"{client_id}-{i}",
+            client_type="INDIVIDUAL",
+            full_name=f"{request.team_name} Test Client {i}",
+            segment="MASS",
+            birth_year=1990,
+            monthly_income=50000,
+            created_at=datetime.utcnow()
+        )
+        db.add(client)
+        test_clients.append(f"{client_id}-{i}")
+    
+    try:
+        await db.commit()
+    except Exception as e:
+        await db.rollback()
+        # Check if it's an integrity error (duplicate key)
+        if "duplicate key" in str(e).lower() or "unique constraint" in str(e).lower():
+            raise HTTPException(400, f"Тестовые клиенты для '{client_id}' уже существуют. Попробуйте другой Client ID.")
+        # Re-raise other exceptions
+        raise HTTPException(500, f"Ошибка при создании команды: {str(e)}")
+    
+    # Determine base URL for links
+    # Use 8080 for Docker deployment (regardless of PUBLIC_URL setting)
+    # This can be overridden by setting PUBLIC_URL in .env
+    if config.PUBLIC_URL.startswith("http://localhost:8"):
+        # Default localhost:8xxx ports -> use Docker port 8080
+        base_url = "http://localhost:8080"
+    else:
+        # Custom URL provided
+        base_url = config.PUBLIC_URL
+    
+    return {
+        "success": True,
+        "message": "Команда успешно зарегистрирована!",
+        "credentials": {
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "team_name": request.team_name
+        },
+        "test_clients": test_clients,
+        "test_password": "password",
+        "next_steps": "Сохраните Client ID и Client Secret в надежном месте",
+        "links": {
+            "ui": f"{base_url}/client/",
+            "api_docs": f"{base_url}/docs"
+        }
+    }
 

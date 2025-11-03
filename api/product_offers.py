@@ -11,13 +11,14 @@ from decimal import Decimal
 from datetime import datetime, timedelta
 import uuid
 
-from ..database import get_db
-from ..models import ProductOffer, CustomerLead, Product, Client
-from ..services.auth_service import get_current_client
+from database import get_db
+from models import ProductOffer, CustomerLead, Product, Client
+from services.auth_service import get_current_client
 
 router = APIRouter(
     prefix="/product-offers",
-    tags=["08 OpenBanking: Product Offers"]
+    tags=["08 OpenBanking: Product Offers"],
+    include_in_schema=False  # Скрыто из публичной документации
 )
 
 

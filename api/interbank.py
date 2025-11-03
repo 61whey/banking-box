@@ -11,13 +11,13 @@ from datetime import datetime
 from decimal import Decimal
 import uuid
 
-from ..database import get_db
-from ..models import Account, Payment, Transaction, InterbankTransfer, BankCapital
-from ..services.payment_service import PaymentService
-from ..config import config
+from database import get_db
+from models import Account, Payment, Transaction, InterbankTransfer, BankCapital
+from services.payment_service import PaymentService
+from config import config
 
 
-router = APIRouter(prefix="/interbank", tags=["Interbank API"])
+router = APIRouter(prefix="/interbank", tags=["Interbank API"], include_in_schema=False)
 
 
 # === Pydantic Models ===

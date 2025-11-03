@@ -19,15 +19,15 @@ from decimal import Decimal
 import uuid
 
 try:
-    from ..database import get_db
-    from ..models import (
+    from database import get_db
+    from models import (
         ProductAgreementConsentRequest, 
         ProductAgreementConsent,
         Client,
         Notification,
         BankSettings
     )
-    from ..services.auth_service import get_current_client, get_current_banker, get_optional_client
+    from services.auth_service import get_current_client, get_current_banker, get_optional_client
 except ImportError:
     from database import get_db
     from models import (
@@ -42,7 +42,7 @@ except ImportError:
 
 router = APIRouter(
     prefix="/product-agreement-consents",
-    tags=["06 Согласия на управление договорами"]
+    tags=["6 Согласия на управление договорами"]
 )
 
 
@@ -101,7 +101,7 @@ class ProductAgreementConsentResponse(BaseModel):
 
 # === Endpoints ===
 
-@router.post("/request", response_model=dict, status_code=200, summary="1. Создать запрос согласия на управление договорами")
+@router.post("/request", response_model=dict, status_code=200, summary="Создать запрос согласия на управление договорами")
 async def create_product_agreement_consent_request(
     data: ProductAgreementConsentRequestData,
     client_id: Optional[str] = Query(None, description="ID клиента (обязательно для bank_token)", example="team200-1"),
@@ -255,7 +255,7 @@ async def create_product_agreement_consent_request(
     }
 
 
-@router.get("/{consent_id}", response_model=dict, summary="2. Получить согласие по ID")
+@router.get("/{consent_id}", response_model=dict, summary="Получить согласие по ID")
 async def get_product_agreement_consent(
     consent_id: str,
     current_client: dict = Depends(get_current_client),
@@ -289,7 +289,7 @@ async def get_product_agreement_consent(
     }
 
 
-@router.delete("/{consent_id}", status_code=204, summary="3. Отозвать согласие")
+@router.delete("/{consent_id}", status_code=204, summary="Отозвать согласие")
 async def revoke_product_agreement_consent(
     consent_id: str,
     current_client: dict = Depends(get_current_client),

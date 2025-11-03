@@ -12,13 +12,13 @@ from datetime import datetime
 from decimal import Decimal
 import uuid
 
-from ..database import get_db
-from ..models import Payment, Account, PaymentConsent
-from ..services.auth_service import get_current_client
-from ..services.payment_service import PaymentService
+from database import get_db
+from models import Payment, Account, PaymentConsent
+from services.auth_service import get_current_client
+from services.payment_service import PaymentService
 
 
-router = APIRouter(prefix="/payments", tags=["03 OpenBanking: Payments"])
+router = APIRouter(prefix="/payments", tags=["4 Переводы"])
 
 
 # === Pydantic Models (OpenBanking Russia format) ===
@@ -69,7 +69,7 @@ class PaymentResponse(BaseModel):
 
 # === Endpoints ===
 
-@router.post("", response_model=PaymentResponse, status_code=201)
+@router.post("", response_model=PaymentResponse, status_code=201, summary="Создать платеж")
 async def create_payment(
     request: PaymentRequest,
     x_fapi_interaction_id: Optional[str] = Header(None, alias="x-fapi-interaction-id"),
@@ -248,7 +248,7 @@ async def create_payment(
         raise HTTPException(400, str(e))
 
 
-@router.get("/{payment_id}", response_model=PaymentResponse)
+@router.get("/{payment_id}", response_model=PaymentResponse, summary="Получить платеж")
 async def get_payment(
     payment_id: str,
     x_fapi_interaction_id: Optional[str] = Header(None, alias="x-fapi-interaction-id"),

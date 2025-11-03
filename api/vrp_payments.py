@@ -11,13 +11,14 @@ from decimal import Decimal
 from datetime import datetime, timedelta
 import uuid
 
-from ..database import get_db
-from ..models import VRPPayment, VRPConsent, Account, Transaction
-from ..services.auth_service import get_current_client
+from database import get_db
+from models import VRPPayment, VRPConsent, Account, Transaction
+from services.auth_service import get_current_client
 
 router = APIRouter(
     prefix="/domestic-vrp-payments",
-    tags=["05 OpenBanking: VRP Payments"]
+    tags=["05 OpenBanking: VRP Payments"],
+    include_in_schema=False  # Скрыто из публичной документации
 )
 
 

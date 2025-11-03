@@ -13,13 +13,13 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 import uuid
 
-from ..database import get_db
-from ..models import PaymentConsentRequest, PaymentConsent, Client, Notification, BankSettings
-from ..services.auth_service import get_current_client, get_current_banker
-from ..config import config
+from database import get_db
+from models import PaymentConsentRequest, PaymentConsent, Client, Notification, BankSettings
+from services.auth_service import get_current_client, get_current_banker
+from config import config
 
 
-router = APIRouter(prefix="/payment-consents", tags=["03 OpenBanking: Payment-Consents"])
+router = APIRouter(prefix="/payment-consents", tags=["3 Согласия на переводы"])
 
 
 # === Pydantic Models ===
@@ -57,7 +57,7 @@ class PaymentConsentResponse(BaseModel):
 
 # === Endpoints ===
 
-@router.post("/request", response_model=dict, status_code=200)
+@router.post("/request", response_model=dict, status_code=200, summary="Создать запрос согласия на перевод")
 async def create_payment_consent_request(
     request: PaymentConsentRequestModel,
     x_requesting_bank: Optional[str] = Header(None, alias="x-requesting-bank"),
@@ -220,7 +220,7 @@ async def create_payment_consent_request(
     }
 
 
-@router.get("/{consent_id}", response_model=PaymentConsentResponse)
+@router.get("/{consent_id}", response_model=PaymentConsentResponse, summary="Получить согласие по ID")
 async def get_payment_consent(
     consent_id: str,
     current_client: dict = Depends(get_current_client),
@@ -267,7 +267,7 @@ async def get_payment_consent(
     )
 
 
-@router.delete("/{consent_id}", status_code=204)
+@router.delete("/{consent_id}", status_code=204, summary="Отозвать согласие")
 async def revoke_payment_consent(
     consent_id: str,
     current_client: dict = Depends(get_current_client),
@@ -293,7 +293,7 @@ async def revoke_payment_consent(
     return None
 
 
-@router.get("/pending/list", response_model=List[dict])
+@router.get("/pending/list", response_model=List[dict], include_in_schema=False)
 async def list_pending_payment_consents(
     current_banker: dict = Depends(get_current_banker),
     db: AsyncSession = Depends(get_db)
@@ -336,7 +336,7 @@ async def list_pending_payment_consents(
     return response
 
 
-@router.post("/{request_id}/approve", response_model=dict)
+@router.post("/{request_id}/approve", response_model=dict, include_in_schema=False)
 async def approve_payment_consent(
     request_id: str,
     current_banker: dict = Depends(get_current_banker),
@@ -392,7 +392,7 @@ async def approve_payment_consent(
     }
 
 
-@router.post("/{request_id}/reject", response_model=dict)
+@router.post("/{request_id}/reject", response_model=dict, include_in_schema=False)
 async def reject_payment_consent(
     request_id: str,
     reason: Optional[str] = None,

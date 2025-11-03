@@ -11,16 +11,16 @@ from pydantic import BaseModel
 from decimal import Decimal
 import uuid
 
-from ..database import get_db
-from ..models import Account, Client, Transaction, BankCapital
-from ..services.auth_service import get_current_client, get_optional_client
-from ..services.consent_service import ConsentService
+from database import get_db
+from models import Account, Client, Transaction, BankCapital
+from services.auth_service import get_current_client, get_optional_client
+from services.consent_service import ConsentService
 
 
-router = APIRouter(prefix="/accounts", tags=["Accounts"])
+router = APIRouter(prefix="/accounts", tags=["2 Счета и балансы"])
 
 
-@router.get("")
+@router.get("", summary="Получить счета")
 async def get_accounts(
     client_id: Optional[str] = None,
     x_consent_id: Optional[str] = Header(None, alias="x-consent-id"),
@@ -115,7 +115,7 @@ async def get_accounts(
     }
 
 
-@router.get("/{account_id}")
+@router.get("/{account_id}", summary="Получить счет")
 async def get_account(
     account_id: str,
     x_consent_id: Optional[str] = Header(None, alias="x-consent-id"),
@@ -155,7 +155,7 @@ async def get_account(
     }
 
 
-@router.get("/{account_id}/balances")
+@router.get("/{account_id}/balances", summary="Получить балансы")
 async def get_balances(
     account_id: str,
     x_consent_id: Optional[str] = Header(None, alias="x-consent-id"),
@@ -202,7 +202,7 @@ async def get_balances(
     }
 
 
-@router.get("/{account_id}/transactions")
+@router.get("/{account_id}/transactions", summary="Получить транзакции")
 async def get_transactions(
     account_id: str,
     from_booking_date_time: Optional[str] = None,
@@ -270,7 +270,7 @@ class AccountCloseRequest(BaseModel):
     destination_account_id: Optional[str] = None  # Для action=transfer
 
 
-@router.post("")
+@router.post("", summary="Создать счет", include_in_schema=False)
 async def create_account(
     request: CreateAccountRequest,
     current_client: dict = Depends(get_current_client),
@@ -347,7 +347,7 @@ async def create_account(
     }
 
 
-@router.put("/{account_id}/status")
+@router.put("/{account_id}/status", summary="Изменить статус счета", include_in_schema=False)
 async def update_account_status(
     account_id: str,
     request: AccountStatusUpdate,
@@ -400,7 +400,7 @@ async def update_account_status(
     }
 
 
-@router.put("/{account_id}/close")
+@router.put("/{account_id}/close", summary="Закрыть счет", include_in_schema=False)
 async def close_account_with_balance(
     account_id: str,
     request: AccountCloseRequest,
@@ -477,7 +477,7 @@ async def close_account_with_balance(
         
     elif request.action == "donate":
         # Подарить банку (увеличить capital)
-        from ..config import config
+        from config import config
         
         capital_result = await db.execute(
             select(BankCapital).where(BankCapital.bank_code == config.BANK_CODE)

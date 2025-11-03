@@ -23,13 +23,13 @@ from typing import Optional, List
 from datetime import datetime, timedelta
 import uuid
 
-from ..database import get_db
-from ..models import Consent, ConsentRequest, Notification, Client
-from ..services.auth_service import get_current_client, get_current_bank, get_optional_client
-from ..services.consent_service import ConsentService
+from database import get_db
+from models import Consent, ConsentRequest, Notification, Client
+from services.auth_service import get_current_client, get_current_bank, get_optional_client
+from services.consent_service import ConsentService
 
 
-router = APIRouter(prefix="/account-consents", tags=["01 OpenBanking: Account-Consents"])
+router = APIRouter(prefix="/account-consents", tags=["1 Согласия на доступ к счетам"])
 
 
 # === Pydantic Models (OpenBanking Russia format) ===
@@ -78,7 +78,7 @@ class ConsentRequestBody(BaseModel):
     requesting_bank_name: str = "Test Bank"
 
 
-@router.post("/request")
+@router.post("/request", summary="Создать согласие")
 async def request_consent(
     body: ConsentRequestBody,
     x_requesting_bank: Optional[str] = Header(None, alias="x-requesting-bank"),
@@ -140,7 +140,7 @@ async def request_consent(
 
 # === OpenBanking Russia стандартные endpoints ===
 
-@router.post("", response_model=ConsentResponse, status_code=201)
+@router.post("", response_model=ConsentResponse, status_code=201, include_in_schema=False)
 async def create_account_access_consents(
     request: ConsentCreateRequest,
     x_fapi_interaction_id: Optional[str] = Header(None, alias="x-fapi-interaction-id"),
@@ -202,7 +202,7 @@ async def create_account_access_consents(
     )
 
 
-@router.post("/{consent_id}/authorize")
+@router.post("/{consent_id}/authorize", include_in_schema=False)
 async def authorize_consent(
     consent_id: str,
     action: str = "approve",
@@ -408,7 +408,7 @@ async def revoke_consent(
     }
 
 
-@router.get("/{consent_id}", response_model=ConsentResponse)
+@router.get("/{consent_id}", response_model=ConsentResponse, summary="Получить согласие по ID")
 async def get_account_access_consents_consent_id(
     consent_id: str,
     x_fapi_interaction_id: Optional[str] = Header(None, alias="x-fapi-interaction-id"),
@@ -480,7 +480,7 @@ async def get_account_access_consents_consent_id(
     )
 
 
-@router.delete("/{consent_id}", status_code=204)
+@router.delete("/{consent_id}", status_code=204, summary="Отозвать согласие")
 async def delete_account_access_consents_consent_id(
     consent_id: str,
     x_fapi_interaction_id: Optional[str] = Header(None, alias="x-fapi-interaction-id"),

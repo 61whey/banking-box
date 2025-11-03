@@ -1,0 +1,62 @@
+@startuml bank-structure
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Структура банка участника
+
+Person(client, "Клиент банка", "Пользователь")
+Person(banker, "Банкир", "Сотрудник команды")
+Person(developer, "Разработчик", "Участник хакатона")
+
+System_Ext(abank, "ABank", "abank.open.bankingapi.ru")
+System_Ext(vbank, "VBank", "vbank.open.bankingapi.ru")
+System_Ext(sbank, "SBank", "sbank.open.bankingapi.ru")
+
+System_Boundary(bank, "Банк команды (репозиторий участника)") {
+    Container(client_ui, "UI Клиента", "HTML/JS", "Авторизация, баланс счетов, мультибанк")
+    Container(banker_ui, "Кабинет банкира", "HTML/JS", "Управление: клиенты, продукты, команды")
+    Container(developer_ui, "Developer Portal", "HTML", "Публичная регистрация команд")
+    
+    Container(backend, "Backend API", "FastAPI", "REST API: accounts, products, consents, payments")
+    Container(multibank_proxy, "Multibank Proxy", "FastAPI", "Проксирование запросов к внешним банкам")
+    
+    Container(auth_service, "Auth Service", "OAuth2/JWT", "Авторизация клиентов, банков, команд")
+    Container(consent_service, "Consent Service", "Service", "Управление согласиями OpenBanking")
+    
+    ContainerDb(db, "База данных", "PostgreSQL", "Клиенты, счета, продукты, согласия, команды")
+}
+
+' Клиент
+Rel(client, client_ui, "Просмотр счетов", "HTTPS")
+Rel(client_ui, backend, "API запросы", "REST")
+Rel(client_ui, multibank_proxy, "Мультибанк запросы", "REST")
+
+' Multibank Proxy -> External Banks
+Rel(multibank_proxy, abank, "OpenBanking Flow", "HTTPS")
+Rel(multibank_proxy, vbank, "OpenBanking Flow", "HTTPS")
+Rel(multibank_proxy, sbank, "OpenBanking Flow", "HTTPS")
+
+' Банкир
+Rel(banker, banker_ui, "Управление банком", "HTTPS")
+Rel(banker_ui, backend, "Admin API", "REST")
+
+' Разработчик
+Rel(developer, developer_ui, "Регистрация команды", "HTTPS")
+Rel(developer_ui, backend, "POST /auth/register-team", "REST")
+
+' Backend
+Rel(backend, auth_service, "Проверка токенов", "Internal")
+Rel(backend, consent_service, "Проверка согласий", "Internal")
+Rel(backend, db, "CRUD операции", "SQL")
+
+' Services
+Rel(auth_service, db, "Хранение токенов и команд", "SQL")
+Rel(consent_service, db, "Хранение согласий", "SQL")
+
+' Interbank
+Rel(abank, backend, "Запросы к нашему банку", "HTTPS + JWT")
+Rel(vbank, backend, "Запросы к нашему банку", "HTTPS + JWT")
+Rel(sbank, backend, "Запросы к нашему банку", "HTTPS + JWT")
+
+@enduml
