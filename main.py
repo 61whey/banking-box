@@ -103,10 +103,10 @@ app.add_middleware(
 app.add_middleware(APILoggingMiddleware)
 
 
-# Кастомная страница Swagger с Яндекс.Метрикой
+# Кастомная страница Swagger
 @app.get("/docs", include_in_schema=False)
 async def custom_swagger_ui_html():
-    """Swagger UI с встроенной Яндекс.Метрикой"""
+    """Swagger UI"""
     return HTMLResponse(content=f"""
 <!DOCTYPE html>
 <html>
@@ -115,23 +115,6 @@ async def custom_swagger_ui_html():
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{config.BANK_NAME} API - Swagger UI</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css">
-    
-    <!-- Yandex.Metrika counter -->
-    <script type="text/javascript">
-        (function(m,e,t,r,i,k,a){{
-            m[i]=m[i]||function(){{(m[i].a=m[i].a||[]).push(arguments)}};
-            m[i].l=1*new Date();
-            for (var j = 0; j < document.scripts.length; j++) {{if (document.scripts[j].src === r) {{ return; }}}}
-            k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
-        }})(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=105080093', 'ym');
-
-        ym(105080093, 'init', {{ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", accurateTrackBounce:true, trackLinks:true}});
-        
-        // Отслеживаем просмотр документации
-        setTimeout(function(){{ ym(105080093, 'reachGoal', 'docs_viewed', {{bank: '{config.BANK_CODE}'}}); }}, 1000);
-    </script>
-    <noscript><div><img src="https://mc.yandex.ru/watch/105080093" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
-    <!-- /Yandex.Metrika counter -->
 </head>
 <body>
     <div id="swagger-ui"></div>
@@ -150,16 +133,6 @@ async def custom_swagger_ui_html():
                 operationsSorter: 'alpha'
             }});
         }};
-    </script>
-    
-    <!-- Feedback Widget -->
-    <script src="/static/feedback-widget.js"></script>
-    <script>
-        initFeedbackWidget({{
-            bankCode: '{config.BANK_CODE}',
-            uiType: 'docs',
-            participantLogin: null
-        }});
     </script>
 </body>
 </html>
@@ -191,8 +164,6 @@ frontend_path = Path(__file__).parent / "frontend"
 if frontend_path.exists():
     app.mount("/client", StaticFiles(directory=str(frontend_path / "client"), html=True), name="client")
     app.mount("/banker", StaticFiles(directory=str(frontend_path / "banker"), html=True), name="banker")
-    # Mount static files (for feedback-widget.js and other shared assets)
-    app.mount("/static", StaticFiles(directory=str(frontend_path)), name="static")
 
 
 @app.get("/")
