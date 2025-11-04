@@ -166,14 +166,14 @@ async def create_product_agreement_consent_request(
     ]):
         raise HTTPException(400, "At least one permission must be requested")
     
-    # Найти клиента
+    # Найти клиента (используем target_client_id, а не data.client_id!)
     result = await db.execute(
-        select(Client).where(Client.person_id == data.client_id)
+        select(Client).where(Client.person_id == target_client_id)
     )
     client = result.scalar_one_or_none()
     
     if not client:
-        raise HTTPException(404, f"Client {data.client_id} not found")
+        raise HTTPException(404, f"Client {target_client_id} not found")
     
     # Создать запрос на согласие
     request_id = f"pagcr-{uuid.uuid4().hex[:12]}"
