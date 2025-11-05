@@ -6,19 +6,19 @@ OpenBanking Russia Payments API compatible
 from fastapi import APIRouter, Depends, HTTPException, Header
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, and_
 from typing import Optional
 from datetime import datetime
 from decimal import Decimal
 import uuid
 
 from database import get_db
-from models import Payment, Account
+from models import Payment, Account, PaymentConsent
 from services.auth_service import get_current_client
 from services.payment_service import PaymentService
 
 
-router = APIRouter(prefix="/payments", tags=["Payments"])
+router = APIRouter(prefix="/payments", tags=["4 Переводы"])
 
 
 # === Pydantic Models (OpenBanking Russia format) ===
@@ -69,25 +69,127 @@ class PaymentResponse(BaseModel):
 
 # === Endpoints ===
 
-@router.post("", response_model=PaymentResponse, status_code=201)
+@router.post("", response_model=PaymentResponse, status_code=201, summary="Создать платеж")
 async def create_payment(
     request: PaymentRequest,
     x_fapi_interaction_id: Optional[str] = Header(None, alias="x-fapi-interaction-id"),
     x_fapi_customer_ip_address: Optional[str] = Header(None, alias="x-fapi-customer-ip-address"),
+    x_payment_consent_id: Optional[str] = Header(None, alias="x-payment-consent-id"),
+    x_requesting_bank: Optional[str] = Header(None, alias="x-requesting-bank"),
     current_client: dict = Depends(get_current_client),
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Инициирование платежа
+    ## 💸 Создание платежа (разовый перевод)
+
+    **OpenBanking Russia Payments API**
+
+    ### Два типа платежей:
+
+    #### 1️⃣ Внутрибанковский перевод (тот же банк)
+    ```json
+    {
+      "data": {
+        "initiation": {
+          "instructedAmount": {
+            "amount": "1000.00",
+            "currency": "RUB"
+          },
+          "debtorAccount": {
+            "schemeName": "RU.CBR.PAN",
+            "identification": "40817810099910004312"
+          },
+          "creditorAccount": {
+            "schemeName": "RU.CBR.PAN",
+            "identification": "40817810099910005423"
+          }
+        }
+      }
+    }
+    ```
+
+    #### 2️⃣ Межбанковский перевод
+    Добавьте в `creditorAccount`:
+    ```json
+    {
+      "creditorAccount": {
+        "identification": "40817810099910001234",
+        "bank_code": "abank"  // Код банка получателя
+      }
+    }
+    ```
     
-    OpenBanking Russia Payments API
-    POST /payments
+    ### Статусы платежа:
+    - `pending` — ожидает обработки
+    - `completed` — успешно выполнен
+    - `failed` — ошибка (недостаточно средств, счет не найден)
     
-    Спецификация: https://wiki.opendatarussia.ru/specifications
+    ### Проверка статуса:
+    ```bash
+    GET /payments/{payment_id}
+    ```
+
+    ### ⚠️ Важно:
+    - Проверяйте баланс счета перед платежом: `GET /accounts/{account_id}/balances`
+    - Счет списания (`debtorAccount`) должен принадлежать авторизованному клиенту
+    - Для межбанковых переводов используйте правильный `bank_code`
+    - Коды банков: `vbank`, `abank`, `sbank`
+
+    ### Sandbox особенности:
+    - Межбанковые переводы выполняются мгновенно
+    - Комиссия не взимается
+    - Все валюты конвертируются по курсу 1:1 для упрощения
     """
     if not current_client:
         raise HTTPException(401, "Unauthorized")
     
+    # Проверка согласия для межбанковых запросов
+    payment_consent_id_to_store = None
+    if x_requesting_bank:
+        # Межбанковый запрос - требуется согласие на платеж
+        if not x_payment_consent_id:
+            raise HTTPException(
+                403,
+                detail={
+                    "error": "PAYMENT_CONSENT_REQUIRED",
+                    "message": "Требуется согласие клиента на платеж",
+                    "consent_request_url": "/payment-consents/request"
+                }
+            )
+
+        # Проверить согласие
+        consent_result = await db.execute(
+            select(PaymentConsent).where(
+                and_(
+                    PaymentConsent.consent_id == x_payment_consent_id,
+                    PaymentConsent.status == "active",
+                    PaymentConsent.expiration_date_time > datetime.utcnow()
+                )
+            )
+        )
+        payment_consent = consent_result.scalar_one_or_none()
+
+        if not payment_consent:
+            raise HTTPException(
+                403,
+                detail={
+                    "error": "INVALID_CONSENT",
+                    "message": "Согласие недействительно, истекло или уже использовано"
+                }
+            )
+
+        # Проверить что согласие выдано запрашивающему банку
+        if payment_consent.granted_to != x_requesting_bank:
+            raise HTTPException(
+                403,
+                detail={
+                    "error": "CONSENT_MISMATCH",
+                    "message": "Согласие выдано другому банку"
+                }
+            )
+
+        payment_consent_id_to_store = x_payment_consent_id
+
     # Извлечь данные из request
     initiation = request.data.get("initiation")
     if not initiation:
@@ -108,9 +210,22 @@ async def create_payment(
             from_account_number=debtor_account.get("identification"),
             to_account_number=creditor_account.get("identification"),
             amount=Decimal(amount_data.get("amount", "0")),
-            description=description
+            description=description,
+            payment_consent_id=payment_consent_id_to_store
         )
-        
+
+        # Если использовалось согласие - пометить его как использованное
+        if payment_consent_id_to_store:
+            consent_result = await db.execute(
+                select(PaymentConsent).where(PaymentConsent.consent_id == payment_consent_id_to_store)
+            )
+            consent = consent_result.scalar_one_or_none()
+            if consent:
+                consent.status = "used"
+                consent.used_at = datetime.utcnow()
+                consent.status_update_date_time = datetime.utcnow()
+                await db.commit()
+
         # Формируем ответ OpenBanking Russia
         now = datetime.utcnow()
         
@@ -133,7 +248,7 @@ async def create_payment(
         raise HTTPException(400, str(e))
 
 
-@router.get("/{payment_id}", response_model=PaymentResponse)
+@router.get("/{payment_id}", response_model=PaymentResponse, summary="Получить платеж")
 async def get_payment(
     payment_id: str,
     x_fapi_interaction_id: Optional[str] = Header(None, alias="x-fapi-interaction-id"),

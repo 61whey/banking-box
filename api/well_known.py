@@ -6,10 +6,10 @@ from fastapi import APIRouter
 from pathlib import Path
 import json
 
-router = APIRouter(prefix="/.well-known", tags=["Well-Known"])
+router = APIRouter(prefix="/.well-known", tags=["Technical: Well-Known"])
 
 
-@router.get("/jwks.json")
+@router.get("/jwks.json", summary="Получить публичные ключи (JWKS)")
 async def get_jwks():
     """
     JWKS endpoint - публичные ключи банка
@@ -20,7 +20,7 @@ async def get_jwks():
     Используется другими банками для проверки JWT подписей
     при межбанковских запросах.
     """
-    from ..config import config
+    from config import config
     
     # Путь к JWKS файлу банка
     jwks_path = Path(__file__).parent.parent.parent.parent / "shared" / "keys" / f"{config.BANK_CODE}_jwks.json"

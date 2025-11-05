@@ -14,7 +14,7 @@ from database import get_db
 from models import ProductAgreement, Product, Client, Account, BankCapital, Transaction
 from services.auth_service import get_current_client
 
-router = APIRouter(prefix="/product-agreements", tags=["Product Agreements"])
+router = APIRouter(prefix="/product-agreements", tags=["7 Договоры с продуктами"])
 
 
 class ProductAgreementRequest(BaseModel):
@@ -38,7 +38,7 @@ class ProductAgreementResponse(BaseModel):
     account_number: Optional[str]
 
 
-@router.get("")
+@router.get("", summary="Получить договоры")
 async def get_agreements(
     current_client: dict = Depends(get_current_client),
     db: AsyncSession = Depends(get_db)
@@ -99,7 +99,7 @@ async def get_agreements(
     }
 
 
-@router.post("")
+@router.post("", summary="Создать договор")
 async def create_agreement(
     request: ProductAgreementRequest,
     current_client: dict = Depends(get_current_client),
@@ -214,7 +214,7 @@ async def create_agreement(
         
     elif product.product_type == "loan":
         # Кредит: проверить капитал банка
-        from ..config import config
+        from config import config
         capital_result = await db.execute(
             select(BankCapital).where(BankCapital.bank_code == config.BANK_CODE)
         )
@@ -348,7 +348,7 @@ async def create_agreement(
     }
 
 
-@router.get("/{agreement_id}")
+@router.get("/{agreement_id}", summary="Получить договор")
 async def get_agreement(
     agreement_id: str,
     current_client: dict = Depends(get_current_client),
@@ -418,7 +418,7 @@ class CloseAgreementRequest(BaseModel):
     repayment_amount: Optional[float] = None
 
 
-@router.delete("/{agreement_id}")
+@router.delete("/{agreement_id}", summary="Закрыть договор")
 async def close_agreement(
     agreement_id: str,
     request: Optional[CloseAgreementRequest] = None,
@@ -515,7 +515,7 @@ async def close_agreement(
         db.add(credit_tx)
         
         # Увеличить капитал банка (вернуть выданный кредит)
-        from ..config import config
+        from config import config
         capital_result = await db.execute(
             select(BankCapital).where(BankCapital.bank_code == config.BANK_CODE)
         )

@@ -16,7 +16,8 @@ from services.auth_service import get_current_client
 
 router = APIRouter(
     prefix="/product-offer-consents",
-    tags=["09 OpenBanking: Product Offer Consents"]
+    tags=["09 OpenBanking: Product Offer Consents"],
+    include_in_schema=False  # Скрыто из публичной документации
 )
 
 

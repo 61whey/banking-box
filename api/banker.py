@@ -12,7 +12,7 @@ import uuid
 from database import get_db
 from models import Product, ConsentRequest, Client, Account, ProductAgreement
 
-router = APIRouter(prefix="/banker", tags=["Banker"])
+router = APIRouter(prefix="/banker", tags=["Internal: Banker"], include_in_schema=False)
 
 
 class ProductUpdate(BaseModel):
@@ -21,6 +21,27 @@ class ProductUpdate(BaseModel):
     min_amount: float = None
     max_amount: float = None
     is_active: bool = None
+
+
+@router.get("/clients")
+async def get_all_clients(db: AsyncSession = Depends(get_db)):
+    """Получить всех клиентов (для банкира)"""
+    result = await db.execute(select(Client).order_by(Client.created_at.desc()))
+    clients = result.scalars().all()
+    
+    return [
+        {
+            "id": c.id,
+            "person_id": c.person_id,
+            "client_type": c.client_type,
+            "full_name": c.full_name,
+            "segment": c.segment,
+            "birth_year": c.birth_year,
+            "monthly_income": float(c.monthly_income) if c.monthly_income else None,
+            "created_at": c.created_at.isoformat() if c.created_at else None
+        }
+        for c in clients
+    ]
 
 
 @router.get("/products")

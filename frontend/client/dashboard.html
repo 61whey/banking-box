@@ -993,11 +993,11 @@
             <div class="section-header">
                 <h2 class="section-title">🌐 Мультибанк</h2>
             </div>
-            <p style="color: var(--text-secondary); margin-bottom: var(--spacing-md);">Загрузите счета из других банков</p>
+            <p style="color: var(--text-secondary); margin-bottom: var(--spacing-sm);">Загрузите счета из других банков</p>
             <div style="display: flex; gap: var(--spacing-sm); flex-wrap: wrap; margin-bottom: var(--spacing-lg);">
-                <button class="btn btn-secondary" onclick="loadBankAccounts('vbank', '8001', 'Virtual Bank')">🏦 Virtual Bank</button>
-                <button class="btn btn-secondary" onclick="loadBankAccounts('abank', '8002', 'Awesome Bank')">🏦 Awesome Bank</button>
-                <button class="btn btn-secondary" onclick="loadBankAccounts('sbank', '8003', 'Smart Bank')">🏦 Smart Bank</button>
+                <button class="btn btn-secondary" onclick="loadBankAccounts('vbank', 'https://vbank.open.bankingapi.ru', 'Virtual Bank')">🏦 Virtual Bank</button>
+                <button class="btn btn-secondary" onclick="loadBankAccounts('abank', 'https://abank.open.bankingapi.ru', 'Awesome Bank')">🏦 Awesome Bank</button>
+                <button class="btn btn-secondary" onclick="loadBankAccounts('sbank', 'https://sbank.open.bankingapi.ru', 'Smart Bank')">🏦 Smart Bank</button>
                 <button class="btn btn-primary" onclick="loadAllBanks()">🔄 Загрузить все</button>
             </div>
             <div id="multibankAccounts"></div>
@@ -2042,7 +2042,7 @@ ${agr.end_date ? `📅 Дата закрытия: ${new Date(agr.end_date).toLoc
         }
 
         // Multibank
-        async function loadBankAccounts(bankCode, port, bankName) {
+        async function loadBankAccounts(bankCode, url, bankName) {
             const container = document.getElementById('multibankAccounts');
             
             if (!container.innerHTML || container.innerHTML.includes('Загрузка')) {
@@ -2050,46 +2050,115 @@ ${agr.end_date ? `📅 Дата закрытия: ${new Date(agr.end_date).toLoc
             }
             
             try {
-                const loginResponse = await fetch(`http://localhost:${port}/auth/login`, {
+                console.log(`🔄 ${bankName}: начинаем OpenBanking flow...`);
+                
+                // ШАГ 1: Получить банковский токен
+                const bankTokenResponse = await fetch(`${apiBase}/multibank/bank-token`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ bank_url: url })
+                });
+                
+                if (!bankTokenResponse.ok) {
+                    throw new Error('Не удалось получить банковский токен');
+                }
+                
+                const bankTokenData = await bankTokenResponse.json();
+                const bankToken = bankTokenData.access_token;
+                console.log(`✅ ${bankName}: получен банковский токен`);
+                
+                // ШАГ 2: Попробовать получить consent для разных клиентов
+                const testUsers = ['team200-1', 'team200-2', 'team200-3'];
+                let consentId = null;
+                let workingClientId = null;
+                
+                for (const clientId of testUsers) {
+                    try {
+                        const consentResponse = await fetch(`${apiBase}/multibank/request-consent`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                bank_url: url,
+                                bank_token: bankToken,
+                                client_id: clientId
+                            })
+                        });
+                        
+                        if (consentResponse.ok) {
+                            const consentData = await consentResponse.json();
+                            consentId = consentData.Data?.ConsentId || 
+                                       consentData.consent_id || 
+                                       consentData.ConsentId ||
+                                       consentData.id;
+                            workingClientId = clientId;
+                            console.log(`✅ ${bankName}: получен consent для ${clientId}`, consentData);
+                            break;
+                        }
+                    } catch (e) {
+                        continue;
+                    }
+                }
+                
+                if (!consentId) {
+                    throw new Error('Не удалось получить согласие ни для одного клиента');
+                }
+                
+                // ШАГ 3: Получить счета
+                const accountsResponse = await fetch(`${apiBase}/multibank/accounts-with-consent`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        username: `cli-${bankCode.substring(0,2)}-001`,
-                        password: 'password'
+                        bank_url: url,
+                        bank_token: bankToken,
+                        consent_id: consentId,
+                        client_id: workingClientId
                     })
                 });
-
-                if (!loginResponse.ok) {
-                    container.innerHTML += `<div style="color: var(--danger-color); padding: var(--spacing-sm);">❌ ${bankName}: Ошибка авторизации</div>`;
-                    return;
-                }
-
-                const loginData = await loginResponse.json();
-                const bankToken = loginData.access_token;
-
-                const accountsResponse = await fetch(`http://localhost:${port}/accounts`, {
-                    headers: { 'Authorization': `Bearer ${bankToken}` }
-                });
-
-                if (!accountsResponse.ok) {
-                    container.innerHTML += `<div style="color: var(--danger-color); padding: var(--spacing-sm);">❌ ${bankName}: Ошибка получения счетов</div>`;
-                    return;
-                }
-
-                const accountsData = await accountsResponse.json();
                 
+                if (!accountsResponse.ok) {
+                    const errorData = await accountsResponse.json();
+                    
+                    // Если ошибка CONSENT_REQUIRED - показываем специальное сообщение
+                    if (errorData.detail?.error === 'CONSENT_REQUIRED' || errorData.detail?.includes?.('CONSENT_REQUIRED')) {
+                        const consentMessage = `
+                            <div style="background: var(--bg-hover); padding: var(--spacing-lg); border-radius: var(--border-radius-sm); margin-bottom: var(--spacing-md); border-left: 4px solid var(--warning-color);">
+                                <h3 style="color: var(--text-primary); margin-bottom: var(--spacing-md);">⚠️ ${bankName}</h3>
+                                <p style="color: var(--text-secondary); margin-bottom: var(--spacing-md);">
+                                    Требуется авторизация согласия на доступ к счетам.
+                                </p>
+                                <p style="color: var(--text-muted); font-size: 13px; margin-bottom: var(--spacing-md);">
+                                    Для доступа к счетам этого банка необходимо перейти на сайт банка и авторизовать согласие.
+                                </p>
+                                <a href="${url}/docs" target="_blank" style="display: inline-block; padding: var(--spacing-sm) var(--spacing-md); background: var(--primary-color); color: white; text-decoration: none; border-radius: var(--border-radius-sm); font-size: 14px;">
+                                    🔗 Перейти в ${bankName}
+                                </a>
+                            </div>
+                        `;
+                        container.innerHTML = consentMessage;
+                        return;
+                    }
+                    
+                    throw new Error(errorData.detail || 'Ошибка получения счетов');
+                }
+                
+                const accountsData = await accountsResponse.json();
+                console.log(`✅ ${bankName}: получено ${accountsData.data.account.length} счетов`);
+                
+                // Формируем HTML с счетами
                 let bankHtml = `<div style="background: var(--bg-hover); padding: var(--spacing-md); border-radius: var(--border-radius-sm); margin-bottom: var(--spacing-md);">
-                    <h3 style="color: var(--text-primary); margin-bottom: var(--spacing-md);">${bankName}</h3>`;
+                    <h3 style="color: var(--text-primary); margin-bottom: var(--spacing-md);">🏦 ${bankName}</h3>`;
                 
                 for (const account of accountsData.data.account) {
-                    const balanceResponse = await fetch(`http://localhost:${port}/accounts/${account.accountId}/balances`, {
-                        headers: { 'Authorization': `Bearer ${bankToken}` }
-                    });
-
+                    // Получаем баланс
+                    const balanceResponse = await fetch(
+                        `${apiBase}/multibank/balances-with-consent?account_id=${encodeURIComponent(account.accountId)}&bank_url=${encodeURIComponent(url)}&bank_token=${encodeURIComponent(bankToken)}&consent_id=${encodeURIComponent(consentId)}`,
+                        { method: 'POST' }
+                    );
+                    
                     if (balanceResponse.ok) {
                         const balanceData = await balanceResponse.json();
                         const balance = parseFloat(balanceData.data.balance[0].amount.amount);
-
+                        
                         bankHtml += `
                             <div style="padding: var(--spacing-md); background: var(--bg-card); border-radius: var(--border-radius-sm); margin-bottom: var(--spacing-sm); display: flex; justify-content: space-between;">
                                 <div>
@@ -2105,16 +2174,19 @@ ${agr.end_date ? `📅 Дата закрытия: ${new Date(agr.end_date).toLoc
                 }
                 
                 bankHtml += '</div>';
+                container.innerHTML = bankHtml;
                 
-                if (container.innerHTML.includes('Загрузка')) {
-                    container.innerHTML = bankHtml;
-                } else {
-                    container.innerHTML += bankHtml;
-                }
-
             } catch (error) {
-                console.error(`Ошибка загрузки из ${bankName}:`, error);
-                container.innerHTML += `<div style="color: var(--danger-color); padding: var(--spacing-sm);">❌ ${bankName}: ${error.message}</div>`;
+                console.error(`❌ ${bankName}: ошибка:`, error);
+                const errorHtml = `
+                    <div style="background: var(--bg-hover); padding: var(--spacing-lg); border-radius: var(--border-radius-sm); margin-bottom: var(--spacing-md); border-left: 4px solid var(--danger-color);">
+                        <h3 style="color: var(--text-primary); margin-bottom: var(--spacing-md);">❌ ${bankName}</h3>
+                        <p style="color: var(--text-secondary);">
+                            ${error.message}
+                        </p>
+                    </div>
+                `;
+                container.innerHTML = errorHtml;
             }
         }
 
@@ -2122,10 +2194,27 @@ ${agr.end_date ? `📅 Дата закрытия: ${new Date(agr.end_date).toLoc
             const container = document.getElementById('multibankAccounts');
             container.innerHTML = '<div style="text-align: center; padding: var(--spacing-lg); color: var(--text-muted);">Загрузка из всех банков...</div>';
 
+            // Конфигурация банков с правильными логинами
             const banks = [
-                { code: 'vbank', name: 'Virtual Bank', port: '8001' },
-                { code: 'abank', name: 'Awesome Bank', port: '8002' },
-                { code: 'sbank', name: 'Smart Bank', port: '8003' }
+                { 
+                    code: 'vbank', 
+                    name: 'Virtual Bank', 
+                    url: 'https://vbank.open.bankingapi.ru',
+                    // Используем только team200-X клиентов, так как они точно существуют на всех банках
+                    testUsers: ['team200-1', 'team200-2', 'team200-3']
+                },
+                { 
+                    code: 'abank', 
+                    name: 'Awesome Bank', 
+                    url: 'https://abank.open.bankingapi.ru',
+                    testUsers: ['team200-1', 'team200-2', 'team200-3']
+                },
+                { 
+                    code: 'sbank', 
+                    name: 'Smart Bank', 
+                    url: 'https://sbank.open.bankingapi.ru',
+                    testUsers: ['team200-1', 'team200-2', 'team200-3']
+                }
             ];
 
             let allAccounts = [];
@@ -2133,31 +2222,104 @@ ${agr.end_date ? `📅 Дата закрытия: ${new Date(agr.end_date).toLoc
 
             for (const bank of banks) {
                 try {
-                    const loginResponse = await fetch(`http://localhost:${bank.port}/auth/login`, {
+                    console.log(`🔄 ${bank.name}: начинаем OpenBanking flow...`);
+                    
+                    // ШАГ 1: Получить банковский токен (используя креды team200)
+                    const bankTokenResponse = await fetch(`${apiBase}/multibank/bank-token`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            username: `cli-${bank.code.substring(0,2)}-001`,
-                            password: 'password'
+                            bank_url: bank.url
+                        })
+                    });
+                    
+                    if (!bankTokenResponse.ok) {
+                        console.error(`❌ ${bank.name}: не удалось получить банковский токен`);
+                        continue;
+                    }
+                    
+                    const bankTokenData = await bankTokenResponse.json();
+                    const bankToken = bankTokenData.access_token;
+                    console.log(`✅ ${bank.name}: получен банковский токен`);
+                    
+                    // Пробуем разные варианты клиентов для запроса consent
+                    let consentId = null;
+                    let workingClientId = null;
+                    
+                    for (const clientId of bank.testUsers) {
+                        try {
+                            // ШАГ 2: Запросить согласие (consent) на доступ к счетам
+                            const consentResponse = await fetch(`${apiBase}/multibank/request-consent`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    bank_url: bank.url,
+                                    bank_token: bankToken,
+                                    client_id: clientId
+                                })
+                            });
+                            
+                            if (consentResponse.ok) {
+                                const consentData = await consentResponse.json();
+                                // Поддерживаем разные форматы ответа
+                                consentId = consentData.Data?.ConsentId || 
+                                           consentData.consent_id || 
+                                           consentData.ConsentId ||
+                                           consentData.id;
+                                workingClientId = clientId;
+                                console.log(`✅ ${bank.name}: получен consent для ${clientId}`, consentData);
+                                break;
+                            }
+                        } catch (e) {
+                            continue;
+                        }
+                    }
+                    
+                    if (!consentId || !workingClientId) {
+                        console.warn(`⚠️ ${bank.name}: не удалось получить согласие ни для одного клиента`);
+                        continue;
+                    }
+                    
+                    // ШАГ 3: Получить счета с использованием consent
+                    const accountsResponse = await fetch(`${apiBase}/multibank/accounts-with-consent`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            bank_url: bank.url,
+                            bank_token: bankToken,
+                            consent_id: consentId,
+                            client_id: workingClientId
                         })
                     });
 
-                    if (!loginResponse.ok) continue;
-
-                    const loginData = await loginResponse.json();
-                    const bankToken = loginData.access_token;
-
-                    const accountsResponse = await fetch(`http://localhost:${bank.port}/accounts`, {
-                        headers: { 'Authorization': `Bearer ${bankToken}` }
-                    });
-
-                    if (!accountsResponse.ok) continue;
+                    if (!accountsResponse.ok) {
+                        const errorData = await accountsResponse.json();
+                        
+                        // Если ошибка CONSENT_REQUIRED - добавляем предупреждение
+                        if (errorData.detail?.error === 'CONSENT_REQUIRED' || errorData.detail?.includes?.('CONSENT_REQUIRED')) {
+                            console.warn(`⚠️ ${bank.name}: требуется авторизация согласия`);
+                            allAccounts.push({
+                                bank: bank.name,
+                                account: '⚠️ Требуется авторизация',
+                                balance: 0,
+                                type: 'Consent Required',
+                                needsConsent: true,
+                                bankUrl: bank.url
+                            });
+                        } else {
+                            console.error(`❌ ${bank.name}: не удалось получить счета`);
+                        }
+                        continue;
+                    }
 
                     const accountsData = await accountsResponse.json();
+                    console.log(`✅ ${bank.name}: получены счета`);
+
 
                     for (const account of accountsData.data.account) {
-                        const balanceResponse = await fetch(`http://localhost:${bank.port}/accounts/${account.accountId}/balances`, {
-                            headers: { 'Authorization': `Bearer ${bankToken}` }
+                        // Получаем баланс с использованием consent
+                        const balanceResponse = await fetch(`${apiBase}/multibank/balances-with-consent?account_id=${encodeURIComponent(account.accountId)}&bank_url=${encodeURIComponent(bank.url)}&bank_token=${encodeURIComponent(bankToken)}&consent_id=${encodeURIComponent(consentId)}`, {
+                            method: 'POST'
                         });
 
                         if (balanceResponse.ok) {
@@ -2194,18 +2356,38 @@ ${agr.end_date ? `📅 Дата закрытия: ${new Date(agr.end_date).toLoc
                         Счетов: ${allAccounts.length} • Банков: ${new Set(allAccounts.map(a => a.bank)).size}
                     </div>
                 </div>
-                ${allAccounts.map(acc => `
-                    <div style="padding: var(--spacing-md); border: 1px solid var(--border-color); border-radius: var(--border-radius-sm); margin-bottom: var(--spacing-sm); display: flex; justify-content: space-between; align-items: center; background: var(--bg-card);">
-                        <div>
-                            <div style="font-weight: 600; color: var(--text-primary);">${acc.bank}</div>
-                            <div style="font-size: 12px; color: var(--text-muted); font-family: monospace;">${acc.account}</div>
-                            <div style="font-size: 11px; color: var(--text-secondary);">${acc.type}</div>
+                ${allAccounts.map(acc => {
+                    if (acc.needsConsent) {
+                        return `
+                            <div style="padding: var(--spacing-md); border: 2px solid var(--warning-color); border-radius: var(--border-radius-sm); margin-bottom: var(--spacing-sm); background: var(--bg-hover);">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-sm);">
+                                    <div>
+                                        <div style="font-weight: 600; color: var(--text-primary);">⚠️ ${acc.bank}</div>
+                                        <div style="font-size: 12px; color: var(--text-muted);">${acc.account}</div>
+                                    </div>
+                                </div>
+                                <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: var(--spacing-sm);">
+                                    Для доступа к счетам перейдите в банк и авторизуйте согласие
+                                </div>
+                                <a href="${acc.bankUrl}/docs" target="_blank" style="display: inline-block; padding: 6px 12px; background: var(--primary-color); color: white; text-decoration: none; border-radius: var(--border-radius-sm); font-size: 13px;">
+                                    🔗 Перейти в ${acc.bank}
+                                </a>
+                            </div>
+                        `;
+                    }
+                    return `
+                        <div style="padding: var(--spacing-md); border: 1px solid var(--border-color); border-radius: var(--border-radius-sm); margin-bottom: var(--spacing-sm); display: flex; justify-content: space-between; align-items: center; background: var(--bg-card);">
+                            <div>
+                                <div style="font-weight: 600; color: var(--text-primary);">${acc.bank}</div>
+                                <div style="font-size: 12px; color: var(--text-muted); font-family: monospace;">${acc.account}</div>
+                                <div style="font-size: 11px; color: var(--text-secondary);">${acc.type}</div>
+                            </div>
+                            <div style="font-size: 20px; font-weight: 700; color: var(--success-color);">
+                                ${acc.balance.toLocaleString('ru-RU')} ₽
+                            </div>
                         </div>
-                        <div style="font-size: 20px; font-weight: 700; color: var(--success-color);">
-                            ${acc.balance.toLocaleString('ru-RU')} ₽
-                        </div>
-                    </div>
-                `).join('')}
+                    `;
+                }).join('')}
             `;
             
             // Update total balance in summary
