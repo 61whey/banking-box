@@ -11,6 +11,7 @@ from pathlib import Path
 
 from config import config
 from database import engine
+from middleware import APILoggingMiddleware
 from models import Base
 from api import (
     accounts, auth, consents, payments, admin, products, well_known,
