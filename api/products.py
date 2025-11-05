@@ -9,10 +9,10 @@ from sqlalchemy import select
 from database import get_db
 from models import Product
 
-router = APIRouter(prefix="/products", tags=["Products"])
+router = APIRouter(prefix="/products", tags=["5 Каталог продуктов"])
 
 
-@router.get("")
+@router.get("", summary="Получить продукты")
 async def get_products(
     product_type: str = None,
     db: AsyncSession = Depends(get_db)
@@ -49,7 +49,7 @@ async def get_products(
     }
 
 
-@router.get("/{product_id}")
+@router.get("/{product_id}", summary="Получить продукт")
 async def get_product(
     product_id: str,
     db: AsyncSession = Depends(get_db)

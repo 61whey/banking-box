@@ -11,15 +11,9 @@ from decimal import Decimal
 from datetime import datetime
 
 from database import get_db
-from models import BankCapital, InterbankTransfer, Payment, Account, BankSettings, KeyRateHistory
+from models import BankCapital, InterbankTransfer, Payment, Account, BankSettings, KeyRateHistory, Team, ConsentRequest, Client, Consent
 
-router = APIRouter(prefix="/admin", tags=["Admin"])
-
-
-class KeyRateUpdate(BaseModel):
-    """Обновление ключевой ставки"""
-    rate: float
-    changed_by: str = "admin"
+router = APIRouter(prefix="/admin", tags=["Internal: Admin"], include_in_schema=False)
 
 
 @router.get("/capital")
@@ -103,7 +97,10 @@ async def get_all_payments(
         "payments": [
             {
                 "payment_id": p.payment_id,
+                "sender_account_id": p.debtor_account or "—",
+                "receiver_account_id": p.destination_account or p.creditor_account or "—",
                 "amount": float(p.amount),
+                "currency": p.currency or "RUB",
                 "destination_account": p.destination_account,
                 "destination_bank": p.destination_bank,
                 "description": p.description,
@@ -191,54 +188,8 @@ async def get_key_rate(db: AsyncSession = Depends(get_db)):
     }
 
 
-@router.put("/key-rate")
-async def update_key_rate(
-    update: KeyRateUpdate,
-    db: AsyncSession = Depends(get_db)
-):
-    """
-    Изменить ключевую ставку ЦБ
-    """
-    # Валидация ставки
-    if update.rate < 0 or update.rate > 100:
-        raise HTTPException(400, "Rate must be between 0 and 100")
-    
-    # Обновить в BankSettings
-    result = await db.execute(
-        select(BankSettings).where(BankSettings.key == "key_rate")
-    )
-    setting = result.scalar_one_or_none()
-    
-    if setting:
-        setting.value = str(update.rate)
-        setting.updated_at = datetime.utcnow()
-    else:
-        setting = BankSettings(
-            key="key_rate",
-            value=str(update.rate)
-        )
-        db.add(setting)
-    
-    # Добавить в историю
-    history = KeyRateHistory(
-        rate=Decimal(str(update.rate)),
-        effective_from=datetime.utcnow(),
-        changed_by=update.changed_by
-    )
-    db.add(history)
-    
-    await db.commit()
-    
-    return {
-        "data": {
-            "rate": update.rate,
-            "effective_from": history.effective_from.isoformat(),
-            "changed_by": update.changed_by
-        },
-        "meta": {
-            "message": "Key rate updated successfully"
-        }
-    }
+# Изменение ключевой ставки доступно только через е-Каталог (главному админу)
+# Endpoint PUT /admin/key-rate удален для участников хакатона
 
 
 @router.get("/key-rate/history")
@@ -335,5 +286,166 @@ async def update_bank_settings(
         "meta": {
             "message": "Settings updated successfully"
         }
+    }
+
+
+@router.get("/teams")
+async def get_all_teams(db: AsyncSession = Depends(get_db)):
+    """
+    Получить все зарегистрированные команды
+
+    Для админ панели. Показывает все команды включая приостановленные.
+    """
+    result = await db.execute(
+        select(Team)
+        .order_by(Team.created_at.desc())
+    )
+    teams = result.scalars().all()
+
+    return {
+        "teams": [
+            {
+                "client_id": t.client_id,
+                "client_secret": t.client_secret,
+                "team_name": t.team_name,  # Теперь включает всю контактную информацию
+                "is_active": t.is_active,
+                "created_at": t.created_at.isoformat() if t.created_at else None
+            }
+            for t in teams
+        ]
+    }
+
+
+@router.put("/teams/{client_id}/suspend")
+async def suspend_team(client_id: str, db: AsyncSession = Depends(get_db)):
+    """
+    Приостановить команду
+
+    Блокирует возможность делать запросы к API
+    """
+    result = await db.execute(
+        select(Team).where(Team.client_id == client_id)
+    )
+    team = result.scalar_one_or_none()
+
+    if not team:
+        raise HTTPException(404, "Team not found")
+
+    team.is_active = False
+    await db.commit()
+
+    return {
+        "success": True,
+        "message": f"Команда {client_id} приостановлена"
+    }
+
+
+@router.put("/teams/{client_id}/activate")
+async def activate_team(client_id: str, db: AsyncSession = Depends(get_db)):
+    """
+    Активировать команду
+
+    Восстанавливает возможность делать запросы к API
+    """
+    result = await db.execute(
+        select(Team).where(Team.client_id == client_id)
+    )
+    team = result.scalar_one_or_none()
+
+    if not team:
+        raise HTTPException(404, "Team not found")
+
+    team.is_active = True
+    await db.commit()
+
+    return {
+        "success": True,
+        "message": f"Команда {client_id} активирована"
+    }
+
+
+@router.delete("/teams/{client_id}")
+async def delete_team(client_id: str, db: AsyncSession = Depends(get_db)):
+    """
+    Удалить команду
+
+    Удаляет команду и всех её тестовых клиентов из базы данных
+    """
+    # Find team
+    result = await db.execute(
+        select(Team).where(Team.client_id == client_id)
+    )
+    team = result.scalar_one_or_none()
+
+    if not team:
+        raise HTTPException(404, "Team not found")
+
+    # Delete team's test clients
+    await db.execute(
+        select(Client).where(Client.person_id.like(f"{client_id}-%"))
+    )
+    # Note: Cascade delete should handle this, but we can be explicit
+
+    # Delete team
+    await db.delete(team)
+    await db.commit()
+
+    return {
+        "success": True,
+        "message": f"Команда {client_id} удалена"
+    }
+
+
+@router.get("/consents")
+async def get_all_consents(db: AsyncSession = Depends(get_db)):
+    """
+    Получить все согласия
+
+    Для админ панели - показывает как ConsentRequest (запросы), так и Consent (авторизованные)
+    """
+    # Get all consent requests
+    consent_requests_result = await db.execute(
+        select(ConsentRequest, Client)
+        .join(Client, ConsentRequest.client_id == Client.id)
+        .order_by(ConsentRequest.created_at.desc())
+    )
+    consent_requests = consent_requests_result.all()
+
+    # Get all authorized consents
+    consents_result = await db.execute(
+        select(Consent, Client)
+        .join(Client, Consent.client_id == Client.id)
+        .order_by(Consent.creation_date_time.desc())
+    )
+    consents = consents_result.all()
+
+    all_consents = []
+
+    # Add consent requests
+    for cr, client in consent_requests:
+        all_consents.append({
+            "consent_id": cr.request_id,
+            "client_id": client.person_id,
+            "requesting_bank": cr.requesting_bank,
+            "permissions": cr.permissions or [],
+            "status": cr.status.upper(),
+            "created_at": cr.created_at.isoformat() if cr.created_at else None,
+            "expiration_date": None
+        })
+
+    # Add authorized consents
+    for c, client in consents:
+        all_consents.append({
+            "consent_id": c.consent_id,
+            "client_id": client.person_id,
+            "requesting_bank": c.granted_to,
+            "permissions": c.permissions or [],
+            "status": c.status.upper(),
+            "created_at": c.creation_date_time.isoformat() if c.creation_date_time else None,
+            "expiration_date": c.expiration_date_time.isoformat() if c.expiration_date_time else None
+        })
+
+    return {
+        "consents": all_consents
     }
 

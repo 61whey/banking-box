@@ -1,0 +1,1290 @@
+openapi: 3.0.3
+info:
+  title: OpenBanking Russia — Open Data + AIS + PIS (draft VRP)
+  version: 1.3.1
+  description: |
+    Спецификация OpenAPI 3.0.3 для российских открытых банковских интерфейсов (OBRU):
+    * Open Data (публичные данные)
+    * AIS (получение информации о счёте) — account-consents, accounts, balances, transactions
+    * PIS (инициирование перевода) — payment-consents, payments
+    * VRP (повторяющиеся платежи) — vpr-consents (DRAFT, по материалам «под утверждением»)
+    Основано на стандартах Банка России и документации Ассоциации Финтех (AFT).
+  termsOfService: https://example.ru/terms
+  contact:
+    name: OpenBanking Russia Working Group
+    url: https://wiki.openbankingrussia.ru/
+
+servers:
+  - url: https://{host}/{participantPathPrefix}/open-banking/{version}/aisp
+    description: Сегмент AIS (информация о счёте)
+    variables:
+      host:
+        default: api.bank.ru
+      participantPathPrefix:
+        default: oapi-channel
+      version:
+        default: v1.3
+  - url: https://{host}/{participantPathPrefix}/open-banking/{version}/pisp
+    description: Сегмент PIS (инициирование перевода)
+    variables:
+      host:
+        default: api.bank.ru
+      participantPathPrefix:
+        default: oapi-channel
+      version:
+        default: v1.3
+
+tags:
+  - name: Banks
+    description: Open Data — кредитные организации
+  - name: Devices
+    description: Open Data — устройства (банкоматы, терминалы)
+  - name: Branches
+    description: Open Data — офисы обслуживания
+  - name: AIS Consents
+  - name: Accounts
+  - name: Balances
+  - name: Transactions
+  - name: PIS Consents
+  - name: Payments
+  - name: VRP Consents (draft)
+
+paths:
+  ####################################################
+  # -------------------- OPEN DATA ------------------ #
+  ####################################################
+  /banks:
+    get:
+      tags: [Banks]
+      summary: Список кредитных организаций
+      operationId: listBanks
+      parameters:
+        - $ref: '#/components/parameters/FapiAuthDate'
+        - $ref: '#/components/parameters/FapiCustomerIp'
+        - $ref: '#/components/parameters/Accept'
+        - $ref: '#/components/parameters/FapiInteractionId'
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: OK
+          headers:
+            x-fapi-interaction-id:
+              $ref: '#/components/headers/FapiInteractionIdResp'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '406': { $ref: '#/components/responses/NotAcceptable' }
+        '415': { $ref: '#/components/responses/UnsupportedMediaType' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /devices:
+    get:
+      tags: [Devices]
+      summary: Список устройств (ППД/агенты)
+      operationId: listDevices
+      parameters:
+        - $ref: '#/components/parameters/FapiAuthDate'
+        - $ref: '#/components/parameters/FapiCustomerIp'
+        - $ref: '#/components/parameters/Accept'
+        - $ref: '#/components/parameters/FapiInteractionId'
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageSize'
+        - name: filter[deviceType]
+          in: query
+          schema: { $ref: '#/components/schemas/DeviceTypeStaticType' }
+        - name: filter[townName]
+          in: query
+          schema: { type: string, maxLength: 35 }
+      responses:
+        '200':
+          description: OK
+          headers:
+            x-fapi-interaction-id:
+              $ref: '#/components/headers/FapiInteractionIdResp'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '406': { $ref: '#/components/responses/NotAcceptable' }
+        '415': { $ref: '#/components/responses/UnsupportedMediaType' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /branches:
+    get:
+      tags: [Branches]
+      summary: Список офисов обслуживания
+      operationId: listBranches
+      parameters:
+        - $ref: '#/components/parameters/FapiAuthDate'
+        - $ref: '#/components/parameters/FapiCustomerIp'
+        - $ref: '#/components/parameters/Accept'
+        - $ref: '#/components/parameters/FapiInteractionId'
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageSize'
+        - name: filter[townName]
+          in: query
+          schema: { type: string, maxLength: 35 }
+        - name: filter[segment]
+          in: query
+          schema: { $ref: '#/components/schemas/SegmentStaticType' }
+      responses:
+        '200':
+          description: OK
+          headers:
+            x-fapi-interaction-id:
+              $ref: '#/components/headers/FapiInteractionIdResp'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BranchResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '406': { $ref: '#/components/responses/NotAcceptable' }
+        '415': { $ref: '#/components/responses/UnsupportedMediaType' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  ####################################################
+  # ---------------------- AIS ---------------------- #
+  ####################################################
+  /account-consents:
+    post:
+      tags: [AIS Consents]
+      summary: Создать согласие на доступ к информации о счёте
+      operationId: createAccountConsent
+      description: Создаёт ресурс согласия (AwaitingAuthorisation). Требуется токен **client_credentials** со scope `accounts`.
+      parameters:
+        - $ref: '#/components/parameters/FapiAuthDate'
+        - $ref: '#/components/parameters/FapiCustomerIp'
+        - $ref: '#/components/parameters/Accept'
+        - $ref: '#/components/parameters/FapiInteractionId'
+        - $ref: '#/components/parameters/JwsSignature'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AccountConsent' }
+      responses:
+        '201':
+          description: Created
+          headers:
+            x-fapi-interaction-id:
+              $ref: '#/components/headers/FapiInteractionIdResp'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AccountConsentResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '406': { $ref: '#/components/responses/NotAcceptable' }
+        '415': { $ref: '#/components/responses/UnsupportedMediaType' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalError' }
+      security:
+        - MutualTLS: []
+        - OBRUAuth:
+            - accounts
+      x-token-grant: client_credentials
+
+  /account-consents/{consentId}:
+    get:
+      tags: [AIS Consents]
+      summary: Получить согласие на доступ к счёту
+      operationId: getAccountConsent
+      parameters:
+        - $ref: '#/components/parameters/FapiAuthDate'
+        - $ref: '#/components/parameters/FapiCustomerIp'
+        - $ref: '#/components/parameters/Accept'
+        - $ref: '#/components/parameters/FapiInteractionId'
+        - name: consentId
+          in: path
+          required: true
+          schema: { type: string, maxLength: 128 }
+      responses:
+        '200':
+          description: OK
+          headers:
+            x-fapi-interaction-id:
+              $ref: '#/components/headers/FapiInteractionIdResp'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AccountConsentResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalError' }
+      security:
+        - MutualTLS: []
+        - OBRUAuth:
+            - accounts
+      x-token-grant: client_credentials
+
+    delete:
+      tags: [AIS Consents]
+      summary: Удалить согласие
+      operationId: deleteAccountConsent
+      parameters:
+        - $ref: '#/components/parameters/FapiAuthDate'
+        - $ref: '#/components/parameters/FapiCustomerIp'
+        - $ref: '#/components/parameters/Accept'
+        - $ref: '#/components/parameters/FapiInteractionId'
+        - name: consentId
+          in: path
+          required: true
+          schema: { type: string, maxLength: 128 }
+      responses:
+        '204':
+          description: No Content
+          headers:
+            x-fapi-interaction-id:
+              $ref: '#/components/headers/FapiInteractionIdResp'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalError' }
+      security:
+        - MutualTLS: []
+        - OBRUAuth:
+            - accounts
+      x-token-grant: client_credentials
+
+  /account-consents/{consentId}/retrieval-grant:
+    get:
+      tags: [AIS Consents]
+      summary: Получить поручение на извлечение данных по согласию
+      operationId: getRetrievalGrant
+      parameters:
+        - $ref: '#/components/parameters/FapiAuthDate'
+        - $ref: '#/components/parameters/FapiCustomerIp'
+        - $ref: '#/components/parameters/Accept'
+        - $ref: '#/components/parameters/FapiInteractionId'
+        - name: consentId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          headers:
+            x-fapi-interaction-id:
+              $ref: '#/components/headers/FapiInteractionIdResp'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RetrievalGrantResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalError' }
+      security:
+        - MutualTLS: []
+        - OBRUAuth:
+            - accounts
+
+  /accounts:
+    get:
+      tags: [Accounts]
+      summary: Список счетов, доступных по авторизованному согласию
+      operationId: listAccounts
+      parameters:
+        - $ref: '#/components/parameters/FapiAuthDate'
+        - $ref: '#/components/parameters/FapiCustomerIp'
+        - $ref: '#/components/parameters/Accept'
+        - $ref: '#/components/parameters/FapiInteractionId'
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: OK
+          headers:
+            x-fapi-interaction-id:
+              $ref: '#/components/headers/FapiInteractionIdResp'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AccountResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalError' }
+      security:
+        - MutualTLS: []
+        - OBRUAuth:
+            - accounts
+
+  /accounts/{accountId}:
+    get:
+      tags: [Accounts]
+      summary: Детали счёта
+      operationId: getAccountById
+      parameters:
+        - $ref: '#/components/parameters/FapiAuthDate'
+        - $ref: '#/components/parameters/FapiCustomerIp'
+        - $ref: '#/components/parameters/Accept'
+        - $ref: '#/components/parameters/FapiInteractionId'
+        - name: accountId
+          in: path
+          required: true
+          schema: { type: string, maxLength: 40 }
+      responses:
+        '200':
+          description: OK
+          headers:
+            x-fapi-interaction-id:
+              $ref: '#/components/headers/FapiInteractionIdResp'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AccountResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalError' }
+      security:
+        - MutualTLS: []
+        - OBRUAuth:
+            - accounts
+
+  /accounts/{accountId}/balances:
+    get:
+      tags: [Balances]
+      summary: Баланс по счёту
+      operationId: getAccountBalances
+      parameters:
+        - $ref: '#/components/parameters/FapiAuthDate'
+        - $ref: '#/components/parameters/FapiCustomerIp'
+        - $ref: '#/components/parameters/Accept'
+        - $ref: '#/components/parameters/FapiInteractionId'
+        - name: accountId
+          in: path
+          required: true
+          schema: { type: string, maxLength: 40 }
+      responses:
+        '200':
+          description: OK
+          headers:
+            x-fapi-interaction-id:
+              $ref: '#/components/headers/FapiInteractionIdResp'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BalanceResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalError' }
+      security:
+        - MutualTLS: []
+        - OBRUAuth:
+            - accounts
+
+  /balances:
+    get:
+      tags: [Balances]
+      summary: Баланс по всем авторизованным счетам
+      operationId: listBalances
+      parameters:
+        - $ref: '#/components/parameters/FapiAuthDate'
+        - $ref: '#/components/parameters/FapiCustomerIp'
+        - $ref: '#/components/parameters/Accept'
+        - $ref: '#/components/parameters/FapiInteractionId'
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: OK
+          headers:
+            x-fapi-interaction-id:
+              $ref: '#/components/headers/FapiInteractionIdResp'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BalanceResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalError' }
+      security:
+        - MutualTLS: []
+        - OBRUAuth:
+            - accounts
+
+  /accounts/{accountId}/transactions:
+    get:
+      tags: [Transactions]
+      summary: Список транзакций по счёту
+      operationId: listTransactionsByAccount
+      parameters:
+        - $ref: '#/components/parameters/FapiAuthDate'
+        - $ref: '#/components/parameters/FapiCustomerIp'
+        - $ref: '#/components/parameters/Accept'
+        - $ref: '#/components/parameters/FapiInteractionId'
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/FromBookingDateTime'
+        - $ref: '#/components/parameters/ToBookingDateTime'
+        - name: accountId
+          in: path
+          required: true
+          schema: { type: string, maxLength: 40 }
+      responses:
+        '200':
+          description: OK
+          headers:
+            x-fapi-interaction-id:
+              $ref: '#/components/headers/FapiInteractionIdResp'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TransactionResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalError' }
+      security:
+        - MutualTLS: []
+        - OBRUAuth:
+            - accounts
+
+  /transactions:
+    get:
+      tags: [Transactions]
+      summary: Список транзакций по всем авторизованным счетам
+      operationId: listAllTransactions
+      parameters:
+        - $ref: '#/components/parameters/FapiAuthDate'
+        - $ref: '#/components/parameters/FapiCustomerIp'
+        - $ref: '#/components/parameters/Accept'
+        - $ref: '#/components/parameters/FapiInteractionId'
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/FromBookingDateTime'
+        - $ref: '#/components/parameters/ToBookingDateTime'
+      responses:
+        '200':
+          description: OK
+          headers:
+            x-fapi-interaction-id:
+              $ref: '#/components/headers/FapiInteractionIdResp'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TransactionResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalError' }
+      security:
+        - MutualTLS: []
+        - OBRUAuth:
+            - accounts
+
+  ####################################################
+  # ---------------------- PIS ---------------------- #
+  ####################################################
+  /payment-consents:
+    post:
+      tags: [PIS Consents]
+      summary: Создать согласие на проведение платежа
+      operationId: createPaymentConsent
+      description: Создаёт ресурс согласия на проведение платежа (AwaitingAuthorisation). Требуется токен **client_credentials** со scope `payments`.
+      parameters:
+        - $ref: '#/components/parameters/FapiAuthDate'
+        - $ref: '#/components/parameters/FapiCustomerIp'
+        - $ref: '#/components/parameters/Accept'
+        - $ref: '#/components/parameters/FapiInteractionId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/JwsSignature'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PaymentConsentRequest' }
+      responses:
+        '201':
+          description: Created
+          headers:
+            x-fapi-interaction-id:
+              $ref: '#/components/headers/FapiInteractionIdResp'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentConsentResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '406': { $ref: '#/components/responses/NotAcceptable' }
+        '415': { $ref: '#/components/responses/UnsupportedMediaType' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalError' }
+      security:
+        - MutualTLS: []
+        - OBRUAuth:
+            - payments
+      x-token-grant: client_credentials
+
+  /payment-consents/{consentId}:
+    get:
+      tags: [PIS Consents]
+      summary: Получить согласие на проведение платежа
+      operationId: getPaymentConsent
+      parameters:
+        - $ref: '#/components/parameters/FapiAuthDate'
+        - $ref: '#/components/parameters/FapiCustomerIp'
+        - $ref: '#/components/parameters/Accept'
+        - $ref: '#/components/parameters/FapiInteractionId'
+        - name: consentId
+          in: path
+          required: true
+          schema: { type: string, maxLength: 128 }
+      responses:
+        '200':
+          description: OK
+          headers:
+            x-fapi-interaction-id:
+              $ref: '#/components/headers/FapiInteractionIdResp'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentConsentResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalError' }
+      security:
+        - MutualTLS: []
+        - OBRUAuth:
+            - payments
+      x-token-grant: client_credentials
+
+  /payments:
+    post:
+      tags: [Payments]
+      summary: Инициировать перевод денежных средств
+      operationId: createPayment
+      description: Подтверждает инициирование платежа по авторизованному consentId.
+      parameters:
+        - $ref: '#/components/parameters/FapiAuthDate'
+        - $ref: '#/components/parameters/FapiCustomerIp'
+        - $ref: '#/components/parameters/Accept'
+        - $ref: '#/components/parameters/FapiInteractionId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/JwsSignature'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PaymentRequest' }
+      responses:
+        '201':
+          description: Created
+          headers:
+            x-fapi-interaction-id:
+              $ref: '#/components/headers/FapiInteractionIdResp'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '406': { $ref: '#/components/responses/NotAcceptable' }
+        '415': { $ref: '#/components/responses/UnsupportedMediaType' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalError' }
+      security:
+        - MutualTLS: []
+        - OBRUAuth:
+            - payments
+
+  /payments/{paymentId}:
+    get:
+      tags: [Payments]
+      summary: Получить платёж
+      operationId: getPaymentById
+      parameters:
+        - $ref: '#/components/parameters/FapiAuthDate'
+        - $ref: '#/components/parameters/FapiCustomerIp'
+        - $ref: '#/components/parameters/Accept'
+        - $ref: '#/components/parameters/FapiInteractionId'
+        - name: paymentId
+          in: path
+          required: true
+          schema: { type: string, maxLength: 128 }
+      responses:
+        '200':
+          description: OK
+          headers:
+            x-fapi-interaction-id:
+              $ref: '#/components/headers/FapiInteractionIdResp'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalError' }
+      security:
+        - MutualTLS: []
+        - OBRUAuth:
+            - payments
+
+  ####################################################
+  # ---------------------- VRP ---------------------- #
+  ####################################################
+  /vpr-consents:
+    post:
+      tags: [VRP Consents (draft)]
+      summary: Создать согласие на повторяющиеся переводы (VRP, draft)
+      operationId: createVrpConsent
+      description: DRAFT. По материалам AFT «под утверждением». Набор полей может измениться.
+      parameters:
+        - $ref: '#/components/parameters/FapiAuthDate'
+        - $ref: '#/components/parameters/FapiCustomerIp'
+        - $ref: '#/components/parameters/Accept'
+        - $ref: '#/components/parameters/FapiInteractionId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/JwsSignature'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/VrpConsentRequest' }
+      responses:
+        '201':
+          description: Created
+          headers:
+            x-fapi-interaction-id:
+              $ref: '#/components/headers/FapiInteractionIdResp'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VrpConsentResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalError' }
+      security:
+        - MutualTLS: []
+        - OBRUAuth:
+            - payments
+
+  /vpr-consents/{consentId}:
+    get:
+      tags: [VRP Consents (draft)]
+      summary: Получить согласие VRP (draft)
+      operationId: getVrpConsent
+      parameters:
+        - $ref: '#/components/parameters/FapiAuthDate'
+        - $ref: '#/components/parameters/FapiCustomerIp'
+        - $ref: '#/components/parameters/Accept'
+        - $ref: '#/components/parameters/FapiInteractionId'
+        - name: consentId
+          in: path
+          required: true
+          schema: { type: string, maxLength: 128 }
+      responses:
+        '200':
+          description: OK
+          headers:
+            x-fapi-interaction-id:
+              $ref: '#/components/headers/FapiInteractionIdResp'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VrpConsentResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalError' }
+      security:
+        - MutualTLS: []
+        - OBRUAuth:
+            - payments
+
+components:
+  securitySchemes:
+    OBRUAuth:
+      type: oauth2
+      description: |
+        OAuth 2.0 (OIDC) с профилем безопасности ФАПИ.СЕК:
+        * Authorization Code + PAR (пуш-запрос авторизации)
+        * Аутентификация клиента **private_key_jwt**
+        * Привязка токена к mTLS-сертификату (токен-связывание)
+      flows:
+        authorizationCode:
+          authorizationUrl: https://auth.example.ru/as/authorize
+          tokenUrl: https://auth.example.ru/as/connect/token
+          scopes:
+            accounts: Доступ к данным счетов (AISP)
+            payments: Инициирование переводов (PISP)
+    MutualTLS:
+      type: mutualTLS
+      description: mTLS на транспортном уровне (ГОСТ TLS для промышленной среды)
+
+  parameters:
+
+    FapiAuthDate:
+      name: x-fapi-auth-date
+      in: header
+      required: false
+      description: Время аутентификации PSU у СП/ППУ (HTTP-date, RFC 7231).
+      schema: { type: string, example: 'Sun, 15 Sep 2019 11:22:31 GMT' }
+    FapiCustomerIp:
+      name: x-fapi-customer-ip-address
+      in: header
+      required: false
+      description: IP-адрес пользователя.
+      schema: { type: string }
+    Accept:
+      name: Accept
+      in: header
+      schema: { type: string, default: application/json }
+    FapiInteractionId:
+      name: x-fapi-interaction-id
+      in: header
+      required: false
+      description: RFC 4122 UUID для корреляции.
+      schema: { type: string, format: uuid }
+    IdempotencyKey:
+      name: x-idempotency-key
+      in: header
+      required: true
+      description: Уникальный ключ идемпотентности для POST (рекомендуется UUID).
+      schema: { type: string, minLength: 1, maxLength: 128 }
+    JwsSignature:
+      name: x-jws-signature
+      in: header
+      required: true
+      description: |
+        Detached JWS подпись полезной нагрузки (RFC 7515, App F). Обязательна для PIS и рекомендуема для AIS.
+        Требуемые заголовки JWS: `kid`, `typ`, `alg` (+ `jwks_uri` при сертификации ППУ).
+      schema: { type: string }
+    PageNumber:
+      name: page[number]
+      in: query
+      schema: { type: integer, minimum: 1, default: 1 }
+    PageSize:
+      name: page[size]
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 1000, default: 25 }
+    FromBookingDateTime:
+      name: fromBookingDateTime
+      in: query
+      description: Начало интервала фильтрации по дате бронирования/проведения.
+      schema: { type: string, format: date-time }
+    ToBookingDateTime:
+      name: toBookingDateTime
+      in: query
+      description: Конец интервала фильтрации по дате бронирования/проведения.
+      schema: { type: string, format: date-time }
+
+  headers:
+    FapiInteractionIdResp:
+      description: RFC 4122 UUID для корреляции взаимодействия.
+      required: true
+      schema: { type: string, format: uuid }
+
+  responses:
+    BadRequest:
+      description: Неверный запрос
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    Unauthorized:
+      description: Требуется аутентификация
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    Forbidden:
+      description: Недостаточно прав или доступ по согласию не предоставлен
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    NotFound:
+      description: Ресурс не найден
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    NotAcceptable:
+      description: Media type в Accept не поддерживается
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    UnsupportedMediaType:
+      description: Неподдерживаемый формат запроса
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    TooManyRequests:
+      description: Превышен лимит запросов
+      headers:
+        Retry-After:
+          description: Секунды до повторной попытки
+          schema: { type: integer, minimum: 1 }
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    InternalError:
+      description: Внутренняя ошибка
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  schemas:
+    # -------- Общие --------
+    Links:
+      type: object
+      properties:
+        self: { type: string, format: uri }
+        first: { type: string, format: uri }
+        prev:  { type: string, format: uri }
+        next:  { type: string, format: uri }
+        last:  { type: string, format: uri }
+    Meta:
+      type: object
+      properties:
+        totalPages: { type: integer, minimum: 1 }
+        firstAvailableDateTime: { type: string, format: date-time }
+        lastAvailableDateTime:  { type: string, format: date-time }
+
+    ErrorResponse:
+      type: object
+      properties:
+        Data:
+          type: object
+          properties:
+            code: { type: string, maxLength: 40 }
+            message: { type: string, maxLength: 500 }
+            id: { type: string, maxLength: 40 }
+        Errors:
+          type: array
+          items:
+            type: object
+            properties:
+              errorCode: { type: string }
+              message:   { type: string }
+              path:      { type: string }
+              url:       { type: string, format: uri }
+
+    ActiveOrHistoricCurrencyCode:
+      type: string
+      description: ISO 4217, alpha-3
+      pattern: '^[A-Z]{3}$'
+    ActiveOrHistoricCurrencyAndAmount:
+      type: object
+      properties:
+        amount:
+          type: string
+          description: Десятичное значение, до 13.5 знаков
+          pattern: '^\\d{1,13}\\.\\d{1,5}$'
+        currency:
+          $ref: '#/components/schemas/ActiveOrHistoricCurrencyCode'
+      required: [amount, currency]
+
+    # -------- Open Data модели (кратко) --------
+    BankResponse:
+      type: object
+      required: [Data, Links, Meta]
+      properties:
+        Data:
+          type: object
+          required: [Bank]
+          properties:
+            Bank:
+              type: array
+              items: { $ref: '#/components/schemas/Bank' }
+        Links: { $ref: '#/components/schemas/Links' }
+        Meta:  { $ref: '#/components/schemas/Meta' }
+
+    Bank:
+      type: object
+      required: [bankId, bankName, PostalAddress]
+      properties:
+        bankId: { type: string, maxLength: 35 }
+        bankName: { type: string, maxLength: 140 }
+        baseUrl: { type: string, format: uri }
+        PostalAddress: { $ref: '#/components/schemas/PostalAddress' }
+
+    PostalAddress:
+      type: object
+      required: [townName, country]
+      properties:
+        townName: { type: string, maxLength: 35 }
+        country:  { type: string, minLength: 2, maxLength: 2 }
+        addressLine:
+          type: array
+          items: { type: string, maxLength: 70 }
+          maxItems: 7
+
+    DeviceResponse:
+      type: object
+      required: [Data, Links, Meta]
+      properties:
+        Data:
+          type: object
+          required: [Device]
+          properties:
+            Device:
+              type: array
+              items: { $ref: '#/components/schemas/Device' }
+        Links: { $ref: '#/components/schemas/Links' }
+        Meta:  { $ref: '#/components/schemas/Meta' }
+
+    Device:
+      type: object
+      properties:
+        deviceId: { type: string }
+        deviceType: { $ref: '#/components/schemas/DeviceTypeStaticType' }
+        Address: { $ref: '#/components/schemas/PostalAddress' }
+
+    BranchResponse:
+      type: object
+      required: [Data, Links, Meta]
+      properties:
+        Data:
+          type: object
+          required: [Branch]
+          properties:
+            Branch:
+              type: array
+              items: { $ref: '#/components/schemas/Branch' }
+        Links: { $ref: '#/components/schemas/Links' }
+        Meta:  { $ref: '#/components/schemas/Meta' }
+
+    Branch:
+      type: object
+      properties:
+        branchId: { type: string }
+        name: { type: string }
+        Address: { $ref: '#/components/schemas/PostalAddress' }
+
+    # -------- AIS модели --------
+    AccountConsent:
+      type: object
+      properties:
+        Data:
+          type: object
+          required: [permissions]
+          properties:
+            permissions:
+              type: array
+              minItems: 1
+              items: { $ref: '#/components/schemas/AISPermission' }
+            expirationDateTime:
+              type: string
+              format: date-time
+            transactionFromDateTime:
+              type: string
+              format: date-time
+            transactionToDateTime:
+              type: string
+              format: date-time
+        Risk:
+          type: object
+          description: Доп. сведения для оценки рисков (передаются инициатором).
+      required: [Data]
+
+    AccountConsentResponse:
+      type: object
+      required: [Data, Links, Meta]
+      properties:
+        Data:
+          type: object
+          required: [consentId, status, permissions]
+          properties:
+            consentId: { type: string, maxLength: 128 }
+            status:
+              type: string
+              enum: [AwaitingAuthorisation, Authorised, Rejected, Revoked]
+            creationDateTime: { type: string, format: date-time }
+            statusUpdateDateTime: { type: string, format: date-time }
+            permissions:
+              type: array
+              items: { $ref: '#/components/schemas/AISPermission' }
+            expirationDateTime: { type: string, format: date-time }
+            transactionFromDateTime: { type: string, format: date-time }
+            transactionToDateTime:   { type: string, format: date-time }
+        Links: { $ref: '#/components/schemas/Links' }
+        Meta:  { $ref: '#/components/schemas/Meta' }
+
+    RetrievalGrantResponse:
+      type: object
+      required: [Data, Links, Meta]
+      properties:
+        Data:
+          type: object
+          properties:
+            consentId: { type: string }
+            retrievalGrantId: { type: string }
+            documentType: { type: string }
+            OGRN: { type: string }
+            creationDateTime: { type: string, format: date-time }
+            expirationDateTime: { type: string, format: date-time }
+        Links: { $ref: '#/components/schemas/Links' }
+        Meta:  { $ref: '#/components/schemas/Meta' }
+
+    AccountResponse:
+      type: object
+      required: [Data, Links, Meta]
+      properties:
+        Data:
+          type: object
+          required: [Account]
+          properties:
+            Account:
+              type: array
+              items: { $ref: '#/components/schemas/Account' }
+        Links: { $ref: '#/components/schemas/Links' }
+        Meta:  { $ref: '#/components/schemas/Meta' }
+
+    Account:
+      type: object
+      required: [accountId, status, currency, accountType, accountSubType]
+      properties:
+        accountId: { type: string, maxLength: 40 }
+        status: { type: string, enum: [Enabled, Disabled] }
+        statusUpdateDateTime: { type: string, format: date-time }
+        currency: { $ref: '#/components/schemas/ActiveOrHistoricCurrencyCode' }
+        accountType: { type: string, enum: [Personal, Business] }
+        accountSubType: { type: string, enum: [CurrentAccount, Savings, CreditCard, Loan, Other] }
+        accountDetails:
+          type: array
+          items:
+            type: object
+            required: [schemeName, identification]
+            properties:
+              schemeName:
+                type: string
+                description: Тип идентификатора, напр. RU.CBR.AccountNumber, RU.CBR.PhoneNumber
+              identification: { type: string, maxLength: 140 }
+              name: { type: string, maxLength: 140 }
+        ServiceProvider:
+          type: object
+          properties:
+            schemeName: { type: string }
+            identification: { type: string }
+
+    BalanceResponse:
+      type: object
+      required: [Data, Links, Meta]
+      properties:
+        Data:
+          type: object
+          required: [Balance]
+          properties:
+            Balance:
+              type: array
+              items: { $ref: '#/components/schemas/Balance' }
+        Links: { $ref: '#/components/schemas/Links' }
+        Meta:  { $ref: '#/components/schemas/Meta' }
+
+    Balance:
+      type: object
+      required: [accountId, Amount, CreditDebitIndicator, Type, DateTime]
+      properties:
+        accountId: { type: string, maxLength: 40 }
+        Amount: { $ref: '#/components/schemas/ActiveOrHistoricCurrencyAndAmount' }
+        CreditDebitIndicator: { $ref: '#/components/schemas/CreditDebitIndicator' }
+        Type:
+          type: string
+          description: Тип баланса
+          enum: [OpeningAvailable, ClosingAvailable, InterimBooked, InterimAvailable, Expected]
+        DateTime: { type: string, format: date-time }
+        CreditLine:
+          type: array
+          items:
+            type: object
+            properties:
+              Included: { type: boolean }
+              Amount: { $ref: '#/components/schemas/ActiveOrHistoricCurrencyAndAmount' }
+              Type: { type: string, enum: [Pre-Agreed, Temporary, Emergency] }
+
+    TransactionResponse:
+      type: object
+      required: [Data, Links, Meta]
+      properties:
+        Data:
+          type: object
+          required: [Transaction]
+          properties:
+            Transaction:
+              type: array
+              items: { $ref: '#/components/schemas/Transaction' }
+        Links: { $ref: '#/components/schemas/Links' }
+        Meta:
+          allOf:
+            - $ref: '#/components/schemas/Meta'
+          properties:
+            firstAvailableDateTime: { type: string, format: date-time }
+            lastAvailableDateTime:  { type: string, format: date-time }
+
+    Transaction:
+      type: object
+      required: [transactionId, bookingDateTime, amount, currency, creditDebitIndicator, status]
+      properties:
+        accountId: { type: string, maxLength: 40 }
+        transactionId: { type: string, maxLength: 40 }
+        transactionReference: { type: string, maxLength: 40 }
+        bookingDateTime: { type: string, format: date-time }
+        valueDateTime:   { type: string, format: date-time }
+        amount:
+          type: string
+          pattern: '^\\d{1,13}\\.\\d{1,5}$'
+        currency: { $ref: '#/components/schemas/ActiveOrHistoricCurrencyCode' }
+        creditDebitIndicator: { $ref: '#/components/schemas/CreditDebitIndicator' }
+        status: { type: string, enum: [Booked, Pending] }
+        merchantCategoryCode: { type: string, maxLength: 4 }
+        merchantName: { type: string, maxLength: 140 }
+        debtorAccount: { $ref: '#/components/schemas/SimpleAccountRef' }
+        creditorAccount: { $ref: '#/components/schemas/SimpleAccountRef' }
+        remittanceInformation: { type: string, maxLength: 300 }
+
+    CreditDebitIndicator:
+      type: string
+      enum: [Credit, Debit]
+
+    SimpleAccountRef:
+      type: object
+      required: [schemeName, identification]
+      properties:
+        schemeName: { type: string }
+        name: { type: string }
+        identification: { type: string, maxLength: 140 }
+
+    # -------- PIS модели --------
+    PaymentConsentRequest:
+      type: object
+      required: [Data, Risk]
+      properties:
+        Data:
+          type: object
+          required: [Initiation]
+          properties:
+            Initiation:
+              $ref: '#/components/schemas/PaymentInitiation'
+        Risk:
+          type: object
+          description: Доп. сведения для скоринга платежей.
+    PaymentConsentResponse:
+      type: object
+      required: [Data, Links, Meta]
+      properties:
+        Data:
+          type: object
+          properties:
+            consentId: { type: string }
+            status: { type: string, enum: [AwaitingAuthorisation, Authorised, Rejected, Revoked] }
+            creationDateTime: { type: string, format: date-time }
+            statusUpdateDateTime: { type: string, format: date-time }
+            Initiation: { $ref: '#/components/schemas/PaymentInitiation' }
+        Links: { $ref: '#/components/schemas/Links' }
+        Meta:  { $ref: '#/components/schemas/Meta' }
+
+    PaymentInitiation:
+      type: object
+      required: [instructionIdentification, endToEndIdentification, InstructedAmount, DebtorAccount, CreditorAccount]
+      properties:
+        instructionIdentification: { type: string, maxLength: 35 }
+        endToEndIdentification:   { type: string, maxLength: 35 }
+        DebtorAccount: { $ref: '#/components/schemas/SimpleAccountRef' }
+        CreditorAccount: { $ref: '#/components/schemas/SimpleAccountRef' }
+        RemittanceInformation: { type: string, maxLength: 300 }
+        InstructedAmount: { $ref: '#/components/schemas/ActiveOrHistoricCurrencyAndAmount' }
+
+    PaymentRequest:
+      type: object
+      required: [Data]
+      properties:
+        Data:
+          type: object
+          required: [consentId, Initiation]
+          properties:
+            consentId: { type: string }
+            Initiation: { $ref: '#/components/schemas/PaymentInitiation' }
+
+    PaymentResponse:
+      type: object
+      required: [Data, Links, Meta]
+      properties:
+        Data:
+          type: object
+          properties:
+            paymentId: { type: string }
+            status: { type: string, enum: [AcceptedSettlementInProcess, AcceptedSettlementCompleted, Pending, Rejected] }
+            creationDateTime: { type: string, format: date-time }
+            statusUpdateDateTime: { type: string, format: date-time }
+            consentId: { type: string }
+            Initiation: { $ref: '#/components/schemas/PaymentInitiation' }
+        Links: { $ref: '#/components/schemas/Links' }
+        Meta:  { $ref: '#/components/schemas/Meta' }
+
+    # -------- VRP (draft) --------
+    VrpConsentRequest:
+      type: object
+      required: [Data, Risk]
+      properties:
+        Data:
+          type: object
+          required: [ControlParameters, DebtorAccount, CreditorAccount]
+          properties:
+            ControlParameters:
+              type: object
+              properties:
+                periodicLimits:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      periodType: { type: string, enum: [Day, Week, Month] }
+                      periodAlignment: { type: string, enum: [Consent, Calendar] }
+                      amount: { type: string, pattern: '^\\d{1,13}\\.\\d{1,5}$' }
+                      currency: { $ref: '#/components/schemas/ActiveOrHistoricCurrencyCode' }
+                maximumIndividualAmount: { type: string, pattern: '^\\d{1,13}\\.\\d{1,5}$' }
+                maximumIndividualCurrency: { $ref: '#/components/schemas/ActiveOrHistoricCurrencyCode' }
+                validFromDateTime: { type: string, format: date-time }
+                validToDateTime: { type: string, format: date-time }
+            DebtorAccount: { $ref: '#/components/schemas/SimpleAccountRef' }
+            CreditorAccount: { $ref: '#/components/schemas/SimpleAccountRef' }
+        Risk:
+          type: object
+    VrpConsentResponse:
+      type: object
+      required: [Data, Links, Meta]
+      properties:
+        Data:
+          type: object
+          properties:
+            consentId: { type: string }
+            status: { type: string, enum: [AwaitingAuthorisation, Authorised, Rejected, Revoked] }
+            creationDateTime: { type: string, format: date-time }
+            statusUpdateDateTime: { type: string, format: date-time }
+            ControlParameters: { $ref: '#/components/schemas/VrpConsentRequest/properties/Data/properties/ControlParameters' }
+            DebtorAccount: { $ref: '#/components/schemas/SimpleAccountRef' }
+            CreditorAccount: { $ref: '#/components/schemas/SimpleAccountRef' }
+        Links: { $ref: '#/components/schemas/Links' }
+        Meta:  { $ref: '#/components/schemas/Meta' }
+
+    # -------- Справочники --------
+    DeviceTypeStaticType:
+      type: string
+      enum: ['БК','БП','С','М','И','Т','К','КМ']
+    SegmentStaticType:
+      type: string
+      enum: ['Business','Individual']
+    AISPermission:
+      type: string
+      enum:
+        - ReadAccountsBasic
+        - ReadAccountsDetail
+        - ReadBalances
+        - ReadTransactionsBasic
+        - ReadTransactionsDetail
+        - ReadTransactionsCredits
+        - ReadTransactionsDebits
