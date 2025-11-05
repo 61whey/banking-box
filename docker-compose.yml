@@ -39,11 +39,11 @@ services:
       REGISTRY_URL: ${REGISTRY_URL}
       PUBLIC_URL: ${PUBLIC_URL}
     ports:
-      - "8080:8000"
+      - "${API_EXTERNAL_PORT}:${API_INTERNAL_PORT}"
     depends_on:
       db:
         condition: service_healthy
-    command: python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    command: python -m uvicorn main:app --host 0.0.0.0 --port ${API_INTERNAL_PORT} --reload
     volumes:
       - ./shared/keys:/app/shared/keys:ro
       - ./frontend:/app/frontend:ro
