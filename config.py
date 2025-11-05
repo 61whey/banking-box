@@ -1,6 +1,5 @@
 """
 Конфигурация банка
-Команды кастомизируют эти параметры
 """
 from pydantic_settings import BaseSettings
 
@@ -9,15 +8,15 @@ class BankConfig(BaseSettings):
     """Настройки банка"""
     
     # === ИДЕНТИФИКАЦИЯ БАНКА (КАСТОМИЗИРУЙ!) ===
-    BANK_CODE: str = "vbank"
-    BANK_NAME: str = "Virtual Bank"
-    BANK_DESCRIPTION: str = "Виртуальный банк - эмуляция от организаторов"
+    BANK_CODE: str = "convolute"
+    BANK_NAME: str = "Convolute"
+    BANK_DESCRIPTION: str = "Convolute - сверточно-разверточный банк"
     
     # === DATABASE ===
-    DATABASE_URL: str = "postgresql://hackapi_user:hackapi_pass@localhost:5432/vbank_db"
+    DATABASE_URL: str #= "postgresql://postgres:postgres@localhost:5432/local_convolute"
     
     # === SECURITY ===
-    SECRET_KEY: str = "your-secret-key-change-in-production"
+    SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440  # 24 hours
     
@@ -26,6 +25,8 @@ class BankConfig(BaseSettings):
     API_BASE_PATH: str = ""
     
     # === REGISTRY (для федеративной архитектуры) ===
+    # Connection to the Directory Service - a centralized registry
+    # More info in doc/README.org.md
     REGISTRY_URL: str = "http://localhost:3000"
     PUBLIC_URL: str = "http://localhost:8001"
     

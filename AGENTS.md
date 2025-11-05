@@ -194,3 +194,4 @@ Default test clients (created by SQL init scripts):
 - Client UI: http://localhost:8000/client/
 - Banker UI: http://localhost:8000/banker/
 - JWKS endpoint: http://localhost:8000/.well-known/jwks.json
+

@@ -1,21 +1,22 @@
-version: '3.8'
-
 services:
   # PostgreSQL Database
   db:
     image: postgres:15-alpine
-    container_name: mybank-db
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-bankuser}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bankpass}
-      POSTGRES_DB: ${POSTGRES_DB:-mybank_db}
+    container_name: banking-db
+    #environment:
+    #  POSTGRES_USER: ${POSTGRES_USER:}
+    #  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    #  POSTGRES_DB: ${POSTGRES_DB:-mybank_db}
+    env_file:
+      - .env
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      # - postgres_data:/var/lib/postgresql/data
+      - /opt/banking-box/postgresql:/var/lib/postgresql/data
       - ./shared/database:/docker-entrypoint-initdb.d
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-bankuser}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -25,18 +26,20 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: mybank-api
-    environment:
-      BANK_CODE: ${BANK_CODE:-mybank}
-      BANK_NAME: ${BANK_NAME:-My Awesome Bank}
-      BANK_DESCRIPTION: ${BANK_DESCRIPTION:-Custom bank}
-      DATABASE_URL: postgresql://${POSTGRES_USER:-bankuser}:${POSTGRES_PASSWORD:-bankpass}@db:5432/${POSTGRES_DB:-mybank_db}
-      SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-in-production}
-      ALGORITHM: ${ALGORITHM:-HS256}
-      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-1440}
-      API_VERSION: ${API_VERSION:-2.1}
-      REGISTRY_URL: ${REGISTRY_URL:-http://localhost:3000}
-      PUBLIC_URL: ${PUBLIC_URL:-http://localhost:8000}
+    container_name: banking-api
+    #environment:
+    #  BANK_CODE: ${BANK_CODE}
+    #  BANK_NAME: ${BANK_NAME}
+    #  BANK_DESCRIPTION: ${BANK_DESCRIPTION}
+    #  DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-mybank_db}
+    #  SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-in-production}
+    #  ALGORITHM: ${ALGORITHM:-HS256}
+    #  ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-1440}
+    #  API_VERSION: ${API_VERSION:-2.1}
+    #  REGISTRY_URL: ${REGISTRY_URL:-http://localhost:3000}
+    #  PUBLIC_URL: ${PUBLIC_URL:-http://localhost:8000}
+    env_file:
+      - .env
     ports:
       - "8000:8000"
     depends_on:
