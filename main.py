@@ -11,6 +11,7 @@ from pathlib import Path
 
 from config import config
 from database import engine
+from middleware import APILoggingMiddleware
 from models import Base
 from api import (
     accounts, auth, consents, payments, admin, products, well_known,
@@ -191,13 +192,4 @@ async def health():
 if __name__ == "__main__":
     import uvicorn
     
-    # Определяем порт на основе bank_code
-    port_map = {
-        "vbank": 8001,
-        "abank": 8002,
-        "sbank": 8003
-    }
-    port = port_map.get(config.BANK_CODE, 8001)
-    
-    uvicorn.run(app, host="0.0.0.0", port=port)
-
+    uvicorn.run(app, host="0.0.0.0", port=config.PORT)
