@@ -65,16 +65,17 @@ async def login(
     if not client:
         raise HTTPException(401, "Invalid credentials")
     
+    # 61whey: TODO: We need to change all this authentication
     # В MVP: простая проверка пароля (для упрощения тестирования)
     # В production: проверять хешированный пароль
 
     # Определяем правильный пароль для клиента
     expected_password = None
 
-    if request.username.startswith("demo-"):
+    if request.username.startswith("demo-"):  # Like demo-client-001
         # Demo клиенты: пароль = "password"
-        expected_password = "password"
-    elif request.username.startswith("team"):
+        expected_password = config.DEMO_CLIENT_PASSWORD
+    elif request.username.startswith("team"):  # Like team025-1
         # Командные клиенты: проверяем пароль из таблицы teams
         # Извлекаем номер команды из person_id (team010-1 → team010)
         import re
@@ -92,15 +93,16 @@ async def login(
                 # Используем client_secret из таблицы teams как пароль
                 expected_password = team.client_secret
             else:
-                # Команда не найдена в БД - используем fallback "password" для локальной разработки
-                expected_password = "password"
+                # Команда не найдена в БД
+                raise HTTPException(401, "Invalid credentials")
         else:
-            # Неправильный формат - используем fallback
-            expected_password = "password"
+            # Неправильный формат
+            raise HTTPException(401, "Invalid credentials")
     else:
+        raise HTTPException(401, "Invalid credentials")
         # Старые клиенты: пароль = username или "password"
-        if request.password in [request.username, "password"]:
-            expected_password = request.password
+        # if request.password in [request.username, "password"]:
+        #     expected_password = request.password
 
     # Проверка пароля
     if not expected_password or request.password != expected_password:
@@ -242,11 +244,12 @@ async def banker_login(
     
     Для доступа к Banker UI и управления продуктами банка.
     """
-    # Проверка учетных данных (для хакатона - упрощенная схема)
-    if username != "admin" or password != "admin":
-        raise HTTPException(401, "Invalid credentials")
-    
     from config import config
+
+    # 61whey: TODO: We need to change this authentication
+    # Проверка учетных данных (для хакатона - упрощенная схема)
+    if username != config.ADMIN_USERNAME or password != config.ADMIN_PASSWORD:
+        raise HTTPException(401, "Invalid credentials")
     
     # Создать токен банкира
     banker_token = create_access_token(

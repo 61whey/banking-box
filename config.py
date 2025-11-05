@@ -38,6 +38,9 @@ class BankConfig(BaseSettings):
     PUBLIC_URL: str
 
     PORT: int = 8000  # Default port for API
+    ADMIN_USERNAME: str
+    ADMIN_PASSWORD: str
+    DEMO_CLIENT_PASSWORD: str
 
 # Singleton instance
 config = BankConfig()
