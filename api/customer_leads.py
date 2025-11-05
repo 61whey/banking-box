@@ -17,7 +17,8 @@ from services.auth_service import get_current_client
 
 router = APIRouter(
     prefix="/customer-leads",
-    tags=["07 OpenBanking: Customer Leads"]
+    tags=["07 OpenBanking: Customer Leads"],
+    include_in_schema=False  # Скрыто из публичной документации
 )
 
 

@@ -125,7 +125,7 @@ class ConsentService:
                 client_id=client.id,
                 granted_to=requesting_bank,
                 permissions=permissions,
-                status="Authorized",
+                status="active",
                 expiration_date_time=datetime.utcnow() + timedelta(days=365),
                 creation_date_time=datetime.utcnow(),
                 status_update_date_time=datetime.utcnow(),
@@ -206,7 +206,7 @@ class ConsentService:
                 client_id=client.id,
                 granted_to=consent_request.requesting_bank,
                 permissions=consent_request.permissions,
-                status="Authorized",  # OpenBanking Russia статус
+                status="active",  # Системный активный статус
                 expiration_date_time=datetime.utcnow() + timedelta(days=365),
                 creation_date_time=datetime.utcnow(),
                 status_update_date_time=datetime.utcnow(),
@@ -231,6 +231,85 @@ class ConsentService:
             return ("rejected", None)
     
     @staticmethod
+    async def authorize_consent_by_id(
+        db: AsyncSession,
+        consent_id: str,
+        client_person_id: str,
+        action: str  # approve / reject
+    ) -> tuple[str, Optional[Consent]]:
+        """
+        Авторизация consent resource по ID (упрощённый OAuth для sandbox)
+        
+        В production это происходит через OAuth redirect flow.
+        Для sandbox: клиент может авторизовать consent напрямую.
+        
+        Args:
+            consent_id: ID consent resource (формат ac-xxxx из POST /account-consents)
+            client_person_id: person_id клиента
+            action: approve / reject
+            
+        Returns:
+            (status, consent) - статус и созданное согласие (если approved)
+        """
+        # Получить client
+        client_result = await db.execute(
+            select(Client).where(Client.person_id == client_person_id)
+        )
+        client = client_result.scalar_one_or_none()
+        
+        if not client:
+            raise ValueError(f"Client {client_person_id} not found")
+        
+        # Найти consent request по consent_id
+        request_result = await db.execute(
+            select(ConsentRequest).where(
+                and_(
+                    ConsentRequest.request_id == consent_id,
+                    ConsentRequest.client_id == client.id,
+                    ConsentRequest.status == "pending"
+                )
+            )
+        )
+        consent_request = request_result.scalar_one_or_none()
+        
+        if not consent_request:
+            raise ValueError(f"Consent {consent_id} not found or already processed")
+        
+        if action == "approve":
+            # Создать активное согласие
+            final_consent_id = f"consent-{uuid.uuid4().hex[:12]}"
+            
+            consent = Consent(
+                consent_id=final_consent_id,
+                request_id=consent_request.id,
+                client_id=client.id,
+                granted_to=consent_request.requesting_bank,
+                permissions=consent_request.permissions,
+                status="active",
+                expiration_date_time=datetime.utcnow() + timedelta(days=365),
+                creation_date_time=datetime.utcnow(),
+                status_update_date_time=datetime.utcnow(),
+                signed_at=datetime.utcnow()
+            )
+            db.add(consent)
+            
+            # Обновить статус запроса
+            consent_request.status = "approved"
+            consent_request.responded_at = datetime.utcnow()
+            
+            await db.commit()
+            await db.refresh(consent)
+            
+            return ("Authorized", consent)
+            
+        else:  # reject
+            consent_request.status = "rejected"
+            consent_request.responded_at = datetime.utcnow()
+            await db.commit()
+            
+            return ("Rejected", None)
+    
+    @staticmethod
     async def revoke_consent(
         db: AsyncSession,
         consent_id: str,
@@ -252,7 +331,7 @@ class ConsentService:
                 and_(
                     Consent.consent_id == consent_id,
                     Consent.client_id == client.id,
-                    Consent.status == "Authorized"
+                    Consent.status == "active"
                 )
             )
         )
@@ -262,7 +341,7 @@ class ConsentService:
             return False
         
         # Отозвать
-        consent.status = "Revoked"
+        consent.status = "Revoked"  # OpenBanking формат с заглавной буквы
         consent.status_update_date_time = datetime.utcnow()
         consent.revoked_at = datetime.utcnow()
         

@@ -17,7 +17,8 @@ from services.auth_service import get_current_client
 
 router = APIRouter(
     prefix="/vrp-consents",
-    tags=["04 OpenBanking: VRP Consents"]
+    tags=["04 OpenBanking: VRP Consents"],
+    include_in_schema=False  # Скрыто из публичной документации
 )
 
 
