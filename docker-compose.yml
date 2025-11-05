@@ -11,7 +11,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
-      - /opt/banking-box/postgresql/data:/var/lib/postgresql/data
+      - ${POSTGRES_DATA_DIR}:/var/lib/postgresql/data
       - ./shared/database:/docker-entrypoint-initdb.d
     ports:
       - "${POSTGRES_EXTERNAL_PORT}:5432"
