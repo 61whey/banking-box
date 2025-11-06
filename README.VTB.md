@@ -17,13 +17,13 @@
 <summary>🔍 Посмотреть диаграммы архитектуры</summary>
 
 ### Общая структура системы
-![Bank Structure](./docs/diagrams/bank-structure.svg)
+![Bank Structure](./doc/vtb/diagrams/bank-structure.svg)
 
 ### Детальная схема компонентов
-![Bank Components](./docs/diagrams/bank-components.svg)
+![Bank Components](./doc/vtb/diagrams/bank-components.svg)
 
 ### Схема базы данных (ER-диаграмма)
-![Database Schema](./docs/diagrams/database-schema.svg)
+![Database Schema](./doc/vtb/diagrams/database-schema.svg)
 
 **Основные таблицы:**
 - **Клиенты и счета**: `clients`, `accounts`, `transactions`
@@ -34,7 +34,7 @@
 
 Подробная структура таблиц: [`shared/database/init.sql`](./shared/database/init.sql)
 
-📁 Исходные PlantUML файлы и инструкции: [`docs/diagrams/`](./docs/diagrams/)
+📁 Исходные PlantUML файлы и инструкции: [`docs/diagrams/`](./doc/vtb/diagrams/)
 
 </details>
 
@@ -327,7 +327,7 @@ allowed_origins = [
 
 ### Компоненты системы
 
-![Bank Architecture](./docs/diagrams/bank-structure.svg)
+![Bank Architecture](./doc/vtb/diagrams/bank-structure.svg)
 
 **Основные компоненты:**
 - **FastAPI App** - веб-сервер с 42+ API endpoints
