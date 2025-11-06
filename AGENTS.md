@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Banking API backend implementing **OpenBanking Russia v2.1**. FastAPI + PostgreSQL with multi-bank support, consent-based data sharing, and inter-bank transfers.
+Banking Box - API backend implementing **OpenBanking Russia v2.1**. FastAPI + PostgreSQL with multi-bank support, consent-based data sharing, and inter-bank transfers.
 
 **Stack:** FastAPI 0.115.0, PostgreSQL 15, SQLAlchemy 2.0.35 (async), JWT (HS256/RS256), Docker
 
@@ -17,6 +17,7 @@ Banking API backend implementing **OpenBanking Russia v2.1**. FastAPI + PostgreS
 - DO NOT hardcode any values in the code. Use environment variables in config.py.
 - DO NOT use icons or emojis in code.
 - DO NOT use uppercase words if it's not necessary.
+- DO NOT translate from Russian to English or vice versa. The development team is bilingual.
 
 ## Quick Start
 
