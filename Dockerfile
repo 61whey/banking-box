@@ -19,12 +19,10 @@ COPY pyproject.toml .
 COPY uv.lock        .
 
 # Install Python dependencies
-# -system               Install python into the system.
-# --compile-bytecode    Do compile python bytecode.
-# -e                    Installs the current directory as an editable
-#                       package, meaning changes to the source code will
-#                       immediately affect the installed package.
-RUN uv -v pip install --system --compile-bytecode -e .
+# Export uv.lock to requirements.txt format, then install to system Python
+RUN uv export --format requirements-txt --no-hashes -o requirements.txt \
+    && uv pip install --system --compile-bytecode -r requirements.txt \
+    && rm requirements.txt
 
 ENV PYTHONPATH="${PYTHONPATH}:/app"
 
