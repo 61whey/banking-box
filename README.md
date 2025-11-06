@@ -9,6 +9,16 @@
 
 [TODO](doc/TODO.md)
 
+## Docs
+
+- Документация ВТБ перенесена сюда:
+  - [README.VTB.md](README.VTB.md)
+  - [doc/vtb/](doc/vtb/)
+
+
+## AGENTS.md
+
+[AGENTS.md](AGENTS.md) - единый файл для всех coding agents. Редактируйте его.
 
 # Local development
 
