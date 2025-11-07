@@ -1,0 +1,1062 @@
+<?xml version="1.0" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" font-family="monospace" width="123.20000000000002em" height="145.8em" style="background-color:white"><defs>
+	<marker id="Triangle"
+		viewBox="0 0 10 10" refX="0" refY="5" 
+		markerUnits="strokeWidth"
+		markerWidth="15" markerHeight="10"
+		orient="auto">
+		<path d="M 0 0 L 10 5 L 0 10 z" />
+	</marker>
+		
+		<marker id="Diamond"
+		viewBox="0 0 16 10" refX="0" refY="5" 
+		markerUnits="strokeWidth"
+		markerWidth="20" markerHeight="10"
+		orient="auto">
+		<path d="M 0 5 L 8 10 L 16 5 L 8 0 z" />
+	</marker>   
+</defs>
+<rect x="1em" y="1em" width="15.200000000000001em" height="3em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="8.600000000000001em" y="2.3em" fill="black">
+<title>Ответ на запрос информации об операциях по счету</title>
+TransactionResponse
+</text>
+
+<rect x="22.200000000000003em" y="1em" width="3.2em" height="3em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="23.800000000000004em" y="2.3em" fill="black">
+<title>Полезная нагрузка ответа на запрос об операциях по счету</title>
+Data
+</text>
+
+<rect x="31.400000000000002em" y="1em" width="23.200000000000003em" height="13.4em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="43em" y="2.3em" fill="black">
+<title>Операция по счету</title>
+Transaction
+</text>
+
+<text x="32.400000000000006em" y="4.3em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 40
+Description: Уникальный и неизменный идентификатор, используемый для идентификации ресурса accounts
+Pattern: ^[a-zA-Z0-9-]{1,40}$
+</title>
+accountId [1..1]
+</text>
+
+<text x="32.400000000000006em" y="5.6em" fill="darkslateblue">
+<title>Type: string
+Format: date-time
+Description: Формат даты и времени
+</title>
+bookingDateTime [1..1]
+</text>
+
+<text x="32.400000000000006em" y="6.9em" fill="darkslateblue">
+<title>Type: string
+Description: Признак дебета/кредита
+Values:
+ - Credit
+ - Debit
+</title>
+creditDebitIndicator [1..1]
+</text>
+
+<text x="32.400000000000006em" y="8.2em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 40
+Description: Уникальный и неизменный идентификатор, используемый для идентификации банковской операции в различных компонентах процесса проведения данной операции
+Pattern: ^[a-zA-Z0-9-]{1,40}$
+</title>
+operationId [1..1]
+</text>
+
+<text x="32.400000000000006em" y="9.5em" fill="darkslateblue">
+<title>Type: string
+Description: Статус записи операции по счету
+Values:
+ - AcceptedCreditSettlementCompleted
+ - AcceptedSettlementCompleted
+ - AcceptedSettlementInProcess
+ - AcceptedWithoutPosting
+ - Pending
+ - Rejected
+</title>
+status [1..1]
+</text>
+
+<text x="32.400000000000006em" y="10.8em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 40
+Description: Уникальный и неизменный идентификатор, используемый для идентификации рессурса операции по счету
+Pattern: ^[a-zA-Z0-9-]{1,40}$
+</title>
+transactionId [1..1]
+</text>
+
+<text x="32.400000000000006em" y="12.100000000000001em" fill="darkslateblue">
+<title>Type: string
+Description: Сообщение отправителя получателю денежных средств
+Pattern: ^[\w\W]{1,240}$
+</title>
+transactionInformation [0..1]
+</text>
+
+<text x="32.400000000000006em" y="13.399999999999999em" fill="darkslateblue">
+<title>Type: string
+Format: date-time
+Description: Формат даты и времени
+</title>
+valueDateTime [0..1]
+</text>
+
+<rect x="60.60000000000001em" y="1em" width="12em" height="5.6em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="66.60000000000001em" y="2.3em" fill="black">
+<title>Сумма денежных средств и код валюты</title>
+Amount
+</text>
+
+<text x="61.60000000000001em" y="4.3em" fill="darkslateblue">
+<title>Type: string
+Description: Сумма денежных средств
+Pattern: ^\d{1,15}\.\d{2,4}$
+</title>
+amount [1..1]
+</text>
+
+<text x="61.60000000000001em" y="5.6em" fill="darkslateblue">
+<title>Type: string
+Description: Код валюты, соответствующий международного стандарта ISO 4217
+Pattern: ^[A-Z]{3,3}$
+</title>
+currency [1..1]
+</text>
+
+<rect x="60.60000000000001em" y="7.6em" width="15.200000000000001em" height="6.9em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="68.2em" y="8.9em" fill="black">
+<title>Код банковской операции</title>
+BankTransactionCode
+</text>
+
+<text x="61.60000000000001em" y="10.9em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 35
+Description: Тип банковской операции
+Pattern: ^[\w\W]{1,35}$
+</title>
+code [1..1]
+</text>
+
+<text x="61.60000000000001em" y="12.200000000000001em" fill="darkslateblue">
+<title>Type: string
+MaxLength: 35
+Description: Идентификация эмитента собственного банковского кода операции по счету
+Pattern: ^[\w\W]{1,35}$
+</title>
+issuer [0..1]
+</text>
+
+<text x="61.60000000000001em" y="13.5em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 35
+Description: Подтип банковской операции
+Pattern: ^[\w\W]{1,35}$
+</title>
+subCode [0..1]
+</text>
+
+<rect x="60.60000000000001em" y="15.5em" width="12em" height="3em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="66.60000000000001em" y="16.8em" fill="black">
+<title>Предоставляет данные по карте (номер, платежная система), терминалу (номер, идентификатор) и транзакционные данные, используемые для уникальной идентификации операции по карте</title>
+CardTransaction
+</text>
+
+<rect x="78.60000000000001em" y="15.5em" width="20em" height="5.6em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="88.60000000000001em" y="16.8em" fill="black">
+<title>Данные по платежной карте</title>
+Card
+</text>
+
+<text x="79.60000000000001em" y="18.8em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 70
+Description: Дополнительные сведения, специфичные для эмитента карты
+Pattern: ^[\w\W]{1,70}$
+</title>
+additionalCardData [0..1]
+</text>
+
+<text x="79.60000000000001em" y="20.1em" fill="darkslateblue">
+<title>Type: string
+Description: Наименование платежной системы или схемы карты
+Values:
+ - MIR
+ - AmericanExpress
+ - Diners
+ - Discover
+ - MasterCard
+ - VISA
+ - ArCa
+ - BELKART
+ - ELCART
+ - JCB
+ - UnionPay
+</title>
+cardScheme [0..1]
+</text>
+
+<rect x="104.60000000000001em" y="15.5em" width="13.600000000000001em" height="5.6em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="111.4em" y="16.8em" fill="black">
+<title>Данные платежной карты, ассоциированной со счетом</title>
+PaymentCardData
+</text>
+
+<text x="105.60000000000001em" y="18.8em" fill="darkslateblue">
+<title>Type: string
+Description: Маскированный учетный номер карты (PAN) или номер карты, ограниченный последними 4 цифрами.
+Pattern: ^[0-9]{4}$
+</title>
+PAN [1..1]
+</text>
+
+<text x="105.60000000000001em" y="20.1em" fill="darkslateblue">
+<title>Type: string
+Description: Формат даты год и месяц
+Pattern: ^(1[0-2]|0[1-9]|\d)\/([2-9]\d[1-9]\d|[1-9]\d)$
+</title>
+expiryDate [1..1]
+</text>
+
+<rect x="78.60000000000001em" y="22.1em" width="20.8em" height="5.6em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="89.00000000000001em" y="23.400000000000002em" fill="black">
+<title>Сведения об отдельной операции по карте, записанные на POI-терминале (точке взаимодействия)</title>
+Transaction
+</text>
+
+<text x="79.60000000000001em" y="25.400000000000002em" fill="darkslateblue">
+<title>Type: string
+MinLength: 3
+MaxLength: 35
+Description: Код авторизации операции
+Pattern: ^[\w\W]{3,35}$
+</title>
+authorizationCode [0..1]
+</text>
+
+<text x="79.60000000000001em" y="26.700000000000003em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 4
+Description: Код категории соответствует ISO 18245 и относится к типу услуг или товаров, которые продавец предоставляет для транзакции
+Pattern: ^[\w\W]{1,4}$
+</title>
+transactionCategory [0..1]
+</text>
+
+<rect x="60.60000000000001em" y="28.7em" width="12em" height="5.6em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="66.60000000000001em" y="30em" fill="black">
+<title>Сумма денежных средств и код валюты</title>
+ChargeAmount
+</text>
+
+<text x="61.60000000000001em" y="32em" fill="darkslateblue">
+<title>Type: string
+Description: Сумма денежных средств
+Pattern: ^\d{1,15}\.\d{2,4}$
+</title>
+amount [1..1]
+</text>
+
+<text x="61.60000000000001em" y="33.3em" fill="darkslateblue">
+<title>Type: string
+Description: Код валюты, соответствующий международного стандарта ISO 4217
+Pattern: ^[A-Z]{3,3}$
+</title>
+currency [1..1]
+</text>
+
+<rect x="60.60000000000001em" y="35.3em" width="20em" height="12.1em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="70.60000000000001em" y="36.599999999999994em" fill="black">
+<title>Информация об участнике, используемая для идентификации юридического или физического лица</title>
+Creditor
+</text>
+
+<text x="61.60000000000001em" y="38.599999999999994em" fill="darkslateblue">
+<title>Type: string
+Format: date-time
+Description: Формат даты и времени
+</title>
+birthDate [0..1]
+</text>
+
+<text x="61.60000000000001em" y="39.89999999999999em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 35
+Description: Место рождения (город)
+Pattern: ^[\w\W]{1,35}$
+</title>
+cityOfBirth [0..1]
+</text>
+
+<text x="61.60000000000001em" y="41.199999999999996em" fill="darkslateblue">
+<title>Type: string
+Description: Код страны
+Pattern: ^[A-Z]{2,2}$
+</title>
+countryOfBirth [0..1]
+</text>
+
+<text x="61.60000000000001em" y="42.49999999999999em" fill="darkslateblue">
+<title>Type: string
+Description: Код страны
+Pattern: ^[A-Z]{2,2}$
+</title>
+countryOfResidence [0..1]
+</text>
+
+<text x="61.60000000000001em" y="43.8em" fill="darkslateblue">
+<title>Type: string
+Description: Номер мобильного телефона
+Pattern: ^((\&#43;7|7|8)([0-9]){10})$
+</title>
+mobileNumber [0..1]
+</text>
+
+<text x="61.60000000000001em" y="45.099999999999994em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 160
+Description: Наименование организации или имя физического лица
+Pattern: ^[\w\W]{1,160}$
+</title>
+name [1..1]
+</text>
+
+<text x="61.60000000000001em" y="46.39999999999999em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 35
+Description: Место рождения (область).
+Pattern: ^[\w\W]{1,35}$
+</title>
+provinceOfBirth [0..1]
+</text>
+
+<rect x="86.60000000000001em" y="35.3em" width="16.8em" height="5.6em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="95.00000000000001em" y="36.599999999999994em" fill="black">
+<title>Идентификация физического лица</title>
+Identification
+</text>
+
+<text x="87.60000000000001em" y="38.599999999999994em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 35
+Description: Уникальный и однозначный идентификатор участника, присвоенный идентифицирующей организацией.
+Pattern: ^[\w\W]{1,35}$
+</title>
+identification [1..1]
+</text>
+
+<text x="87.60000000000001em" y="39.89999999999999em" fill="darkslateblue">
+<title>Type: string
+MaxLength: 35
+Description: Схема идентификации юридического или физического лица
+Values:
+ - RU.CBR.TXID
+ - RU.CBR.LEI
+ - RU.CBR.PASP
+ - RU.CBR.CLID
+ - RU.CBR.QRST
+ - RU.CBR.TAXT
+ - RU.CBR.OGRN
+ - RU.CBR.SNILS
+ - RU.CBR.PAN
+ - RU.CBR.MTEL
+ - RU.CBR.BBAN
+</title>
+schemeName [1..1]
+</text>
+
+<rect x="86.60000000000001em" y="41.9em" width="20em" height="13.4em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="96.60000000000001em" y="43.199999999999996em" fill="black">
+<title>Почтовый адрес</title>
+PostalAddress
+</text>
+
+<text x="87.60000000000001em" y="45.199999999999996em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 70
+Description: Строка адреса
+Pattern: ^[\w\W]{1,70}$
+</title>
+addressLine [0..2]
+</text>
+
+<text x="87.60000000000001em" y="46.49999999999999em" fill="darkslateblue">
+<title>Type: string
+Description: Тип адреса
+Values:
+ - Business
+ - Correspondence
+ - DeliveryTo
+ - MailTo
+ - POBox
+ - Postal
+ - Residential
+ - Statement
+</title>
+addressType [0..1]
+</text>
+
+<text x="87.60000000000001em" y="47.8em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 16
+Description: Номер, который определяет положение здания на улице
+Pattern: ^[\w\W]{1,16}$
+</title>
+buildingNumber [0..1]
+</text>
+
+<text x="87.60000000000001em" y="49.099999999999994em" fill="darkslateblue">
+<title>Type: string
+Description: Код страны
+Pattern: ^[A-Z]{2,2}$
+</title>
+country [0..1]
+</text>
+
+<text x="87.60000000000001em" y="50.4em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 35
+Description: Наименование и тип субъекта Российской Федерации
+Pattern: ^[\w\W]{1,35}$
+</title>
+countrySubDivision [0..1]
+</text>
+
+<text x="87.60000000000001em" y="51.699999999999996em" fill="darkslateblue">
+<title>Type: string
+MinLength: 6
+MaxLength: 16
+Description: Почтовый индекс
+Pattern: ^[\w\W]{6,16}$
+</title>
+postCode [0..1]
+</text>
+
+<text x="87.60000000000001em" y="53em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 70
+Description: Наименование улицы или проспекта
+Pattern: ^[\w\W]{1,70}$
+</title>
+streetName [0..1]
+</text>
+
+<text x="87.60000000000001em" y="54.3em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 35
+Description: Наименование населённого пункта или территории, находящейся вне границ поселений
+Pattern: ^[\w\W]{1,35}$
+</title>
+townName [0..1]
+</text>
+
+<rect x="60.60000000000001em" y="56.3em" width="16.8em" height="6.9em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="69.00000000000001em" y="57.599999999999994em" fill="black">
+<title>Идентификация счета</title>
+CreditorAccount
+</text>
+
+<text x="61.60000000000001em" y="59.599999999999994em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 256
+Description: Идентификатор счета соответствующий схеме идентификации, известный владельцу счета (номер банковского счета, номер карты, номер телефона ...)
+Pattern: ^[\w\W]{1,256}$
+</title>
+identification [1..1]
+</text>
+
+<text x="61.60000000000001em" y="60.89999999999999em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 70
+Description: Наименование счета, присвоенное учреждением, обслуживающим счет, по согласованию с владельцем счета  для обеспечения дополнительных средств идентификации счета
+Pattern: ^[\w\W]{1,70}$
+</title>
+name [0..1]
+</text>
+
+<text x="61.60000000000001em" y="62.199999999999996em" fill="darkslateblue">
+<title>Type: string
+Description: Схема идентификации счета
+Values:
+ - RU.CBR.BBAN
+ - RU.CBR.EPID
+ - RU.CBR.PAN
+ - RU.CBR.MTEL
+ - RU.CBR.ORID
+</title>
+schemeName [1..1]
+</text>
+
+<rect x="60.60000000000001em" y="64.2em" width="16.8em" height="5.6em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="69.00000000000001em" y="65.5em" fill="black">
+<title>Идентификация финансового учреждения</title>
+CreditorAgent
+</text>
+
+<text x="61.60000000000001em" y="67.5em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 35
+Description: Банковский идентификационный код (БИК) или другой идентификатор финансового учреждения
+Pattern: ^[\w\W]{1,35}$
+</title>
+identification [1..1]
+</text>
+
+<text x="61.60000000000001em" y="68.8em" fill="darkslateblue">
+<title>Type: string
+Description: Схема идентификации финансового учреждения
+Values:
+ - RU.CBR.BICFI
+ - RU.CBR.BIC
+</title>
+schemeName [1..1]
+</text>
+
+<rect x="60.60000000000001em" y="70.8em" width="20em" height="12.1em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="70.60000000000001em" y="72.1em" fill="black">
+<title>Информация об участнике, используемая для идентификации юридического или физического лица</title>
+Debtor
+</text>
+
+<text x="61.60000000000001em" y="74.1em" fill="darkslateblue">
+<title>Type: string
+Format: date-time
+Description: Формат даты и времени
+</title>
+birthDate [0..1]
+</text>
+
+<text x="61.60000000000001em" y="75.39999999999999em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 35
+Description: Место рождения (город)
+Pattern: ^[\w\W]{1,35}$
+</title>
+cityOfBirth [0..1]
+</text>
+
+<text x="61.60000000000001em" y="76.69999999999999em" fill="darkslateblue">
+<title>Type: string
+Description: Код страны
+Pattern: ^[A-Z]{2,2}$
+</title>
+countryOfBirth [0..1]
+</text>
+
+<text x="61.60000000000001em" y="78em" fill="darkslateblue">
+<title>Type: string
+Description: Код страны
+Pattern: ^[A-Z]{2,2}$
+</title>
+countryOfResidence [0..1]
+</text>
+
+<text x="61.60000000000001em" y="79.3em" fill="darkslateblue">
+<title>Type: string
+Description: Номер мобильного телефона
+Pattern: ^((\&#43;7|7|8)([0-9]){10})$
+</title>
+mobileNumber [0..1]
+</text>
+
+<text x="61.60000000000001em" y="80.6em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 160
+Description: Наименование организации или имя физического лица
+Pattern: ^[\w\W]{1,160}$
+</title>
+name [1..1]
+</text>
+
+<text x="61.60000000000001em" y="81.89999999999999em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 35
+Description: Место рождения (область).
+Pattern: ^[\w\W]{1,35}$
+</title>
+provinceOfBirth [0..1]
+</text>
+
+<rect x="86.60000000000001em" y="70.8em" width="16.8em" height="5.6em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="95.00000000000001em" y="72.1em" fill="black">
+<title>Идентификация физического лица</title>
+Identification
+</text>
+
+<text x="87.60000000000001em" y="74.1em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 35
+Description: Уникальный и однозначный идентификатор участника, присвоенный идентифицирующей организацией.
+Pattern: ^[\w\W]{1,35}$
+</title>
+identification [1..1]
+</text>
+
+<text x="87.60000000000001em" y="75.39999999999999em" fill="darkslateblue">
+<title>Type: string
+MaxLength: 35
+Description: Схема идентификации юридического или физического лица
+Values:
+ - RU.CBR.TXID
+ - RU.CBR.LEI
+ - RU.CBR.PASP
+ - RU.CBR.CLID
+ - RU.CBR.QRST
+ - RU.CBR.TAXT
+ - RU.CBR.OGRN
+ - RU.CBR.SNILS
+ - RU.CBR.PAN
+ - RU.CBR.MTEL
+ - RU.CBR.BBAN
+</title>
+schemeName [1..1]
+</text>
+
+<rect x="86.60000000000001em" y="77.39999999999999em" width="20em" height="13.4em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="96.60000000000001em" y="78.69999999999999em" fill="black">
+<title>Почтовый адрес</title>
+PostalAddress
+</text>
+
+<text x="87.60000000000001em" y="80.69999999999999em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 70
+Description: Строка адреса
+Pattern: ^[\w\W]{1,70}$
+</title>
+addressLine [0..2]
+</text>
+
+<text x="87.60000000000001em" y="81.99999999999999em" fill="darkslateblue">
+<title>Type: string
+Description: Тип адреса
+Values:
+ - Business
+ - Correspondence
+ - DeliveryTo
+ - MailTo
+ - POBox
+ - Postal
+ - Residential
+ - Statement
+</title>
+addressType [0..1]
+</text>
+
+<text x="87.60000000000001em" y="83.29999999999998em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 16
+Description: Номер, который определяет положение здания на улице
+Pattern: ^[\w\W]{1,16}$
+</title>
+buildingNumber [0..1]
+</text>
+
+<text x="87.60000000000001em" y="84.6em" fill="darkslateblue">
+<title>Type: string
+Description: Код страны
+Pattern: ^[A-Z]{2,2}$
+</title>
+country [0..1]
+</text>
+
+<text x="87.60000000000001em" y="85.89999999999999em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 35
+Description: Наименование и тип субъекта Российской Федерации
+Pattern: ^[\w\W]{1,35}$
+</title>
+countrySubDivision [0..1]
+</text>
+
+<text x="87.60000000000001em" y="87.19999999999999em" fill="darkslateblue">
+<title>Type: string
+MinLength: 6
+MaxLength: 16
+Description: Почтовый индекс
+Pattern: ^[\w\W]{6,16}$
+</title>
+postCode [0..1]
+</text>
+
+<text x="87.60000000000001em" y="88.49999999999999em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 70
+Description: Наименование улицы или проспекта
+Pattern: ^[\w\W]{1,70}$
+</title>
+streetName [0..1]
+</text>
+
+<text x="87.60000000000001em" y="89.79999999999998em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 35
+Description: Наименование населённого пункта или территории, находящейся вне границ поселений
+Pattern: ^[\w\W]{1,35}$
+</title>
+townName [0..1]
+</text>
+
+<rect x="60.60000000000001em" y="91.8em" width="16.8em" height="6.9em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="69.00000000000001em" y="93.1em" fill="black">
+<title>Идентификация счета</title>
+DebtorAccount
+</text>
+
+<text x="61.60000000000001em" y="95.1em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 256
+Description: Идентификатор счета соответствующий схеме идентификации, известный владельцу счета (номер банковского счета, номер карты, номер телефона ...)
+Pattern: ^[\w\W]{1,256}$
+</title>
+identification [1..1]
+</text>
+
+<text x="61.60000000000001em" y="96.39999999999999em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 70
+Description: Наименование счета, присвоенное учреждением, обслуживающим счет, по согласованию с владельцем счета  для обеспечения дополнительных средств идентификации счета
+Pattern: ^[\w\W]{1,70}$
+</title>
+name [0..1]
+</text>
+
+<text x="61.60000000000001em" y="97.69999999999999em" fill="darkslateblue">
+<title>Type: string
+Description: Схема идентификации счета
+Values:
+ - RU.CBR.BBAN
+ - RU.CBR.EPID
+ - RU.CBR.PAN
+ - RU.CBR.MTEL
+ - RU.CBR.ORID
+</title>
+schemeName [1..1]
+</text>
+
+<rect x="60.60000000000001em" y="99.7em" width="16.8em" height="5.6em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="69.00000000000001em" y="101em" fill="black">
+<title>Идентификация финансового учреждения</title>
+DebtorAgent
+</text>
+
+<text x="61.60000000000001em" y="103em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 35
+Description: Банковский идентификационный код (БИК) или другой идентификатор финансового учреждения
+Pattern: ^[\w\W]{1,35}$
+</title>
+identification [1..1]
+</text>
+
+<text x="61.60000000000001em" y="104.3em" fill="darkslateblue">
+<title>Type: string
+Description: Схема идентификации финансового учреждения
+Values:
+ - RU.CBR.BICFI
+ - RU.CBR.BIC
+</title>
+schemeName [1..1]
+</text>
+
+<rect x="60.60000000000001em" y="106.3em" width="12.8em" height="3em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="67.00000000000001em" y="107.6em" fill="black">
+<title>Сумма денег  и информации об обменом курсе, подлежащая переводу между плательщиком и получателем денежных средств до вычета расходов, выраженная в валюте обозначенной инициирующей стороной в случае, если указанная сумма и/или валюта отличаются от суммы и/или валюты операции по счету</title>
+InstructedAmount
+</text>
+
+<rect x="79.4em" y="106.3em" width="12em" height="5.6em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="85.4em" y="107.6em" fill="black">
+<title>Сумма денежных средств и код валюты</title>
+Amount
+</text>
+
+<text x="80.4em" y="109.6em" fill="darkslateblue">
+<title>Type: string
+Description: Сумма денежных средств
+Pattern: ^\d{1,15}\.\d{2,4}$
+</title>
+amount [1..1]
+</text>
+
+<text x="80.4em" y="110.89999999999999em" fill="darkslateblue">
+<title>Type: string
+Description: Код валюты, соответствующий международного стандарта ISO 4217
+Pattern: ^[A-Z]{3,3}$
+</title>
+currency [1..1]
+</text>
+
+<rect x="79.4em" y="112.89999999999999em" width="23.200000000000003em" height="10.8em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="91em" y="114.19999999999999em" fill="black">
+<title>Подробная информация об обмене валюты</title>
+CurrencyExchange
+</text>
+
+<text x="80.4em" y="116.19999999999999em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 35
+Description: Идентификатор для однозначного определения валютного контракта
+Pattern: ^[\w\W]{1,35}$
+</title>
+contractIdentification [0..1]
+</text>
+
+<text x="80.4em" y="117.49999999999999em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 12
+Description: Коэффициент, используемый для перевода суммы из одной валюты в другую. Это отражает цену, по которой одна валюта была куплена за другую валюту
+Pattern: ^[\w\W]{1,12}$
+</title>
+exchangeRate [1..1]
+</text>
+
+<text x="80.4em" y="118.79999999999998em" fill="darkslateblue">
+<title>Type: string
+Format: date-time
+Description: Формат даты и времени
+</title>
+quotationDate [0..1]
+</text>
+
+<text x="80.4em" y="120.1em" fill="darkslateblue">
+<title>Type: string
+Description: Код валюты, соответствующий международного стандарта ISO 4217
+Pattern: ^[A-Z]{3,3}$
+</title>
+sourceCurrency [1..1]
+</text>
+
+<text x="80.4em" y="121.39999999999999em" fill="darkslateblue">
+<title>Type: string
+Description: Код валюты, соответствующий международного стандарта ISO 4217
+Pattern: ^[A-Z]{3,3}$
+</title>
+targetCurrency [0..1]
+</text>
+
+<text x="80.4em" y="122.69999999999999em" fill="darkslateblue">
+<title>Type: string
+Description: Код валюты, соответствующий международного стандарта ISO 4217
+Pattern: ^[A-Z]{3,3}$
+</title>
+unitCurrency [0..1]
+</text>
+
+<rect x="60.60000000000001em" y="124.69999999999999em" width="16.8em" height="4.3em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="69.00000000000001em" y="125.99999999999999em" fill="black">
+<title>Предоставляемая информация, позволяющая сопоставить запись с позициями, для которых предназначен перевод, такими как коммерческие счета в системе дебиторской задолженности</title>
+RemittanceInformation
+</text>
+
+<text x="61.60000000000001em" y="127.99999999999999em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 140
+Description: Текстовое назначение платежа
+Pattern: ^[\w\W]{1,140}$
+</title>
+unstructured [0..1]
+</text>
+
+<rect x="22.200000000000003em" y="130em" width="9.600000000000001em" height="9.5em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="27.000000000000004em" y="131.3em" fill="black">
+<title>Поставщик услуг предоставляет постраничный ответ для операций GET, которые возвращают множественные записи.</title>
+Links
+</text>
+
+<text x="23.200000000000003em" y="133.3em" fill="darkslateblue">
+<title>Type: string
+Format: uri
+Description: Первая ссылка
+</title>
+first [0..1]
+</text>
+
+<text x="23.200000000000003em" y="134.60000000000002em" fill="darkslateblue">
+<title>Type: string
+Format: uri
+Description: Последняя ссылка
+</title>
+last [0..1]
+</text>
+
+<text x="23.200000000000003em" y="135.9em" fill="darkslateblue">
+<title>Type: string
+Format: uri
+Description: Следующая ссылка
+</title>
+next [0..1]
+</text>
+
+<text x="23.200000000000003em" y="137.20000000000002em" fill="darkslateblue">
+<title>Type: string
+Format: uri
+Description: Предыдущая ссылка
+</title>
+prev [0..1]
+</text>
+
+<text x="23.200000000000003em" y="138.5em" fill="darkslateblue">
+<title>Type: string
+Format: uri
+Description: Текущая ссылка
+</title>
+self [1..1]
+</text>
+
+<rect x="22.200000000000003em" y="140.5em" width="13.600000000000001em" height="4.3em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="29.000000000000004em" y="141.8em" fill="black">
+<title>Дополнительные данные о запросе. «totalPages», указывает на количество передаваемых страниц. Если передается более одной страницы, то элемент «totalPages» обязательно присутствует.</title>
+Meta
+</text>
+
+<text x="23.200000000000003em" y="143.8em" fill="darkslateblue">
+<title>Type: integer
+Format: int32
+Description: Указывает на количество передаваемых страниц
+</title>
+totalPages [0..1]
+</text>
+
+<line x1="16.200000000000003em" y1="2em" x2="18.200000000000003em" y2="2em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="18.200000000000003em" y1="2em" x2="18.200000000000003em" y2="2em" stroke="black" />
+<line x1="18.200000000000003em" y1="2em" x2="21.400000000000002em" y2="2em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="18.700000000000003em" y="1.5em">1..1</text>
+<line x1="25.400000000000002em" y1="2em" x2="27.400000000000002em" y2="2em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="27.400000000000002em" y1="2em" x2="27.400000000000002em" y2="2em" stroke="black" />
+<line x1="27.400000000000002em" y1="2em" x2="30.6em" y2="2em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="27.900000000000002em" y="1.5em">0..*</text>
+<line x1="54.60000000000001em" y1="2em" x2="56.60000000000001em" y2="2em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="56.60000000000001em" y1="2em" x2="56.60000000000001em" y2="2em" stroke="black" />
+<line x1="56.60000000000001em" y1="2em" x2="59.80000000000001em" y2="2em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="57.10000000000001em" y="1.5em">1..1</text>
+<line x1="54.60000000000001em" y1="2em" x2="56.60000000000001em" y2="2em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="56.60000000000001em" y1="2em" x2="56.60000000000001em" y2="8.6em" stroke="black" />
+<line x1="56.60000000000001em" y1="8.6em" x2="59.80000000000001em" y2="8.6em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="57.10000000000001em" y="8.1em">0..1</text>
+<line x1="54.60000000000001em" y1="2em" x2="56.60000000000001em" y2="2em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="56.60000000000001em" y1="2em" x2="56.60000000000001em" y2="16.5em" stroke="black" />
+<line x1="56.60000000000001em" y1="16.5em" x2="59.80000000000001em" y2="16.5em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="57.10000000000001em" y="16em">0..1</text>
+<line x1="72.60000000000001em" y1="16.5em" x2="74.60000000000001em" y2="16.5em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="74.60000000000001em" y1="16.5em" x2="74.60000000000001em" y2="16.5em" stroke="black" />
+<line x1="74.60000000000001em" y1="16.5em" x2="77.80000000000001em" y2="16.5em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="75.10000000000001em" y="16em">0..1</text>
+<line x1="98.60000000000001em" y1="16.5em" x2="100.60000000000001em" y2="16.5em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="100.60000000000001em" y1="16.5em" x2="100.60000000000001em" y2="16.5em" stroke="black" />
+<line x1="100.60000000000001em" y1="16.5em" x2="103.80000000000001em" y2="16.5em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="101.10000000000001em" y="16em">0..1</text>
+<line x1="72.60000000000001em" y1="16.5em" x2="74.60000000000001em" y2="16.5em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="74.60000000000001em" y1="16.5em" x2="74.60000000000001em" y2="23.1em" stroke="black" />
+<line x1="74.60000000000001em" y1="23.1em" x2="77.80000000000001em" y2="23.1em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="75.10000000000001em" y="22.6em">0..1</text>
+<line x1="54.60000000000001em" y1="2em" x2="56.60000000000001em" y2="2em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="56.60000000000001em" y1="2em" x2="56.60000000000001em" y2="29.7em" stroke="black" />
+<line x1="56.60000000000001em" y1="29.7em" x2="59.80000000000001em" y2="29.7em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="57.10000000000001em" y="29.2em">0..1</text>
+<line x1="54.60000000000001em" y1="2em" x2="56.60000000000001em" y2="2em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="56.60000000000001em" y1="2em" x2="56.60000000000001em" y2="36.3em" stroke="black" />
+<line x1="56.60000000000001em" y1="36.3em" x2="59.80000000000001em" y2="36.3em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="57.10000000000001em" y="35.8em">0..1</text>
+<line x1="80.60000000000001em" y1="36.3em" x2="82.60000000000001em" y2="36.3em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="82.60000000000001em" y1="36.3em" x2="82.60000000000001em" y2="36.3em" stroke="black" />
+<line x1="82.60000000000001em" y1="36.3em" x2="85.80000000000001em" y2="36.3em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="83.10000000000001em" y="35.8em">1..*</text>
+<line x1="80.60000000000001em" y1="36.3em" x2="82.60000000000001em" y2="36.3em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="82.60000000000001em" y1="36.3em" x2="82.60000000000001em" y2="42.9em" stroke="black" />
+<line x1="82.60000000000001em" y1="42.9em" x2="85.80000000000001em" y2="42.9em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="83.10000000000001em" y="42.4em">0..1</text>
+<line x1="54.60000000000001em" y1="2em" x2="56.60000000000001em" y2="2em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="56.60000000000001em" y1="2em" x2="56.60000000000001em" y2="57.3em" stroke="black" />
+<line x1="56.60000000000001em" y1="57.3em" x2="59.80000000000001em" y2="57.3em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="57.10000000000001em" y="56.8em">0..1</text>
+<line x1="54.60000000000001em" y1="2em" x2="56.60000000000001em" y2="2em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="56.60000000000001em" y1="2em" x2="56.60000000000001em" y2="65.2em" stroke="black" />
+<line x1="56.60000000000001em" y1="65.2em" x2="59.80000000000001em" y2="65.2em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="57.10000000000001em" y="64.7em">0..1</text>
+<line x1="54.60000000000001em" y1="2em" x2="56.60000000000001em" y2="2em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="56.60000000000001em" y1="2em" x2="56.60000000000001em" y2="71.8em" stroke="black" />
+<line x1="56.60000000000001em" y1="71.8em" x2="59.80000000000001em" y2="71.8em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="57.10000000000001em" y="71.3em">0..1</text>
+<line x1="80.60000000000001em" y1="71.8em" x2="82.60000000000001em" y2="71.8em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="82.60000000000001em" y1="71.8em" x2="82.60000000000001em" y2="71.8em" stroke="black" />
+<line x1="82.60000000000001em" y1="71.8em" x2="85.80000000000001em" y2="71.8em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="83.10000000000001em" y="71.3em">1..*</text>
+<line x1="80.60000000000001em" y1="71.8em" x2="82.60000000000001em" y2="71.8em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="82.60000000000001em" y1="71.8em" x2="82.60000000000001em" y2="78.39999999999999em" stroke="black" />
+<line x1="82.60000000000001em" y1="78.39999999999999em" x2="85.80000000000001em" y2="78.39999999999999em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="83.10000000000001em" y="77.89999999999999em">0..1</text>
+<line x1="54.60000000000001em" y1="2em" x2="56.60000000000001em" y2="2em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="56.60000000000001em" y1="2em" x2="56.60000000000001em" y2="92.8em" stroke="black" />
+<line x1="56.60000000000001em" y1="92.8em" x2="59.80000000000001em" y2="92.8em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="57.10000000000001em" y="92.3em">0..1</text>
+<line x1="54.60000000000001em" y1="2em" x2="56.60000000000001em" y2="2em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="56.60000000000001em" y1="2em" x2="56.60000000000001em" y2="100.7em" stroke="black" />
+<line x1="56.60000000000001em" y1="100.7em" x2="59.80000000000001em" y2="100.7em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="57.10000000000001em" y="100.2em">0..1</text>
+<line x1="54.60000000000001em" y1="2em" x2="56.60000000000001em" y2="2em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="56.60000000000001em" y1="2em" x2="56.60000000000001em" y2="107.3em" stroke="black" />
+<line x1="56.60000000000001em" y1="107.3em" x2="59.80000000000001em" y2="107.3em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="57.10000000000001em" y="106.8em">0..1</text>
+<line x1="73.4em" y1="107.3em" x2="75.4em" y2="107.3em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="75.4em" y1="107.3em" x2="75.4em" y2="107.3em" stroke="black" />
+<line x1="75.4em" y1="107.3em" x2="78.60000000000001em" y2="107.3em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="75.9em" y="106.8em">0..1</text>
+<line x1="73.4em" y1="107.3em" x2="75.4em" y2="107.3em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="75.4em" y1="107.3em" x2="75.4em" y2="113.89999999999999em" stroke="black" />
+<line x1="75.4em" y1="113.89999999999999em" x2="78.60000000000001em" y2="113.89999999999999em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="75.9em" y="113.39999999999999em">0..1</text>
+<line x1="54.60000000000001em" y1="2em" x2="56.60000000000001em" y2="2em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="56.60000000000001em" y1="2em" x2="56.60000000000001em" y2="125.69999999999999em" stroke="black" />
+<line x1="56.60000000000001em" y1="125.69999999999999em" x2="59.80000000000001em" y2="125.69999999999999em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="57.10000000000001em" y="125.19999999999999em">0..1</text>
+<line x1="16.200000000000003em" y1="2em" x2="18.200000000000003em" y2="2em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="18.200000000000003em" y1="2em" x2="18.200000000000003em" y2="131em" stroke="black" />
+<line x1="18.200000000000003em" y1="131em" x2="21.400000000000002em" y2="131em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="18.700000000000003em" y="130.5em">1..1</text>
+<line x1="16.200000000000003em" y1="2em" x2="18.200000000000003em" y2="2em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="18.200000000000003em" y1="2em" x2="18.200000000000003em" y2="141.5em" stroke="black" />
+<line x1="18.200000000000003em" y1="141.5em" x2="21.400000000000002em" y2="141.5em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="18.700000000000003em" y="141em">1..1</text></svg>

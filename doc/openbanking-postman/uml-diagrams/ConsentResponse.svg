@@ -1,0 +1,186 @@
+<?xml version="1.0" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" font-family="monospace" width="44em" height="31.2em" style="background-color:white"><defs>
+	<marker id="Triangle"
+		viewBox="0 0 10 10" refX="0" refY="5" 
+		markerUnits="strokeWidth"
+		markerWidth="15" markerHeight="10"
+		orient="auto">
+		<path d="M 0 0 L 10 5 L 0 10 z" />
+	</marker>
+		
+		<marker id="Diamond"
+		viewBox="0 0 16 10" refX="0" refY="5" 
+		markerUnits="strokeWidth"
+		markerWidth="20" markerHeight="10"
+		orient="auto">
+		<path d="M 0 5 L 8 10 L 16 5 L 8 0 z" />
+	</marker>   
+</defs>
+<rect x="1em" y="1em" width="12em" height="3em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="7em" y="2.3em" fill="black">
+<title>Ресурс согласия на доступ к счету</title>
+ConsentResponse
+</text>
+
+<rect x="19em" y="1em" width="24em" height="13.4em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="31em" y="2.3em" fill="black">
+<title>Полезная нагрузка ответа согласия на доступ к счету</title>
+Data
+</text>
+
+<text x="20em" y="4.3em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 40
+Description: Уникальный идентификатор, предназначенный для идентификации ресурса согласия на доступ к счету
+Pattern: ^[a-zA-Z0-9-]{1,40}$
+</title>
+consentId [1..1]
+</text>
+
+<text x="20em" y="5.6em" fill="darkslateblue">
+<title>Type: string
+Format: date-time
+Description: Формат даты и времени
+</title>
+creationDateTime [1..1]
+</text>
+
+<text x="20em" y="6.9em" fill="darkslateblue">
+<title>Type: string
+Format: date-time
+Description: Формат даты и времени
+</title>
+expirationDateTime [0..1]
+</text>
+
+<text x="20em" y="8.2em" fill="darkslateblue">
+<title>Type: string
+Description: Типы разрешений на доступ к счету
+Values:
+ - ReadAccountsBasic
+ - ReadAccountsDetail
+ - ReadBalances
+ - ReadParty
+ - ReadProducts
+ - ReadStandingOrdersBasic
+ - ReadStandingOrdersDetail
+ - ReadStatementsBasic
+ - ReadStatementsDetail
+ - ReadTransactionsBasic
+ - ReadTransactionsCredits
+ - ReadTransactionsDebits
+ - ReadTransactionsDetail
+ - ReadPaymentCards
+</title>
+permissions [0..1]
+</text>
+
+<text x="20em" y="9.5em" fill="darkslateblue">
+<title>Type: string
+Description: Статус ресурса account-consent
+Values:
+ - AwaitingAuthorisation
+ - Rejected
+ - Authorised
+ - Revoked
+</title>
+status [1..1]
+</text>
+
+<text x="20em" y="10.8em" fill="darkslateblue">
+<title>Type: string
+Format: date-time
+Description: Формат даты и времени
+</title>
+statusUpdateDateTime [1..1]
+</text>
+
+<text x="20em" y="12.100000000000001em" fill="darkslateblue">
+<title>Type: string
+Format: date-time
+Description: Формат даты и времени
+</title>
+transactionFromDateTime [0..1]
+</text>
+
+<text x="20em" y="13.399999999999999em" fill="darkslateblue">
+<title>Type: string
+Format: date-time
+Description: Формат даты и времени
+</title>
+transactionToDateTime [0..1]
+</text>
+
+<rect x="19em" y="15.4em" width="9.600000000000001em" height="9.5em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="23.8em" y="16.7em" fill="black">
+<title>Поставщик услуг предоставляет постраничный ответ для операций GET, которые возвращают множественные записи.</title>
+Links
+</text>
+
+<text x="20em" y="18.7em" fill="darkslateblue">
+<title>Type: string
+Format: uri
+Description: Первая ссылка
+</title>
+first [0..1]
+</text>
+
+<text x="20em" y="20em" fill="darkslateblue">
+<title>Type: string
+Format: uri
+Description: Последняя ссылка
+</title>
+last [0..1]
+</text>
+
+<text x="20em" y="21.3em" fill="darkslateblue">
+<title>Type: string
+Format: uri
+Description: Следующая ссылка
+</title>
+next [0..1]
+</text>
+
+<text x="20em" y="22.6em" fill="darkslateblue">
+<title>Type: string
+Format: uri
+Description: Предыдущая ссылка
+</title>
+prev [0..1]
+</text>
+
+<text x="20em" y="23.9em" fill="darkslateblue">
+<title>Type: string
+Format: uri
+Description: Текущая ссылка
+</title>
+self [1..1]
+</text>
+
+<rect x="19em" y="25.9em" width="13.600000000000001em" height="4.3em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="25.8em" y="27.2em" fill="black">
+<title>Дополнительные данные о запросе. «totalPages», указывает на количество передаваемых страниц. Если передается более одной страницы, то элемент «totalPages» обязательно присутствует.</title>
+Meta
+</text>
+
+<text x="20em" y="29.2em" fill="darkslateblue">
+<title>Type: integer
+Format: int32
+Description: Указывает на количество передаваемых страниц
+</title>
+totalPages [0..1]
+</text>
+
+<line x1="13em" y1="2em" x2="15em" y2="2em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="15em" y1="2em" x2="15em" y2="2em" stroke="black" />
+<line x1="15em" y1="2em" x2="18.2em" y2="2em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="15.5em" y="1.5em">1..1</text>
+<line x1="13em" y1="2em" x2="15em" y2="2em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="15em" y1="2em" x2="15em" y2="16.4em" stroke="black" />
+<line x1="15em" y1="16.4em" x2="18.2em" y2="16.4em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="15.5em" y="15.9em">1..1</text>
+<line x1="13em" y1="2em" x2="15em" y2="2em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="15em" y1="2em" x2="15em" y2="26.9em" stroke="black" />
+<line x1="15em" y1="26.9em" x2="18.2em" y2="26.9em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="15.5em" y="26.4em">1..1</text></svg>

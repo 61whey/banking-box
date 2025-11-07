@@ -1,0 +1,80 @@
+<?xml version="1.0" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" font-family="monospace" width="43.2em" height="10.2em" style="background-color:white"><defs>
+	<marker id="Triangle"
+		viewBox="0 0 10 10" refX="0" refY="5" 
+		markerUnits="strokeWidth"
+		markerWidth="15" markerHeight="10"
+		orient="auto">
+		<path d="M 0 0 L 10 5 L 0 10 z" />
+	</marker>
+		
+		<marker id="Diamond"
+		viewBox="0 0 16 10" refX="0" refY="5" 
+		markerUnits="strokeWidth"
+		markerWidth="20" markerHeight="10"
+		orient="auto">
+		<path d="M 0 5 L 8 10 L 16 5 L 8 0 z" />
+	</marker>   
+</defs>
+<rect x="1em" y="1em" width="11.200000000000001em" height="3em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="6.6000000000000005em" y="2.3em" fill="black">
+<title>Запрос создания ресурса согласия на доступ к счету</title>
+ConsentRequest
+</text>
+
+<rect x="18.200000000000003em" y="1em" width="24em" height="8.2em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="30.200000000000003em" y="2.3em" fill="black">
+<title>Согласие на доступ к счету</title>
+Data
+</text>
+
+<text x="19.200000000000003em" y="4.3em" fill="darkslateblue">
+<title>Type: string
+Format: date-time
+Description: Формат даты и времени
+</title>
+expirationDateTime [0..1]
+</text>
+
+<text x="19.200000000000003em" y="5.6em" fill="darkslateblue">
+<title>Type: string
+Description: Типы разрешений на доступ к счету
+Values:
+ - ReadAccountsBasic
+ - ReadAccountsDetail
+ - ReadBalances
+ - ReadParty
+ - ReadProducts
+ - ReadStandingOrdersBasic
+ - ReadStandingOrdersDetail
+ - ReadStatementsBasic
+ - ReadStatementsDetail
+ - ReadTransactionsBasic
+ - ReadTransactionsCredits
+ - ReadTransactionsDebits
+ - ReadTransactionsDetail
+ - ReadPaymentCards
+</title>
+permissions [0..1]
+</text>
+
+<text x="19.200000000000003em" y="6.9em" fill="darkslateblue">
+<title>Type: string
+Format: date-time
+Description: Формат даты и времени
+</title>
+transactionFromDateTime [0..1]
+</text>
+
+<text x="19.200000000000003em" y="8.2em" fill="darkslateblue">
+<title>Type: string
+Format: date-time
+Description: Формат даты и времени
+</title>
+transactionToDateTime [0..1]
+</text>
+
+<line x1="12.200000000000001em" y1="2em" x2="14.200000000000001em" y2="2em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="14.200000000000001em" y1="2em" x2="14.200000000000001em" y2="2em" stroke="black" />
+<line x1="14.200000000000001em" y1="2em" x2="17.400000000000002em" y2="2em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="14.700000000000003em" y="1.5em">1..1</text></svg>

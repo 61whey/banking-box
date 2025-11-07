@@ -1,0 +1,3613 @@
+openapi: 3.0.3
+info:
+  title: >-
+    Получение информации о счете клиента третьей стороной (в рамках пилота с
+    учетом интерфейсов для получении информации об истории операций)
+  description: >-
+    API получения информации о счете, операциях по счету и продуктах на счете
+    клиента третьей стороной для Среды Открытых банковских интерфейсов
+  version: 1.3.6
+  termsOfService: https://openbankingrussia.ru/terms/01
+  contact:
+    name: Ассоциация развития финансовых технологий (Ассоциация ФинТех)
+    url: https://fintechru.org
+    email: info@openbankingrussia.ru
+  license:
+    name: open-licence
+    url: https://openbankingrussia.ru
+  x-logo:
+    url: static/logo.svg
+    altText: Открытые банковские интерфейсы
+    href: https://openbankingrussia.ru/
+servers:
+  - url: https://sb0.openbankingrussia.ru/sandbox0/open-banking/v1.3/aisp
+    description: Эмулятор Сервера Ресурсов ППИУ Песочница 0
+  - url: https://sb-rs.openbankingrussia.ru/sandbox/open-banking/v1.3/aisp
+    description: Эмулятор Сервера Ресурсов ППИУ Песочница
+tags:
+  - name: AccountConsents
+    description: Согласие на доступ к счету
+  - name: Accounts
+    description: Информация о счете
+  - name: Balances
+    description: Остаток на счете
+  - name: Transactions
+    description: Операции по счету
+  - name: Products
+    description: Финансовые продукты на счете
+  - name: PaymentCards
+    description: Платежные карты
+paths:
+  /account-consents:
+    post:
+      operationId: createAccountAccessConsents
+      tags:
+        - AccountConsents
+      summary: Создание ресурса согласия на доступ к счету
+      description: >-
+        Конечная точка позволяет СПИУ создавать на стороне ППИУ новый ресурс
+        согласия на доступ к счету (account-consents)
+      parameters:
+        - $ref: '#/components/parameters/x-fapi-auth-date'
+        - $ref: '#/components/parameters/x-fapi-customer-ip-address'
+        - $ref: '#/components/parameters/x-fapi-interaction-id'
+        - $ref: '#/components/parameters/x-idempotency-key'
+        - $ref: '#/components/parameters/x-jws-signature'
+        - $ref: '#/components/parameters/x-customer-user-agent'
+      requestBody:
+        description: Запрос создания ресурса согласия account-consent
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsentRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/201AccountAccessConsentsCreated'
+        '400':
+          $ref: '#/components/responses/400Error-req'
+        '401':
+          $ref: '#/components/responses/401Error-req'
+        '403':
+          $ref: '#/components/responses/403Error-req'
+        '405':
+          $ref: '#/components/responses/405Error-req'
+        '406':
+          $ref: '#/components/responses/406Error-req'
+        '429':
+          $ref: '#/components/responses/429Error-req'
+        '500':
+          $ref: '#/components/responses/500Error-req'
+        '501':
+          $ref: '#/components/responses/501Error-req'
+        '503':
+          $ref: '#/components/responses/503Error-req'
+      security:
+        - TPPOAuth2Security:
+            - accounts
+  /account-consents/{consentId}:
+    get:
+      operationId: getAccountAccessConsentsConsentId
+      tags:
+        - AccountConsents
+      summary: Получение ресурса согласия
+      description: >-
+        Конечная точка позволяет СПИУ получать ресурс согласия на доступ к счету
+        и проверять его состояние по идентификатуру ресурса
+      parameters:
+        - $ref: '#/components/parameters/consentId'
+        - $ref: '#/components/parameters/x-fapi-auth-date'
+        - $ref: '#/components/parameters/x-fapi-customer-ip-address'
+        - $ref: '#/components/parameters/x-fapi-interaction-id'
+        - $ref: '#/components/parameters/x-customer-user-agent'
+      responses:
+        '200':
+          $ref: '#/components/responses/200AccountAccessConsentsConsentIdRead'
+        '400':
+          $ref: '#/components/responses/400Error-req'
+        '401':
+          $ref: '#/components/responses/401Error-req'
+        '403':
+          $ref: '#/components/responses/403Error-req'
+        '405':
+          $ref: '#/components/responses/405Error-req'
+        '406':
+          $ref: '#/components/responses/406Error-req'
+        '429':
+          $ref: '#/components/responses/429Error-req'
+        '500':
+          $ref: '#/components/responses/500Error-req'
+        '501':
+          $ref: '#/components/responses/501Error-req'
+        '503':
+          $ref: '#/components/responses/503Error-req'
+      security:
+        - TPPOAuth2Security:
+            - accounts
+    delete:
+      operationId: deleteAccountAccessConsentsConsentId
+      tags:
+        - AccountConsents
+      summary: Отзыв согласия на доступ к счету
+      description: >-
+        Конечная точка позволяет СПИУ удалять ресурс согласия на доступ к счету,
+        если Пользователь его отозвал на стороне СПИУ.
+      parameters:
+        - $ref: '#/components/parameters/consentId'
+        - $ref: '#/components/parameters/x-fapi-auth-date'
+        - $ref: '#/components/parameters/x-fapi-customer-ip-address'
+        - $ref: '#/components/parameters/x-fapi-interaction-id'
+        - $ref: '#/components/parameters/x-customer-user-agent'
+      responses:
+        '204':
+          $ref: '#/components/responses/204Deleted'
+        '400':
+          $ref: '#/components/responses/400Error-req'
+        '401':
+          $ref: '#/components/responses/401Error-req'
+        '403':
+          $ref: '#/components/responses/403Error-req'
+        '405':
+          $ref: '#/components/responses/405Error-req'
+        '406':
+          $ref: '#/components/responses/406Error-req'
+        '429':
+          $ref: '#/components/responses/429Error-req'
+        '500':
+          $ref: '#/components/responses/500Error-req'
+        '501':
+          $ref: '#/components/responses/501Error-req'
+        '503':
+          $ref: '#/components/responses/503Error-req'
+      security:
+        - TPPOAuth2Security:
+            - accounts
+  /accounts:
+    get:
+      operationId: getAccounts
+      tags:
+        - Accounts
+      summary: Получение списка счетов
+      description: >-
+        Конечная точка позволяет СПИУ получать полный список счетов и их
+        идентификаторы (accountId), которые были авторизованы Пользователем на
+        стороне ППИУ.
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/x-fapi-auth-date'
+        - $ref: '#/components/parameters/x-fapi-customer-ip-address'
+        - $ref: '#/components/parameters/x-fapi-interaction-id'
+        - $ref: '#/components/parameters/x-customer-user-agent'
+      responses:
+        '200':
+          $ref: '#/components/responses/200GetAccounts'
+        '400':
+          $ref: '#/components/responses/400Error-req'
+        '401':
+          $ref: '#/components/responses/401Error-req'
+        '403':
+          $ref: '#/components/responses/403Error-req'
+        '405':
+          $ref: '#/components/responses/405Error-req'
+        '406':
+          $ref: '#/components/responses/406Error-req'
+        '429':
+          $ref: '#/components/responses/429Error-req'
+        '500':
+          $ref: '#/components/responses/500Error-req'
+        '501':
+          $ref: '#/components/responses/501Error-req'
+        '503':
+          $ref: '#/components/responses/503Error-req'
+      security:
+        - PSUOAuth2Security:
+            - accounts
+  /accounts/{accountId}:
+    get:
+      operationId: getAccountsaccountId
+      tags:
+        - Accounts
+      summary: Получение детальной информации о счете по его идентификатору `accountId`
+      description: >-
+        Конечная точка позволяет СПИУ получать детальную информацию о счете по
+        идентификатору accountId (который был получен при вызове конечной точке
+        списка счетов GET /accounts)
+      parameters:
+        - $ref: '#/components/parameters/accountId'
+        - $ref: '#/components/parameters/x-fapi-auth-date'
+        - $ref: '#/components/parameters/x-fapi-customer-ip-address'
+        - $ref: '#/components/parameters/x-fapi-interaction-id'
+        - $ref: '#/components/parameters/x-customer-user-agent'
+      responses:
+        '200':
+          $ref: '#/components/responses/200GetAccountsaccountId'
+        '400':
+          $ref: '#/components/responses/400Error-req'
+        '401':
+          $ref: '#/components/responses/401Error-req'
+        '403':
+          $ref: '#/components/responses/403Error-req'
+        '405':
+          $ref: '#/components/responses/405Error-req'
+        '406':
+          $ref: '#/components/responses/406Error-req'
+        '429':
+          $ref: '#/components/responses/429Error-req'
+        '500':
+          $ref: '#/components/responses/500Error-req'
+        '501':
+          $ref: '#/components/responses/501Error-req'
+        '503':
+          $ref: '#/components/responses/503Error-req'
+      security:
+        - PSUOAuth2Security:
+            - accounts
+  /accounts/{accountId}/balances:
+    get:
+      operationId: getAccountsaccountIdBalances
+      tags:
+        - Balances
+      summary: Баланс банковского счета по идентификатору accountId
+      description: >-
+        Конечная точка позволяет СПИУ получать информацию об остатке на счете с
+        идентификатором accountId
+      parameters:
+        - $ref: '#/components/parameters/accountId'
+        - $ref: '#/components/parameters/x-fapi-auth-date'
+        - $ref: '#/components/parameters/x-fapi-customer-ip-address'
+        - $ref: '#/components/parameters/x-fapi-interaction-id'
+        - $ref: '#/components/parameters/x-customer-user-agent'
+      responses:
+        '200':
+          $ref: '#/components/responses/200GetAccountsaccountIdBalances'
+        '400':
+          $ref: '#/components/responses/400Error-req'
+        '401':
+          $ref: '#/components/responses/401Error-req'
+        '403':
+          $ref: '#/components/responses/403Error-req'
+        '405':
+          $ref: '#/components/responses/405Error-req'
+        '406':
+          $ref: '#/components/responses/406Error-req'
+        '429':
+          $ref: '#/components/responses/429Error-req'
+        '500':
+          $ref: '#/components/responses/500Error-req'
+        '501':
+          $ref: '#/components/responses/501Error-req'
+        '503':
+          $ref: '#/components/responses/503Error-req'
+      security:
+        - PSUOAuth2Security:
+            - accounts
+  /balances:
+    get:
+      operationId: getBalances
+      tags:
+        - Balances
+      summary: Остаток денежных средств по всем счетам
+      description: >-
+        Конечная точка позволяет СПИУ получать остаток по всем счетам, которые
+        были авторизованы Пользователем для доступа с помощью согласия
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/x-fapi-auth-date'
+        - $ref: '#/components/parameters/x-fapi-customer-ip-address'
+        - $ref: '#/components/parameters/x-fapi-interaction-id'
+        - $ref: '#/components/parameters/x-customer-user-agent'
+      responses:
+        '200':
+          $ref: '#/components/responses/200GetBalances'
+        '400':
+          $ref: '#/components/responses/400Error-req'
+        '401':
+          $ref: '#/components/responses/401Error-req'
+        '403':
+          $ref: '#/components/responses/403Error-req'
+        '405':
+          $ref: '#/components/responses/405Error-req'
+        '406':
+          $ref: '#/components/responses/406Error-req'
+        '429':
+          $ref: '#/components/responses/429Error-req'
+        '500':
+          $ref: '#/components/responses/500Error-req'
+        '501':
+          $ref: '#/components/responses/501Error-req'
+        '503':
+          $ref: '#/components/responses/503Error-req'
+      security:
+        - PSUOAuth2Security:
+            - accounts
+  /accounts/{accountId}/transactions:
+    get:
+      operationId: getAccountsaccountIdTransactions
+      tags:
+        - Transactions
+      summary: Ресурс операции по счету с идентификатором accountId
+      description: >-
+        Конечная точка извлекает ресурс операции по счету с идентификатором
+        accountId, который получается с помощью вызова конечной точки GET
+        /accounts
+      parameters:
+        - $ref: '#/components/parameters/accountId'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/fromBookingDateTime'
+        - $ref: '#/components/parameters/toBookingDateTime'
+        - $ref: '#/components/parameters/x-fapi-auth-date'
+        - $ref: '#/components/parameters/x-fapi-customer-ip-address'
+        - $ref: '#/components/parameters/x-fapi-interaction-id'
+        - $ref: '#/components/parameters/x-customer-user-agent'
+      responses:
+        '200':
+          $ref: '#/components/responses/200GetAccountsaccountIdTransactions'
+        '400':
+          $ref: '#/components/responses/400Error-req'
+        '401':
+          $ref: '#/components/responses/401Error-req'
+        '403':
+          $ref: '#/components/responses/403Error-req'
+        '405':
+          $ref: '#/components/responses/405Error-req'
+        '406':
+          $ref: '#/components/responses/406Error-req'
+        '429':
+          $ref: '#/components/responses/429Error-req'
+        '500':
+          $ref: '#/components/responses/500Error-req'
+        '501':
+          $ref: '#/components/responses/501Error-req'
+        '503':
+          $ref: '#/components/responses/503Error-req'
+      security:
+        - PSUOAuth2Security:
+            - accounts
+  /transactions:
+    get:
+      operationId: getTransactions
+      tags:
+        - Transactions
+      summary: Список операций по всем счетам
+      description: >-
+        Конечная точка позволяет СПИУ получить список операций по всем счетам,
+        которые авторизованы пользователем с помощью согласия
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/fromBookingDateTime'
+        - $ref: '#/components/parameters/toBookingDateTime'
+        - $ref: '#/components/parameters/x-fapi-auth-date'
+        - $ref: '#/components/parameters/x-fapi-customer-ip-address'
+        - $ref: '#/components/parameters/x-fapi-interaction-id'
+        - $ref: '#/components/parameters/x-customer-user-agent'
+      responses:
+        '200':
+          $ref: '#/components/responses/200GetTransactions'
+        '400':
+          $ref: '#/components/responses/400Error-req'
+        '401':
+          $ref: '#/components/responses/401Error-req'
+        '403':
+          $ref: '#/components/responses/403Error-req'
+        '405':
+          $ref: '#/components/responses/405Error-req'
+        '406':
+          $ref: '#/components/responses/406Error-req'
+        '429':
+          $ref: '#/components/responses/429Error-req'
+        '500':
+          $ref: '#/components/responses/500Error-req'
+        '501':
+          $ref: '#/components/responses/501Error-req'
+        '503':
+          $ref: '#/components/responses/503Error-req'
+      security:
+        - PSUOAuth2Security:
+            - accounts
+  /products:
+    get:
+      tags:
+        - Products
+      summary: Список приобретенных финансовых продуктов
+      description: >-
+        Конечная точка позволяет получить информацию о финансовых продуктах по
+        всем счетам, которые были авторизованы Пользователем для доступа с
+        помощью согласия
+      operationId: getAccountsProductList
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/x-fapi-auth-date'
+        - $ref: '#/components/parameters/x-fapi-customer-ip-address'
+        - $ref: '#/components/parameters/x-fapi-interaction-id'
+        - $ref: '#/components/parameters/x-customer-user-agent'
+      responses:
+        '200':
+          $ref: '#/components/responses/200AcoountsProductListRead'
+        '400':
+          $ref: '#/components/responses/400Error-req'
+        '401':
+          $ref: '#/components/responses/401Error-req'
+        '403':
+          $ref: '#/components/responses/403Error-req'
+        '405':
+          $ref: '#/components/responses/405Error-req'
+        '406':
+          $ref: '#/components/responses/406Error-req'
+        '429':
+          $ref: '#/components/responses/429Error-req'
+        '500':
+          $ref: '#/components/responses/500Error-req'
+        '501':
+          $ref: '#/components/responses/501Error-req'
+        '503':
+          $ref: '#/components/responses/503Error-req'
+      security:
+        - PSUOAuth2Security:
+            - accounts
+  /payment-cards:
+    get:
+      tags:
+        - PaymentCards
+      summary: Получение списка платежных карт
+      description: >-
+        Конечная точка позволяет получать информацию о платежных картах и их
+        идентификаторы `paymentCardId` по всем счетам пользователя на которые он
+        дал согласие
+      operationId: getPaymentCards
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/x-fapi-auth-date'
+        - $ref: '#/components/parameters/x-fapi-customer-ip-address'
+        - $ref: '#/components/parameters/x-fapi-interaction-id'
+        - $ref: '#/components/parameters/x-customer-user-agent'
+      responses:
+        '200':
+          $ref: '#/components/responses/200AcoountPaymentCardsRead'
+        '400':
+          $ref: '#/components/responses/400Error-req'
+        '401':
+          $ref: '#/components/responses/401Error-req'
+        '403':
+          $ref: '#/components/responses/403Error-req'
+        '405':
+          $ref: '#/components/responses/405Error-req'
+        '406':
+          $ref: '#/components/responses/406Error-req'
+        '429':
+          $ref: '#/components/responses/429Error-req'
+        '500':
+          $ref: '#/components/responses/500Error-req'
+        '501':
+          $ref: '#/components/responses/501Error-req'
+        '503':
+          $ref: '#/components/responses/503Error-req'
+      security:
+        - PSUOAuth2Security:
+            - accounts
+  /accounts/{accountId}/payment-cards:
+    get:
+      tags:
+        - PaymentCards
+      summary: Получение списка платежных карт по идентификатору счета
+      description: >-
+        Конечная точка позволяет получать информацию о платежных картах и их
+        идентификаторы `paymentCardId` по идентификатору счета `accountId`.
+      operationId: getAccountPaymentCards
+      parameters:
+        - $ref: '#/components/parameters/accountId'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/x-fapi-auth-date'
+        - $ref: '#/components/parameters/x-fapi-customer-ip-address'
+        - $ref: '#/components/parameters/x-fapi-interaction-id'
+        - $ref: '#/components/parameters/x-customer-user-agent'
+      responses:
+        '200':
+          $ref: '#/components/responses/200AcoountPaymentCardsRead'
+        '400':
+          $ref: '#/components/responses/400Error-req'
+        '401':
+          $ref: '#/components/responses/401Error-req'
+        '403':
+          $ref: '#/components/responses/403Error-req'
+        '405':
+          $ref: '#/components/responses/405Error-req'
+        '406':
+          $ref: '#/components/responses/406Error-req'
+        '429':
+          $ref: '#/components/responses/429Error-req'
+        '500':
+          $ref: '#/components/responses/500Error-req'
+        '501':
+          $ref: '#/components/responses/501Error-req'
+        '503':
+          $ref: '#/components/responses/503Error-req'
+      security:
+        - PSUOAuth2Security:
+            - accounts
+  /payment-card-balances:
+    get:
+      tags:
+        - PaymentCards
+      summary: Остаток денежных средств, доступный по всем платежным картам
+      description: >-
+        Конечная точка позволяет получить информацию об остатке денежных
+        средств, в разрезе платежных карт по всем счетам Пользователя, по
+        которым он дал согласие
+      operationId: getPaymentCardBalances
+      parameters:
+        - $ref: '#/components/parameters/x-fapi-auth-date'
+        - $ref: '#/components/parameters/x-fapi-customer-ip-address'
+        - $ref: '#/components/parameters/x-fapi-interaction-id'
+        - $ref: '#/components/parameters/x-customer-user-agent'
+      responses:
+        '200':
+          $ref: '#/components/responses/200PaymentCardBalancesRead'
+        '400':
+          $ref: '#/components/responses/400Error-req'
+        '401':
+          $ref: '#/components/responses/401Error-req'
+        '403':
+          $ref: '#/components/responses/403Error-req'
+        '405':
+          $ref: '#/components/responses/405Error-req'
+        '406':
+          $ref: '#/components/responses/406Error-req'
+        '429':
+          $ref: '#/components/responses/429Error-req'
+        '500':
+          $ref: '#/components/responses/500Error-req'
+        '501':
+          $ref: '#/components/responses/501Error-req'
+        '503':
+          $ref: '#/components/responses/503Error-req'
+      security:
+        - PSUOAuth2Security:
+            - accounts
+components:
+  securitySchemes:
+    TPPOAuth2Security:
+      type: oauth2
+      description: >-
+        Сторонний поставщик использует поток авторизации сlient сredentional для
+        доступа к ресурсам ППИУ
+      flows:
+        clientCredentials:
+          tokenUrl: https://sb0.openbankingrussia.ru/sandbox0/as/aft/connect/token
+          scopes:
+            accounts: Доступ к информации о счете
+    PSUOAuth2Security:
+      type: oauth2
+      description: >-
+        Поток авторизации, требующий получения Сторонним поставщиком авторизации
+        конечного Пользователя на доступ к ресурсам на сервере авторизации ППИУ.
+      flows:
+        authorizationCode:
+          authorizationUrl: https://sb0.openbankingrussia.ru/sandbox0/as/aft/connect/authorize
+          tokenUrl: https://sb0.openbankingrussia.ru/sandbox0/as/aft/connect/token
+          scopes:
+            accounts: Доступ к информации о счете
+  parameters:
+    x-fapi-auth-date:
+      in: header
+      name: x-fapi-auth-date
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 29
+        pattern: ^[a-zA-Z0-9 :,]{29}$
+      required: false
+      description: >-
+        Время последнего входа Пользователя в систему с TPP. Значение
+        предоставляется в виде HTTP-date, как в разделе 7.1.1.1 [RFC7231].
+        Например, x-fapi-auth-date: Mon, 26 Aug 2019 12:23:11 GMT
+      example: Mon, 26 Aug 2019 12:23:11 GMT
+    x-fapi-customer-ip-address:
+      in: header
+      name: x-fapi-customer-ip-address
+      schema:
+        type: string
+        minLength: 0
+        maxLength: 21
+        pattern: ^([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}|(\d{1,3}\.){3}\d{1,3}$
+        example: 172.123.123.123
+      required: false
+      description: >-
+        IP-адрес Пользователя, если Пользователь в данный момент подключен к
+        Стороннему Поставщику (авторизован в приложении Стороннего Поставщика).
+    x-fapi-interaction-id:
+      in: header
+      name: x-fapi-interaction-id
+      required: true
+      description: >-
+        RFC4122 UID, используемый в качестве идентификатора корреляции. Если
+        необходимо, то Сторонний поставщик передает обратно значение
+        идентификатора корреляции в заголовке ответа x-fapi-interaction-id.
+      schema:
+        type: string
+        format: uuid
+        description: >-
+          Универсальный уникальный идентификатор (UUID) версии 4, в соответствии
+          с IETC RFC 4122 "Universally Unique IDentifier (UUID) URN Namespace".
+      example: 97ed4827-7b6f-4491-a06f-b548d5a7512d
+    x-idempotency-key:
+      name: x-idempotency-key
+      in: header
+      description: >-
+        Уникальный идентификатор запроса для поддержки идемпотентности.
+        Обязательно для запросов POST к конечным точкам идемпотентного ресурса.
+        Для других запросов не указывается.
+      required: false
+      schema:
+        type: string
+        format: uuid
+    x-jws-signature:
+      name: x-jws-signature
+      in: header
+      required: true
+      description: Отделяемая подпись полезной нагрузки в формате JWS
+      schema:
+        type: string
+    x-customer-user-agent:
+      in: header
+      name: x-customer-user-agent
+      schema:
+        type: string
+      description: >-
+        В заголовке указывается тип устройства (user-agent), который использует
+        Пользователь. Сторонний Поставщик может заполнить это поле значением
+        типа устройства (user-agent), указанным Пользователем. Если Пользователь
+        использует мобильное приложение Стороннего Поставщика, Сторонний
+        Поставщик проверяет, что строка типа устройства (user-agent) отличается
+        от строки типа устройства (user-agent) на основе браузера.
+      required: false
+      example: mobile
+    consentId:
+      description: Идентификатор ресурса согласия
+      name: consentId
+      in: path
+      required: true
+      schema:
+        description: >-
+          Идентификатор ресурса согласия, присвоенный на стороне Стороннего
+          поставщика
+        type: string
+        pattern: ^[a-zA-Z0-9-_]{1,40}$
+        maxLength: 40
+        minLength: 1
+    page:
+      name: page
+      in: query
+      required: false
+      description: Номер страницы
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 5000
+        default: 1
+    accountId:
+      name: accountId
+      in: path
+      required: true
+      description: Идентификатор счета
+      schema:
+        type: string
+        pattern: ^[a-zA-Z0-9-]{1,40}$
+        minLength: 1
+        maxLength: 40
+        example: this-is-a-slug-format-account-id
+    fromBookingDateTime:
+      name: fromBookingDateTime
+      in: query
+      required: false
+      description: Дата и время начала фильтрации списка операций по счету
+      schema:
+        description: Формат даты и времени
+        type: string
+        format: date-time
+        example: '2021-06-05T15:15:13+00:00'
+    toBookingDateTime:
+      name: toBookingDateTime
+      in: query
+      required: false
+      description: Дата и время окончания фильтрации списка операций по счету
+      schema:
+        description: Формат даты и времени
+        type: string
+        format: date-time
+        example: '2021-06-05T15:15:13+00:00'
+  schemas:
+    PermissionsType:
+      description: Типы разрешений на доступ к счету
+      type: string
+      enum:
+        - ReadAccountsBasic
+        - ReadAccountsDetail
+        - ReadBalances
+        - ReadParty
+        - ReadProducts
+        - ReadStandingOrdersBasic
+        - ReadStandingOrdersDetail
+        - ReadStatementsBasic
+        - ReadStatementsDetail
+        - ReadTransactionsBasic
+        - ReadTransactionsCredits
+        - ReadTransactionsDebits
+        - ReadTransactionsDetail
+        - ReadPaymentCards
+      x-enum-descriptions:
+        - Возможность чтения основной информации о счете
+        - Возможность чтения детальной информации о счете.
+        - Возможность чтения информации об остатке на счете.
+        - Возможность чтения информации об владельце счета
+        - Возможность чтения информации о продуктах, привязанных к счету.
+        - >-
+          Возможность чтения основной информации о долгосрочных платежных
+          распоряжениях на счете
+        - >-
+          Возможность чтения детальной информации о долгосрочных платежных
+          распоряжениях на счете
+        - Возможность чтения основной информации об операциях по счету
+        - Возможность чтения основной информации об операциях зачисления на счет
+        - Возможность чтения основной информации об операциях списания со счета
+        - Возможность чтения детальной информации об операциях по счету
+        - Возможность чтения информации о платежной карте
+      x-enum-varnames:
+        - ReadAccountsBasic
+        - ReadAccountsDetail
+        - ReadBalances
+        - ReadParty
+        - ReadProducts
+        - ReadStandingOrdersBasic
+        - ReadStandingOrdersDetail
+        - ReadStatementsBasic
+        - ReadStatementsDetail
+        - ReadTransactionsBasic
+        - ReadTransactionsCredits
+        - ReadTransactionsDebits
+        - ReadTransactionsDetail
+        - ReadPaymentCards
+    Consent:
+      description: Согласие на доступ к счету
+      type: object
+      additionalProperties: false
+      required:
+        - permissions
+      properties:
+        permissions:
+          description: >
+            Указание типов данных доступа к счетам Пользователя. Это список
+            доменов  данных, которые были одобрены Пользователем и запрошены для
+            авторизации на
+
+            стороне ППИУ.
+
+
+            **Описание применения разрешений**
+
+
+            ---
+
+            `ReadAccountsBasic` - возможность чтения основной информации о
+            счете. Данное разрешение должно быть в каждом согласии на доступ к
+            счету
+
+
+            Конечные точки:
+              - /accounts
+              - /accounts/{accountId}
+
+            Объект доступа полезной нагрузки (/Data/*): 
+              - Account
+
+            ---
+
+            `ReadAccountsDetail` - Возможность чтения детальной информации о
+            счете
+
+
+            Конечные точки:
+              - /accounts
+              - /accounts/{accountId}
+
+            Объект доступа полезной нагрузки (/Data/*):
+              - Account/AccountDetails
+              - Account/Servicer
+              - Account/Owner
+
+            ---
+
+            `ReadBalances` - Возможность чтения полной информации о балансе
+            счета
+
+
+            Конечные точки:
+              - /balances
+              - /accounts/{accountId}/balances
+              - /payment-card-balances (требует также разрешение `ReadPaymentCards`)
+              
+              Объект доступа полезной нагрузки (/Data/*):
+               - Balance
+
+            ---
+
+            `ReadTransactionsBasic` - Возможность чтения основной информации о
+            транзакциях. Массив разрешений должен также включать один из
+            permission: 
+              - ReadTransactionsCredits
+              - ReadTransactionsDebits
+
+            Конечные точки:
+              - /transactions
+              - /accounts/{accountId}/transactions`
+              - /statements/{statementId}/statements
+
+            Объект доступа полезной нагрузки (/Data/*): 
+              - Transaction
+              - Statement/Transaction
+
+            ---
+
+            `ReadTransactionsDetail` - Возможность чтения детальной информации о
+            транзакциях. Массив разрешений должен также включать один из
+            permission: 
+              - ReadTransactionsCredits
+              - ReadTransactionsDebits
+
+            Конечные точки:
+              - /transactions
+              - /accounts/{accountId}/transactions
+              - /statements/{statementId}/statements
+
+            Объект доступа полезной нагрузки (/Data/*): 
+
+            - Transaction/Balance 
+
+            - Transaction/DebtorAgent 
+
+            - Transaction/DebtorAgentAccount 
+
+            - Transaction/DebtorAccount 
+
+            - Transaction/CreditorAccount 
+
+            - Transaction/CreditorAgent 
+
+            - Transaction/CreditorAgentAccount 
+
+            - Transaction/RemittanceInformation|
+
+
+            `ReadTransactionsCredits` - Возможность чтения основной информации
+            об операциях зачисления на счет
+
+            `ReadTransactionsDebits` - Возможность чтения основной информации об
+            операциях списания со счета
+
+
+            ---
+
+            `ReadProducts` Возможность чтения всей информации о продукте 
+
+
+            Конечные точки:
+              - /products
+              - /accounts/{accountId}/product`
+
+            Объект доступа полезной нагрузки (/Data/*): 
+               - Product
+
+            --- 
+
+            `ReadPaymentCards` - Возможность чтения информации о платежной карте
+
+
+            Конечные точки:
+              - /payment-cards
+              - /accounts/{accountId}/payment-cards`
+              - /payment-card-balances (требует также разрешение `ReadBalances`)
+
+            Объект доступа полезной нагрузки (/Data/*): 
+              - PaymentCard
+              - Balance
+                
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/PermissionsType'
+          minItems: 1
+          example:
+            - ReadAccountsBasic
+            - ReadAccountsDetail
+            - ReadBalances
+            - ReadTransactionsCredits
+            - ReadTransactionsDebits
+            - ReadTransactionsDetail
+        expirationDateTime:
+          description: >-
+            Дата и время истечения срока действия разрешений. Если элемент не
+            представлен, разрешения будет с открытой датой
+          type: string
+          format: date-time
+          example: '2020-03-15T00:00:00+00:00'
+        transactionFromDateTime:
+          description: >-
+            Дата и время начала периода запроса операции по счету. Если период
+            не указан, данные будут возвращены с самой ранней из доступных
+            операций по счету
+          type: string
+          format: date-time
+          example: '2019-09-15T00:00:00+00:00'
+        transactionToDateTime:
+          description: >-
+            Дата и время окончания периода запроса операции по счету. Если
+            период не указан, данные будут возвращены до последней доступной
+            операции по счету
+          example: '2019-12-15T00:00:00+00:00'
+          type: string
+          format: date-time
+    ConsentRequest:
+      type: object
+      description: Запрос создания ресурса согласия на доступ к счету
+      additionalProperties: false
+      properties:
+        Data:
+          description: Полезная нагрузка согласия на доступ к счету
+          allOf:
+            - $ref: '#/components/schemas/Consent'
+      required:
+        - Data
+      minProperties: 1
+      maxProperties: 1
+    ISODateTime:
+      description: Формат даты и времени
+      type: string
+      format: date-time
+      example: '2021-06-05T15:15:13+00:00'
+    ConsentStatus:
+      description: Статус ресурса account-consent
+      type: string
+      enum:
+        - AwaitingAuthorisation
+        - Rejected
+        - Authorised
+        - Revoked
+      x-enum-descriptions:
+        - Ресурс согласия на проведение платежа ожидает авторизации пользователя
+        - Ресурс согласия на проведение платежа был отклонен
+        - Ресурс согласия на проведение платежа был успешно авторизован
+        - Ресурс согласия на проведение платежа был успешно задействован
+      x-enum-varnames:
+        - AwaitingAuthorisation
+        - Rejected
+        - Authorised
+        - Revoked
+      example: AwaitingAuthorisation
+    DataConsentResponse:
+      description: Полезная нагрузка ответа согласия на доступ к счету
+      type: object
+      additionalProperties: false
+      properties:
+        consentId:
+          type: string
+          pattern: ^[a-zA-Z0-9-_]{1,40}$
+          minLength: 1
+          maxLength: 40
+          description: >-
+            Уникальный идентификатор, предназначенный для идентификации ресурса
+            согласия на доступ к счету
+          example: 95791e79-0f2d-47de-a5e0-df034b28574a
+        creationDateTime:
+          description: Дата и время создания ресурса
+          allOf:
+            - $ref: '#/components/schemas/ISODateTime'
+        status:
+          description: Статус согласия
+          allOf:
+            - $ref: '#/components/schemas/ConsentStatus'
+        statusUpdateDateTime:
+          description: Дата и время обновления статуса ресурса
+          allOf:
+            - $ref: '#/components/schemas/ISODateTime'
+        permissions:
+          description: >-
+            Указание типов данных доступа к счетам Пользователя. Это список
+            доменов данных, которые были одобрены Пользователем и запрошены для
+            авторизации на стороне ППИУ
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/PermissionsType'
+          minItems: 1
+          example:
+            - ReadAccountsBasic
+            - ReadAccountsDetail
+            - ReadBalances
+            - ReadTransactionsCredits
+            - ReadTransactionsDebits
+            - ReadTransactionsDetail
+        expirationDateTime:
+          description: >-
+            Дата и время истечения срока действия разрешений. Если элемент не
+            представлен, разрешения будет с открытой датой
+          allOf:
+            - $ref: '#/components/schemas/ISODateTime'
+          example: '2020-03-15T00:00:00+00:00'
+        transactionFromDateTime:
+          description: >-
+            Дата и время начала периода запроса операции по счету. Если период
+            не указан, данные будут возвращены с самой ранней из доступных
+            операций по счету
+          allOf:
+            - $ref: '#/components/schemas/ISODateTime'
+          example: '2019-09-15T00:00:00+00:00'
+        transactionToDateTime:
+          description: >-
+            Дата и время окончания периода запроса операции по счету. Если
+            период не указан, данные будут возвращены до последней доступной
+            операциию по счету
+          example: '2019-12-15T00:00:00+00:00'
+          allOf:
+            - $ref: '#/components/schemas/ISODateTime'
+      required:
+        - consentId
+        - creationDateTime
+        - permissions
+        - status
+        - statusUpdateDateTime
+    Links:
+      description: >-
+        Поставщик услуг предоставляет постраничный ответ для операций GET,
+        которые возвращают множественные записи.
+      type: object
+      additionalProperties: false
+      properties:
+        self:
+          description: Текущая ссылка
+          type: string
+          format: uri
+          example: https://sb.example.ru/v1.3/exaple?page=1
+        first:
+          description: Первая ссылка
+          type: string
+          format: uri
+          example: https://sb.example.ru/v1.3/exaple?page=1
+        prev:
+          description: Предыдущая ссылка
+          type: string
+          format: uri
+          example: https://sb.example.ru/v1.3/exaple?page=1
+        next:
+          description: Следующая ссылка
+          type: string
+          format: uri
+          example: https://sb.example.ru/v1.3/exaple?page=1
+        last:
+          description: Последняя ссылка
+          type: string
+          format: uri
+          example: https://sb.example.ru/v1.3/exaple?page=1
+      required:
+        - self
+    Meta:
+      description: >-
+        Дополнительные данные о запросе. «totalPages», указывает на количество
+        передаваемых страниц. Если передается более одной страницы, то элемент
+        «totalPages» обязательно присутствует.
+      type: object
+      additionalProperties: false
+      properties:
+        totalPages:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 5000
+          description: Указывает на количество передаваемых страниц
+          example: 1
+    ConsentResponse:
+      type: object
+      additionalProperties: false
+      description: Ресурс согласия на доступ к счету
+      properties:
+        Data:
+          description: Полезная нагрузка ответа согласия на доступ к счету
+          allOf:
+            - $ref: '#/components/schemas/DataConsentResponse'
+        Links:
+          description: Раздел для указания ссылок
+          allOf:
+            - $ref: '#/components/schemas/Links'
+          example:
+            self: https://sb.example.ru/v1.3/exaple
+        Meta:
+          description: Раздел метаданных
+          allOf:
+            - $ref: '#/components/schemas/Meta'
+      required:
+        - Data
+      minProperties: 3
+      maxProperties: 3
+    OBRUErrorResponseErrorCode:
+      description: >-
+        Низкоуровневое описание ошибки. Поставщик услуг должен заполнить
+        сообщение детальным описанием ошибки, не раскрывая конфиденциальную
+        информацию.
+      type: string
+      example: RU.CBR.Field.Missing
+      enum:
+        - RU.CBR.Field.Expected
+        - RU.CBR.Field.Invalid
+        - RU.CBR.Field.InvalidDate
+        - RU.CBR.Field.Missing
+        - RU.CBR.Header.Invalid
+        - RU.CBR.Header.Missing
+        - RU.CBR.Resource.InvalidFormat
+        - RU.CBR.Resource.NotFound
+        - RU.CBR.Resource.NotCreated
+        - RU.CBR.Rules.AfterCutOffDateTime
+        - RU.CBR.Signature.Invalid
+        - RU.CBR.Signature.InvalidClaim
+        - RU.CBR.Signature.MissingClaim
+        - RU.CBR.Signature.Malformed
+        - RU.CBR.Signature.Missing
+        - RU.CBR.Unsupported.AccountIdentifier
+        - RU.CBR.Unsupported.LocalInstrument
+        - RU.CBR.Authenticate.InvalidScope
+        - RU.CBR.Authenticate.InvalidConsent
+        - RU.CBR.Rules.ResourceAlreadyExists
+        - RU.CBR.UnexpectedError
+      x-enum-descriptions:
+        - >-
+          (HTTP статус 400). Если поля передаются парой (ключ-значение) и
+          значение не было передано. В поле path должен передаваться путь к
+          ожидаемому полю (например, ErrorResponse.Errors.path ==
+          “AccountResponse.Data.Account.AccountDetails.identification”).
+          Например, для допустимого значения поля «schemeName» должно
+          передаваться соответствующее значение идентификатора в поле
+          «identification».
+        - >-
+          (HTTP статус 400).В поле указано недопустимое значение или длина
+          предоставленного значения превышает соответствующую максимальную длину
+          поля в домене ППИУ. Ссылка на недопустимое поле должна быть указана в
+          поле path (например,ErrorResponse.Errors.path ==
+          “AccountResponse.Data.Account.AccountDetails.schemeName”). В поле URL
+          может быть ссылка на веб-страницу, объясняющую правильное поведение.
+          Проблема должна быть подробно описана в сообщении об ошибке (поле
+          ErrorResponse.Errors.message).
+        - >-
+          (HTTP статус 400).Указана неверная дата. Например, когда ожидается
+          будущая дата, а указана дата в прошлом или текущая дата. В сообщении
+          можно указать актуальную проблему с датой. Ссылка на недопустимое поле
+          должна быть указана в поле path, а в поле URL может быть ссылка на
+          веб-страницу, объясняющую правильное поведение.
+        - >-
+          (HTTP статус 400).Обязательное поле, необходимое для API, отсутствует
+          в полезной нагрузке. Данный код ошибки можно использовать, если ошибка
+          еще не определена при проверке RU.CBR.Resource.InvalidFormat. Ссылка
+          на отсутствующее поле должна быть указана в поле path, а в поле URL
+          может быть ссылка на веб-страницу, объясняющую правильное поведение.
+        - >-
+          (HTTP статус 400).В элементе заголовка HTTP указано неверное значение.
+          Элемент заголовка HTTP должен быть указан в элементе пути.
+        - >-
+          (HTTP статус 400).Обязательный элемент HTTP-заголовка не был
+          предоставлен. Элемент заголовка HTTP должен быть указан в элементе
+          path. Элемент пути кода ошибки должен быть заполнен элементом ресурса
+          согласия, который является недопустимым.
+        - >-
+          (HTTP статус 400).Json-схема полезной нагрузки не соответствует
+          конечной точке. Например, конечная точка POST /account-consents
+          вызывается с полезной нагрузкой JSON, которая не может быть
+          проанализирована в классе ConsentRequest.
+        - >-
+          (HTTP статус 400).Ресурс с указанным идентификатором не существует или
+          не может быть обработан (в том числе неприемлимый формат или значение
+          идентификатора ресурса).
+        - >-
+          (HTTP статус 400).Ресурс с указанным идентификатором еще не создан и
+          не может быть передан в ответном сообщении. Для асинхронных вызовов.
+          Например, получение выписки по счету, где сначала создается ресурс
+          выписки (метод POST /statements/{accountId}) и в ответном сообщение
+          приходит идентификатор созданного ресурса выписки, но для наполнения
+          выписки данными ППИУ требуется некоторое время. Соответственно, будет
+          приходить данное сообщение об ошибке.
+        - >-
+          (HTTP статус 400).Ресурс согласия или ресурс платежа запрашиваются
+          после даты CutOffDateTime.
+        - >-
+          (HTTP статус 400).Заголовок подписи x-jws-signature был
+          проанализирован и имеет действительный заголовок JOSE, соответствующий
+          спецификации. Но сама подпись не может быть проверена.
+        - >-
+          (HTTP статус 400).Заголовок JOSE в элементе x-jws-signature имеет одно
+          или несколько утверждений (claim) с недопустимым значением. (например,
+          утверждение kid, которое не принимает сертификат). Наименование
+          отсутствующего утверждения должно передаваться в поле path ответа об
+          ошибке.
+        - >-
+          (HTTP статус 400).Заголовок JOSE в элементе x-jws-signature имеет одно
+          или несколько обязательных утверждений, которые не указаны. Имя
+          пропущенного утверждения должно быть указано в поле path ответа об
+          ошибке.
+        - >-
+          (HTTP статус 400).x-jws-signature в заголовке запроса была искажена и
+          не могла быть проанализирована как допустимый JWS.
+        - >-
+          (HTTP статус 400).Запрос API предполагает x-jws-signature в заголовке,
+          но элемент отсутствовал.
+        - >-
+          (HTTP статус 400).Идентификатор счета не поддерживается для данной
+          схемы. Элемент path должен быть заполнен путем к элементу
+          accountIdentifier.
+        - >-
+          (HTTP статус 400).Указанный localInstrument не поддерживается ППИУ.
+          Элемент path должен быть заполнен путем к элементу localInstrument.
+          Элемент URL должен быть заполнен ссылкой на документацию ППИУ со
+          списком поддерживаемых localInstrument.
+        - >-
+          (HTTP статус 403).Предъявленный токен доступа не содержит область
+          действия ("scope") необходимый для доступа к ресурсу.
+        - >-
+          (HTTP статус 403).Отказано доступу к ресурсу с указанным
+          идентификатором, так как согласие пользователя, отсутствует, либо
+          имеет не корректный статус, либо не содержит необходимых разрешений
+          ("pernissions") на данный ресурс.
+        - (HTTP статус 409).Ресурс с такими же параметрами уже существует.
+        - >-
+          (HTTP статус 5xx).Данный код ошибки можно использовать при
+          возникновении непредвиденной ошибки. ППИУ должен заполнить сообщение
+          детальным описанием ошибки, не раскрывая конфиденциальную информацию.
+      x-enum-varnames:
+        - FieldExpected
+        - FieldInvalid
+        - FieldInvalidDate
+        - FieldMissing
+        - HeaderInvalid
+        - HeaderMissing
+        - ResourceInvalidFormat
+        - ResourceNotFound
+        - ResourceNotCreated
+        - RulesAfterCutOffDateTime
+        - SignatureInvalid
+        - SignatureInvalidClaim
+        - SignatureMissingClaim
+        - SignatureMalformed
+        - SignatureMissing
+        - UnsupportedAccountIdentifier
+        - UnsupportedLocalInstrument
+        - AuthenticateInvalidScope
+        - AuthenticateInvalidConsent
+        - RulesResourceAlreadyExists
+        - UnexpectedError
+    OBRUError:
+      description: Контейнер с ошибкой
+      type: object
+      additionalProperties: false
+      properties:
+        errorCode:
+          $ref: '#/components/schemas/OBRUErrorResponseErrorCode'
+        message:
+          type: string
+          pattern: ^[\w\W]{1,500}$
+          minLength: 1
+          maxLength: 500
+          description: Описание ошибки
+          example: Обязательное поле не указано
+        path:
+          type: string
+          pattern: ^[\w\W]{1,500}$
+          minLength: 1
+          maxLength: 500
+          description: >-
+            Путь к элементу с ошибкой в JSON объекте. Рекомендуемое, но не
+            обязательное поле
+          example: Data.Model.Object.name
+        url:
+          type: string
+          format: uri
+          description: >-
+            URL для помощи в устранении проблемы, Также через URL можно
+            предоставлять дополнительную информацию
+          example: https://example.com/error-description
+      required:
+        - errorCode
+        - message
+    OBRUErrorResponse:
+      description: Контейнер с детализацией ошибки
+      type: object
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+          pattern: ^[a-zA-Z0-9-]{1,40}$
+          minLength: 1
+          maxLength: 40
+          description: Высокоуровневый текстовый код ошибки, необходимый для классификации
+          example: '400'
+        id:
+          type: string
+          pattern: ^[a-zA-Z0-9-]{1,40}$
+          minLength: 1
+          maxLength: 40
+          description: >-
+            Уникальный идентификатор ошибки, для целей аудита, в случае
+            неизвестных / не классифицированных ошибок
+          example: 4aca5b0d-1730-416f-a52b-6d353b687082
+        message:
+          type: string
+          pattern: ^[\w\W]{1,500}$
+          minLength: 1
+          maxLength: 500
+          description: >-
+            Краткое сообщение об ошибке. Например, «что-то не так с
+            предоставленными параметрами запроса»
+          example: Bad Request
+        Errors:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/OBRUError'
+          minItems: 1
+      required:
+        - code
+        - message
+        - Errors
+    AccountStatus:
+      description: Статус счета
+      type: string
+      example: Enabled
+      enum:
+        - Enabled
+        - Disabled
+        - Deleted
+      x-enum-descriptions:
+        - Cчет доступен и может использоваться
+        - Cчет не доступен и не может использоваться, временно или навсегда
+        - Счет удален и не может использоваться
+      x-enum-varnames:
+        - Enabled
+        - Disabled
+        - Deleted
+    ActiveOrHistoricCurrencyCode:
+      description: Код валюты, соответствующий международного стандарта ISO 4217
+      type: string
+      pattern: ^[A-Z]{3,3}$
+      example: RUB
+    AccountType:
+      description: Тип счета
+      type: string
+      enum:
+        - Business
+        - Personal
+      x-enum-descriptions:
+        - Счет юридического лица
+        - Счет физического лица
+      x-enum-varnames:
+        - Business
+        - Personal
+    AccountIdentificationCode:
+      description: Схема идентификации счета
+      type: string
+      enum:
+        - RU.CBR.BBAN
+        - RU.CBR.EPID
+        - RU.CBR.PAN
+        - RU.CBR.MTEL
+        - RU.CBR.ORID
+      example: RU.CBR.BBAN
+      x-enum-descriptions:
+        - Базовый номер банковского счета (RUCBRAccountIdentifier)
+        - Идентификатор электронного средства платежа
+        - Идентификатор счета по номеру карты
+        - Идентификатор счета по номеру телефона
+        - Иной идентификатор (номер, однозначно идентифицирующий счет стороны)
+      x-enum-varnames:
+        - BBAN
+        - EPID
+        - PAN
+        - MTEL
+        - ORID
+    CashAccount:
+      description: Идентификация счета
+      type: object
+      additionalProperties: false
+      properties:
+        name:
+          description: >-
+            Наименование счета, присвоенное учреждением, обслуживающим счет, по
+            согласованию с владельцем счета  для обеспечения дополнительных
+            средств идентификации счета
+          type: string
+          pattern: ^[\w\W]{1,70}$
+          minLength: 1
+          maxLength: 70
+          example: Основной счет
+        schemeName:
+          description: Наименование схемы идентификации счета
+          allOf:
+            - $ref: '#/components/schemas/AccountIdentificationCode'
+        identification:
+          description: >-
+            Идентификатор счета, соответствующий схеме идентификации, известный
+            владельцу счета (номер банковского счета, номер карты, номер
+            телефона ...)
+          type: string
+          pattern: ^[\w\W]{1,256}$
+          minLength: 1
+          maxLength: 256
+          example: '40817810621234570000'
+      required:
+        - schemeName
+        - identification
+    CountryCode:
+      description: Код страны в формате ISO 3166-1 alpha-2
+      type: string
+      pattern: ^[A-Z]{2,2}$
+      example: RU
+    PartyIdentificationCode:
+      description: Схема идентификации юридического или физического лица
+      type: string
+      example: RU.CBR.TXID
+      maxLength: 35
+      enum:
+        - RU.CBR.TXID
+        - RU.CBR.LEI
+        - RU.CBR.PASP
+        - RU.CBR.CLID
+        - RU.CBR.QRST
+        - RU.CBR.TAXT
+        - RU.CBR.OGRN
+        - RU.CBR.SNILS
+        - RU.CBR.PAN
+        - RU.CBR.MTEL
+        - RU.CBR.BBAN
+      x-enum-descriptions:
+        - Используется в случае идентификационной схемы ИНН/КИО
+        - Код организации в соответствии с ISO 17442
+        - Номер паспорта
+        - Другой идентификатор
+        - Идентификатор в виде QR - кода
+        - КПП
+        - ОГРН
+        - СНИЛС
+        - Идентификатор платежной карты
+        - Номер мобильного телефона
+        - Идентификатор банковского счета
+      x-enum-varnames:
+        - TXID
+        - LEI
+        - PASP
+        - CLID
+        - QRST
+        - TAXT
+        - OGRN
+        - SNILS
+        - PAN
+        - MTEL
+        - BBAN
+    IdentificationType:
+      description: Идентификация физического лица
+      type: object
+      additionalProperties: false
+      properties:
+        schemeName:
+          description: >-
+            Наименование идентификационной схемы юридического или физического
+            лица
+          allOf:
+            - $ref: '#/components/schemas/PartyIdentificationCode'
+        identification:
+          description: >-
+            Уникальный и однозначный идентификатор участника, присвоенный
+            идентифицирующей организацией.
+          type: string
+          pattern: ^[\w\W]{1,35}$
+          minLength: 1
+          maxLength: 35
+          example: '7728240240'
+      required:
+        - schemeName
+        - identification
+    AddressTypeCode:
+      description: Тип адреса
+      type: string
+      example: Postal
+      enum:
+        - Business
+        - Correspondence
+        - DeliveryTo
+        - MailTo
+        - POBox
+        - Postal
+        - Residential
+        - Statement
+      x-enum-descriptions:
+        - Адрес, указанный в едином государственном реестре юридических лиц
+        - Адрес для корреспонденции
+        - Адрес доставки
+        - Почтовый ящик
+        - Абонентский ящик
+        - Фактический/почтовый адрес местонахождения юридического лица
+        - Адрес постоянной регистрации физического лица (прописка)
+        - >-
+          Адрес временной регистрации физического лица (регистрация временного
+          пребывания)
+      x-enum-varnames:
+        - Business
+        - Correspondence
+        - DeliveryTo
+        - MailTo
+        - POBox
+        - Postal
+        - Residential
+        - Statement
+    PostalAddress:
+      description: Почтовый адрес
+      type: object
+      additionalProperties: false
+      properties:
+        addressType:
+          description: Тип адреса
+          allOf:
+            - $ref: '#/components/schemas/AddressTypeCode'
+          example: Postal
+        addressLine:
+          description: Строка адреса
+          type: array
+          minItems: 0
+          maxItems: 2
+          items:
+            description: Строка адреса
+            type: string
+            pattern: ^[\w\W]{1,70}$
+            minLength: 1
+            maxLength: 70
+          example:
+            - Адрес в виде строки
+            - вторая часть строки адреса
+        streetName:
+          description: Наименование улицы или проспекта
+          type: string
+          pattern: ^[\w\W]{1,70}$
+          minLength: 1
+          maxLength: 70
+          example: Садовая
+        buildingNumber:
+          description: Номер, который определяет положение здания на улице
+          type: string
+          pattern: ^[\w\W]{1,16}$
+          minLength: 1
+          maxLength: 16
+          example: '11'
+        postCode:
+          description: Почтовый индекс
+          type: string
+          pattern: ^[\w\W]{6,16}$
+          minLength: 6
+          maxLength: 16
+          example: '0100010'
+        townName:
+          description: >-
+            Наименование населённого пункта или территории, находящейся вне
+            границ поселений
+          type: string
+          pattern: ^[\w\W]{1,35}$
+          minLength: 1
+          maxLength: 35
+          example: Бигсити
+        countrySubDivision:
+          description: Наименование и тип субъекта Российской Федерации
+          type: string
+          pattern: ^[\w\W]{1,35}$
+          minLength: 1
+          maxLength: 35
+          example: Мой край
+        country:
+          description: Название страны в кодированной форме
+          allOf:
+            - $ref: '#/components/schemas/CountryCode'
+    PartyIdentification:
+      description: >-
+        Информация об участнике, используемая для идентификации юридического или
+        физического лица
+      type: object
+      additionalProperties: false
+      properties:
+        name:
+          description: Наименование организации или имя физического лица
+          type: string
+          pattern: ^[\w\W]{1,160}$
+          minLength: 1
+          maxLength: 160
+          example: Наименование организации или физического лица
+        mobileNumber:
+          description: Номер мобильного телефона
+          type: string
+          pattern: ^((\+7|7|8)([0-9]){10})$
+          example: '79206001010'
+        countryOfResidence:
+          description: Страна проживания
+          allOf:
+            - $ref: '#/components/schemas/CountryCode'
+        countryOfBirth:
+          description: Место рождения (страна)
+          allOf:
+            - $ref: '#/components/schemas/CountryCode'
+        provinceOfBirth:
+          description: Место рождения (область).
+          type: string
+          pattern: ^[\w\W]{1,35}$
+          minLength: 1
+          maxLength: 35
+          example: Ставропольский край
+        cityOfBirth:
+          description: Место рождения (город)
+          type: string
+          pattern: ^[\w\W]{1,35}$
+          minLength: 1
+          maxLength: 35
+          example: Ставрополь
+        birthDate:
+          description: Дата рождения
+          allOf:
+            - $ref: '#/components/schemas/ISODateTime'
+        Identification:
+          description: Идентификация юридического или физического лица.
+          type: array
+          maxItems: 12
+          items:
+            $ref: '#/components/schemas/IdentificationType'
+          minItems: 1
+        PostalAddress:
+          $ref: '#/components/schemas/PostalAddress'
+      required:
+        - name
+        - Identification
+    FinancialInstitutionIdentificationCode:
+      description: Схема идентификации финансового учреждения
+      type: string
+      enum:
+        - RU.CBR.BICFI
+        - RU.CBR.BIC
+      example: RU.CBR.BIC
+      x-enum-descriptions:
+        - BIC для финансовых учреждений согласно ISO 9362
+        - >-
+          Уникальный идентификатор банка, используемый в платежных документах на
+          территории Российской Федерации
+      x-enum-varnames:
+        - BICFI
+        - BIC
+    BranchAndFinancialInstitutionIdentification:
+      description: Идентификация финансового учреждения
+      type: object
+      additionalProperties: false
+      properties:
+        schemeName:
+          description: Наименование идентификационной схемы финансового учреждения
+          allOf:
+            - $ref: '#/components/schemas/FinancialInstitutionIdentificationCode'
+        identification:
+          description: >-
+            Банковский идентификационный код (БИК) или другой идентификатор
+            финансового учреждения
+          type: string
+          pattern: ^[\w\W]{1,35}$
+          minLength: 1
+          maxLength: 35
+          example: '9612123'
+      required:
+        - schemeName
+        - identification
+    BranchAndFinancialInstitutionInformationPilot:
+      description: Информация о кредитной организации
+      type: object
+      additionalProperties: false
+      properties:
+        name:
+          description: Наименование организации
+          type: string
+          pattern: ^[\w\W]{1,160}$
+          minLength: 1
+          maxLength: 160
+          example: Наименование организации или физического лица
+        BankIdentification:
+          description: Идентификация финансового учреждения
+          type: array
+          minItems: 1
+          maxItems: 12
+          items:
+            $ref: '#/components/schemas/BranchAndFinancialInstitutionIdentification'
+        OrganizationIdentification:
+          description: Идентификация юридического лица.
+          type: array
+          minItems: 1
+          maxItems: 12
+          items:
+            $ref: '#/components/schemas/IdentificationType'
+        CorrespondentAccount:
+          description: Корреспондентский счет
+          type: object
+          additionalProperties: false
+          properties:
+            schemeName:
+              description: Наименование схемы идентификации счета
+              allOf:
+                - $ref: '#/components/schemas/AccountIdentificationCode'
+            identification:
+              description: >-
+                Идентификатор счета соответствующий схеме идентификации,
+                известный владельцу счета (номер банковского счета, номер карты,
+                номер телефона ...)
+              type: string
+              pattern: ^[\w\W]{1,256}$
+              minLength: 1
+              maxLength: 256
+              example: '40817810621234570000'
+          required:
+            - schemeName
+            - identification
+        PostalAddress:
+          description: Адрес отделения, обслуживающего счет
+          type: object
+          additionalProperties: false
+          properties:
+            addressLine:
+              description: Строка адреса
+              type: array
+              minItems: 0
+              maxItems: 2
+              items:
+                description: Строка адреса
+                type: string
+                pattern: ^[\w\W]{1,70}$
+                minLength: 1
+                maxLength: 70
+              example:
+                - Адрес в виде строки
+                - вторая часть строки адреса
+          required:
+            - addressLine
+      required:
+        - name
+        - BankIdentification
+        - PostalAddress
+        - OrganizationIdentification
+        - CorrespondentAccount
+    OrganizationIdentificationCode:
+      description: Схема идентификации юридического лица
+      type: string
+      example: RU.CBR.TXID
+      maxLength: 35
+      enum:
+        - RU.CBR.TXID
+        - RU.CBR.LEI
+        - RU.CBR.TAXT
+        - RU.CBR.OGRN
+        - RU.CBR.OKPO
+      x-enum-descriptions:
+        - Используется в случае идентификационной схемы ИНН/КИО
+        - Код организации в соответствии с ISO 17442
+        - КПП
+        - ОГРН
+        - ОКПО
+      x-enum-varnames:
+        - TXID
+        - LEI
+        - TAXT
+        - OGRN
+        - OKPO
+    OrganizationIdentificationType:
+      description: Идентификация юридического лица
+      type: object
+      additionalProperties: false
+      properties:
+        schemeName:
+          description: >-
+            Наименование идентификационной схемы юридического или физического
+            лица
+          allOf:
+            - $ref: '#/components/schemas/OrganizationIdentificationCode'
+        identification:
+          description: >-
+            Уникальный и однозначный идентификатор участника, присвоенный
+            идентифицирующей организацией.
+          type: string
+          pattern: ^[\w\W]{1,35}$
+          minLength: 1
+          maxLength: 35
+          example: '7728240240'
+      required:
+        - schemeName
+        - identification
+    BranchAndFinancialInstitutionInformation:
+      description: Информация о кредитной организации
+      type: object
+      additionalProperties: false
+      properties:
+        name:
+          description: Наименование организации
+          type: string
+          pattern: ^[\w\W]{1,160}$
+          minLength: 1
+          maxLength: 160
+          example: Наименование организации или физического лица
+        BankIdentification:
+          description: Идентификация финансового учреждения
+          type: array
+          minItems: 1
+          maxItems: 12
+          items:
+            $ref: '#/components/schemas/BranchAndFinancialInstitutionIdentification'
+        OrganizationIdentification:
+          description: Идентификация юридического лица.
+          type: array
+          minItems: 0
+          maxItems: 12
+          items:
+            $ref: '#/components/schemas/OrganizationIdentificationType'
+        CorrespondentAccount:
+          description: Корреспондентский счет
+          type: object
+          additionalProperties: false
+          properties:
+            schemeName:
+              description: Наименование схемы идентификации счета
+              allOf:
+                - $ref: '#/components/schemas/AccountIdentificationCode'
+            identification:
+              description: >-
+                Идентификатор счета соответствующий схеме идентификации,
+                известный владельцу счета (номер банковского счета, номер карты,
+                номер телефона ...)
+              type: string
+              pattern: ^[\w\W]{1,256}$
+              minLength: 1
+              maxLength: 256
+              example: '40817810621234570000'
+          required:
+            - schemeName
+            - identification
+        PostalAddress:
+          $ref: '#/components/schemas/PostalAddress'
+      required:
+        - name
+        - BankIdentification
+    Account:
+      description: Счет
+      type: object
+      x-openapiru-object-type-contract: true
+      additionalProperties: false
+      properties:
+        accountId:
+          description: >-
+            Уникальный и неизменный идентификатор, используемый для
+            идентификации ресурса
+          type: string
+          pattern: ^[a-zA-Z0-9-]{1,40}$
+          minLength: 1
+          maxLength: 40
+          example: this-is-a-slug-format-account-id
+        status:
+          description: Статус счета в форме кода
+          allOf:
+            - $ref: '#/components/schemas/AccountStatus'
+        statusUpdateDateTime:
+          description: Дата и время изменения статуса счета
+          allOf:
+            - $ref: '#/components/schemas/ISODateTime'
+        currency:
+          description: Валюта ведения счета
+          allOf:
+            - $ref: '#/components/schemas/ActiveOrHistoricCurrencyCode'
+        accountType:
+          description: Тип счета (физическое или юридическое лицо)
+          allOf:
+            - $ref: '#/components/schemas/AccountType'
+        accountDescription:
+          type: string
+          pattern: ^[\w\W]{1,128}$
+          minLength: 1
+          maxLength: 128
+          description: Краткое описание назначения счета или продукта, привязанного к счету
+          example: Розничные операции
+        AccountDetails:
+          type: array
+          minItems: 1
+          maxItems: 24
+          items:
+            $ref: '#/components/schemas/CashAccount'
+          description: Идентификация счета
+        Owner:
+          description: Информация о владельце счета
+          allOf:
+            - $ref: '#/components/schemas/PartyIdentification'
+        Servicer:
+          anyOf:
+            - $ref: >-
+                #/components/schemas/BranchAndFinancialInstitutionInformationPilot
+            - $ref: '#/components/schemas/BranchAndFinancialInstitutionInformation'
+      required:
+        - accountId
+        - status
+        - accountDescription
+        - currency
+        - accountType
+    DataAccountResponse:
+      description: Полезная нагрузка ответа на запрос о списке счетов
+      type: object
+      additionalProperties: false
+      properties:
+        Account:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/Account'
+          minItems: 0
+    AccountResponse:
+      type: object
+      additionalProperties: false
+      description: Список счетов и их идентификаторы
+      properties:
+        Data:
+          allOf:
+            - $ref: '#/components/schemas/DataAccountResponse'
+          description: Полезная нагрузка ответа
+        Links:
+          description: Раздел для указания ссылок
+          allOf:
+            - $ref: '#/components/schemas/Links'
+          example:
+            self: https://sb.example.ru/v1.3/exaple
+        Meta:
+          description: Раздел метаданных
+          allOf:
+            - $ref: '#/components/schemas/Meta'
+      required:
+        - Data
+      minProperties: 3
+      maxProperties: 3
+    BalanceType:
+      description: Тип остатка
+      type: string
+      enum:
+        - ClosingAvailable
+        - ClosingBooked
+        - ClosingCleared
+        - Expected
+        - OpeningAvailable
+        - OpeningBooked
+        - OpeningCleared
+        - PreviouslyClosedBooked
+      x-enum-descriptions:
+        - >-
+          Конечный остаток суммы денег, которая находится в распоряжении
+          владельца счета на указанную дату
+        - >-
+          Остаток по счету на конец предварительно согласованного отчетного
+          периода. Это сумма начального зарегистрированного баланса в начале
+          периода и всех записей, зачисленных на счет в течение предварительно
+          согласованного отчетного периода
+        - Конечный остаток суммы денег, которая очищается в указанную дату
+        - >-
+          Баланс, состоящий из забронированных записей и отложенных позиций,
+          известных на момент расчета, который прогнозирует остаток на конец
+          дня, если все зарезервировано на счете и никакая другая запись не
+          публикуется
+        - >-
+          Начальный баланс суммы денег, которая находится в распоряжении
+          владельца счета на указанную дату
+        - >-
+          Баланс счета в начале отчетного периода. Он всегда равен балансу из
+          предыдущего отчета
+        - Начальный баланс, который очищается в указанную дату
+        - >-
+          Остаток по счету за ранее закрытый отчетный период. Начальный
+          зарегистрированный баланс на новый период равен этому балансу
+      x-enum-varnames:
+        - ClosingAvailable
+        - ClosingBooked
+        - ClosingCleared
+        - Expected
+        - OpeningAvailable
+        - OpeningBooked
+        - OpeningCleared
+        - PreviouslyClosedBooked
+    ActiveCurrencyAndAmountSimpleType:
+      description: Сумма денежных средств
+      type: string
+      pattern: ^\d{1,15}\.\d{2,4}$
+      example: '200.00'
+    ActiveOrHistoricCurrencyAndAmount:
+      description: Сумма денежных средств и код валюты
+      type: object
+      additionalProperties: false
+      properties:
+        amount:
+          description: Сумма денежных средств
+          allOf:
+            - $ref: '#/components/schemas/ActiveCurrencyAndAmountSimpleType'
+        currency:
+          description: Код валюты, соответствующий международного стандарта ISO 4217
+          allOf:
+            - $ref: '#/components/schemas/ActiveOrHistoricCurrencyCode'
+      required:
+        - amount
+        - currency
+    CreditDebitCode:
+      description: Признак дебета/кредита
+      type: string
+      example: Debit
+      enum:
+        - Credit
+        - Debit
+      x-enum-descriptions:
+        - Кредитовая операция по счету
+        - Дебетовая операция по счету
+      x-enum-varnames:
+        - Credit
+        - Debit
+    OBRUCreditLine:
+      description: >-
+        Набор элементов, используемых для предоставления подробной информации о
+        кредитной линии
+      type: object
+      additionalProperties: false
+      properties:
+        included:
+          description: Показывает включена или нет кредитная линия в расчет остатка
+          type: boolean
+          example: false
+        Amount:
+          description: Значение лимита внутридневного кредитования (ВДК)
+          allOf:
+            - $ref: '#/components/schemas/ActiveOrHistoricCurrencyAndAmount'
+      required:
+        - included
+        - Amount
+    Balance:
+      description: Остаток на счете
+      type: object
+      additionalProperties: false
+      x-openapiru-object-type-contract: true
+      properties:
+        accountId:
+          description: >-
+            Уникальный и неизменный идентификатор, используемый для
+            идентификации ресурса счета
+          type: string
+          pattern: ^[a-zA-Z0-9-]{1,40}$
+          minLength: 1
+          maxLength: 40
+          example: this-is-a-slug-format-account-id
+        type:
+          description: Тип остатка
+          allOf:
+            - $ref: '#/components/schemas/BalanceType'
+        Amount:
+          description: Сумма остатка
+          allOf:
+            - $ref: '#/components/schemas/ActiveOrHistoricCurrencyAndAmount'
+        creditDebitIndicator:
+          description: Определяет является остаток кредитовым или дебетовым
+          allOf:
+            - $ref: '#/components/schemas/CreditDebitCode'
+        dateTime:
+          description: Дата, на которую рассчитан остаток
+          allOf:
+            - $ref: '#/components/schemas/ISODateTime'
+        CreditLine:
+          description: Кредитная линия
+          type: array
+          minItems: 0
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/OBRUCreditLine'
+      required:
+        - accountId
+        - type
+        - dateTime
+        - Amount
+        - creditDebitIndicator
+    DataBalanceResponse:
+      description: Полезная нагрузка ответа на запрос об остатке на счете
+      type: object
+      additionalProperties: false
+      properties:
+        Balance:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/Balance'
+          minItems: 0
+    BalanceResponse:
+      type: object
+      additionalProperties: false
+      description: Ответ на запрос об остатке на счете
+      properties:
+        Data:
+          allOf:
+            - $ref: '#/components/schemas/DataBalanceResponse'
+          description: Полезная нагрузка ответа
+        Links:
+          description: Раздел для указания ссылок
+          allOf:
+            - $ref: '#/components/schemas/Links'
+          example:
+            self: https://sb.example.ru/v1.3/exaple
+        Meta:
+          description: Раздел метаданных
+          allOf:
+            - $ref: '#/components/schemas/Meta'
+      required:
+        - Data
+      minProperties: 3
+      maxProperties: 3
+    TransactionStatusCode:
+      description: Статус записи операции по счету
+      type: string
+      example: AcceptedSettlementCompleted
+      enum:
+        - AcceptedCreditSettlementCompleted
+        - AcceptedSettlementCompleted
+        - AcceptedSettlementInProcess
+        - AcceptedWithoutPosting
+        - Pending
+        - Rejected
+      x-enum-descriptions:
+        - Расчет по счету Получателя средств завершен
+        - Расчет по счету Плательщика завершен
+        - >-
+          Все предыдущие проверки, такие как техническая проверка и профиль
+          клиента, были успешными, и поэтому запрос об инициировании платежа был
+          принят к исполнению
+        - >-
+          Платежная инструкция, включенная в перевод, принимается без зачисления
+          на счет Получателя средств
+        - >-
+          Ожидается инициирование группы платежей или отдельного платежа,
+          включенного в группу платежей
+        - >-
+          Инициирование группы платежей или отдельного платежа, включенная в
+          группу инициирования платежей, были отклонены
+      x-enum-varnames:
+        - AcceptedCreditSettlementCompleted
+        - AcceptedSettlementCompleted
+        - AcceptedSettlementInProcess
+        - AcceptedWithoutPosting
+        - Pending
+        - Rejected
+    BankTransactionCode:
+      description: Код банковской операции
+      type: object
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+          pattern: ^[\w\W]{1,35}$
+          minLength: 1
+          maxLength: 35
+          description: Тип банковской операции
+          example: '20'
+        subCode:
+          type: string
+          pattern: ^[\w\W]{1,35}$
+          minLength: 1
+          maxLength: 35
+          description: Подтип банковской операции
+          example: '20'
+        issuer:
+          type: string
+          pattern: ^[\w\W]{1,35}$
+          maxLength: 35
+          example: RU.CBR
+          description: >-
+            Идентификация эмитента собственного банковского кода операции по
+            счету
+      required:
+        - code
+    MerchantInfo:
+      description: Информация о продавце
+      type: object
+      additionalProperties: false
+      properties:
+        merchantId:
+          description: >-
+            Уникальный и неизменный идентификатор, используемый для
+            идентификации ресурса
+          type: string
+          pattern: ^[\w\W]{1,15}$
+          minLength: 1
+          maxLength: 15
+          example: MERCHANTID-374
+        merchantCategoryCode:
+          description: >-
+            Код категории соответствует ISO 18245 и относится к типу услуг или
+            товаров, которые продавец предоставляет для транзакции
+          type: string
+          pattern: ^\d{3,4}$
+          example: '1234'
+    CountryCodeAlfa3:
+      description: Код страны в формате ISO 3166-1 alpha-3
+      type: string
+      pattern: ^[A-Z]{3,3}$
+      example: RUS
+    CardSchemeNameCode:
+      description: |
+        Наименование платежной системы или схемы карты
+        <table class=ScrollTableNormal border=1 cellspacing=0 cellpadding=0
+              style='width:100.0%;border-collapse:collapse;border:none'>
+          <thead>
+            <tr>
+                <th valign=top style='border:solid #DDDDDD 1.0pt;background:#F0F0F0; width:20.0%;
+                    padding:1.5pt 1.5pt 1.0pt 1.5pt'>
+                    <p class=MsoNormal><span lang=RU style='color:#262626'><b>Значение</b></span></p>
+                </th>
+                <th valign=top style='border:solid #DDDDDD 1.0pt;border-left:none;
+                    background:#F0F0F0;padding:1.5pt 1.5pt 1.0pt 1.5pt; width:80.0%'>
+                    <p class=MsoNormal><span lang=RU style='color:#262626'><b>Описание</b></span></p>
+                </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+                <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class="MsoNormal" style="white-space: pre-line;">AmericanExpress</p></td>
+                <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class="MsoNormal" style="white-space: pre-line;">Международная платежная система AmericanExpress</p></td>
+            </tr>
+            <tr>
+                <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class="MsoNormal" style="white-space: pre-line;">ArCa</p></td>
+                <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class="MsoNormal" style="white-space: pre-line;">Армянская национальная платежная система ArCa</p></td>
+            </tr>
+            <tr>
+                <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class="MsoNormal" style="white-space: pre-line;">BELKART</p></td>
+                <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class="MsoNormal" style="white-space: pre-line;">Белорусская национальная платежная система BELKART</p></td>
+            </tr>
+            <tr>
+                <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class="MsoNormal" style="white-space: pre-line;">Diners</p></td>
+                <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class="MsoNormal" style="white-space: pre-line;">Международная платежная система Diners</p></td>
+            </tr>
+            <tr>
+                <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class="MsoNormal" style="white-space: pre-line;">Discover</p></td>
+                <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class="MsoNormal" style="white-space: pre-line;">Международная платежная система Discover</p></td>
+            </tr>
+            <tr>
+                <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class="MsoNormal" style="white-space: pre-line;">ELCART</p></td>
+                <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class="MsoNormal" style="white-space: pre-line;">Киргизская национальная платежная система ELCART</p></td>
+            </tr>
+            <tr>
+                <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class="MsoNormal" style="white-space: pre-line;">JCB</p></td>
+                <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class="MsoNormal" style="white-space: pre-line;">Платежная система Японии JCB</p></td>
+            </tr>
+            <tr>
+                <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class="MsoNormal" style="white-space: pre-line;">MasterCard</p></td>
+                <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class="MsoNormal" style="white-space: pre-line;">Международная платежная система MasterCard</p></td>
+            </tr>
+            <tr>
+                <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class="MsoNormal" style="white-space: pre-line;">MIR</p></td>
+                <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class="MsoNormal" style="white-space: pre-line;">Российская национальная платежная система</p></td>
+            </tr>
+            <tr>
+                <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class="MsoNormal" style="white-space: pre-line;">UnionPay</p></td>
+                <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class="MsoNormal" style="white-space: pre-line;">Национальная платежная система Китая UnionPay</p></td>
+            </tr>
+            <tr>
+                <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class="MsoNormal" style="white-space: pre-line;">VISA</p></td>
+                <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class="MsoNormal" style="white-space: pre-line;">Международная платежная система VISA</p></td>
+            </tr>
+          </tbody>
+        </table>
+      type: string
+      example: MIR
+      enum:
+        - AmericanExpress
+        - ArCa
+        - BELKART
+        - Diners
+        - Discover
+        - ELCART
+        - JCB
+        - MasterCard
+        - MIR
+        - UnionPay
+        - VISA
+      x-enum-descriptions:
+        - Международная платежная система AmericanExpress
+        - Армянская национальная платежная система ArCa
+        - Белорусская национальная платежная система BELKART
+        - Международная платежная система Diners
+        - Международная платежная система Discover
+        - Киргизская национальная платежная система ELCART
+        - Платежная система Японии JCB
+        - Международная платежная система MasterCard
+        - Российская национальная платежная система
+        - Национальная платежная система Китая UnionPay
+        - Международная платежная система VISA
+      x-enum-varnames:
+        - AmericanExpress
+        - ArCa
+        - BELKART
+        - Diners
+        - Discover
+        - ELCART
+        - JCB
+        - MasterCard
+        - MIR
+        - UnionPay
+        - VISA
+    ISOYearMonth:
+      type: string
+      description: Формат даты год и месяц
+      pattern: ^(1[0-2]|0[1-9]|\d)\/([2-9]\d[1-9]\d|[1-9]\d)$
+      example: 12/2025
+    PlainCardData:
+      type: object
+      additionalProperties: false
+      description: Данные платежной карты, ассоциированной со счетом
+      properties:
+        PAN:
+          description: >-
+            Маскированный учетный номер карты (PAN) или номер карты,
+            ограниченный последними 4 цифрами.
+          type: string
+          pattern: ^[0-9]{4}$
+          example: '0001'
+        expiryDate:
+          description: Дата окончания срока действия карты
+          allOf:
+            - $ref: '#/components/schemas/ISOYearMonth'
+          example: 12/2025
+      required:
+        - PAN
+    PaymentCard:
+      type: object
+      description: Данные по платежной карте
+      additionalProperties: false
+      properties:
+        cardScheme:
+          $ref: '#/components/schemas/CardSchemeNameCode'
+        additionalCardData:
+          description: Дополнительные сведения, специфичные для эмитента карты
+          type: string
+          pattern: ^[\w\W]{1,70}$
+          example: Дополнительные сведения
+          maxLength: 70
+          minLength: 1
+        PaymentCardData:
+          $ref: '#/components/schemas/PlainCardData'
+    CardIndividualTransaction:
+      type: object
+      additionalProperties: false
+      description: >-
+        Сведения об отдельной операции по карте, записанные на POI-терминале
+        (точке взаимодействия)
+      properties:
+        authorizationCode:
+          description: Код авторизации операции
+          type: string
+          pattern: ^[\w\W]{3,35}$
+          maxLength: 35
+          minLength: 3
+          example: '1234'
+    CardTransaction:
+      type: object
+      additionalProperties: false
+      description: >-
+        Предоставляет данные по карте (номер, платежная система), терминалу
+        (номер, идентификатор) и транзакционные данные, используемые для
+        уникальной идентификации операции по карте
+      properties:
+        Card:
+          $ref: '#/components/schemas/PaymentCard'
+        Transaction:
+          description: >-
+            Сведения об отдельной операции по карте, записанные на POI-терминале
+            (точке взаимодействия)
+          allOf:
+            - $ref: '#/components/schemas/CardIndividualTransaction'
+    TransactionHistory:
+      description: Операция по счету
+      type: object
+      additionalProperties: false
+      properties:
+        transactionId:
+          description: >-
+            Уникальный и неизменный идентификатор, используемый для
+            идентификации рессурса операции по счету
+          type: string
+          pattern: ^[a-zA-Z0-9-]{1,40}$
+          minLength: 1
+          maxLength: 40
+          example: transaction-01
+        accountId:
+          description: >-
+            Уникальный и неизменный идентификатор, используемый для
+            идентификации ресурса accounts
+          type: string
+          pattern: ^[a-zA-Z0-9-]{1,40}$
+          minLength: 1
+          maxLength: 40
+          example: test-account-id-01
+        groupId:
+          description: >-
+            Уникальный идентификатор, используемый для идентификации группы
+            связанных операций по счету
+          type: string
+          pattern: ^[a-zA-Z0-9-]{1,40}$
+          minLength: 1
+          maxLength: 40
+          example: groupId-01
+        transactionInformation:
+          description: Сообщение отправителя получателю денежных средств
+          type: string
+          pattern: ^[\w\W]{1,240}$
+          example: Сообщение отправителя получателю денежных средств
+        Amount:
+          description: Информация о сумме и валюте операции по счету
+          allOf:
+            - $ref: '#/components/schemas/ActiveOrHistoricCurrencyAndAmount'
+        creditDebitIndicator:
+          description: Определяет является ли операция дебетовая или кредитовая
+          allOf:
+            - $ref: '#/components/schemas/CreditDebitCode'
+          example: Debit
+        status:
+          description: Статус операции по счету
+          example: AcceptedSettlementCompleted
+          allOf:
+            - $ref: '#/components/schemas/TransactionStatusCode'
+        BankTransactionCode:
+          description: >-
+            Подробная информация для полной идентификации собственного
+            банковского кода операции по счету
+          allOf:
+            - $ref: '#/components/schemas/BankTransactionCode'
+          example:
+            code: Payments
+            subCode: MerchantCardTransactions
+        bookingDateTime:
+          description: >-
+            Дата и время, когда запись об операции по счету публикуется на счете
+            в бухгалтерской книге обслуживающей организации. Используется
+            стандарт ISO8601
+          allOf:
+            - $ref: '#/components/schemas/ISODateTime'
+        valueDateTime:
+          description: >-
+            Дата и время, когда активы становятся доступными владельцу счета в
+            случае ввода кредита или перестают быть доступными владельцу счета в
+            случае ввода дебетовой операции по счету
+          allOf:
+            - $ref: '#/components/schemas/ISODateTime'
+        ChargeAmount:
+          description: Комиссия за операциию по счету
+          allOf:
+            - $ref: '#/components/schemas/ActiveOrHistoricCurrencyAndAmount'
+          example:
+            amount: '2.00'
+            currency: RUB
+        InstructedAmount:
+          description: >-
+            Сумма денег, подлежащая переводу между плательщиком и получателем
+            денежных средств до вычета расходов, выраженная в валюте
+            обозначенной инициирующей стороной
+          allOf:
+            - $ref: '#/components/schemas/ActiveOrHistoricCurrencyAndAmount'
+          example:
+            amount: '202.00'
+            currency: RUB
+        Debtor:
+          description: Плательщик
+          additionalProperties: false
+          required:
+            - name
+          properties:
+            name:
+              description: Наименование организации или имя физического лица
+              type: string
+              pattern: ^[\w\W]{1,160}$
+              minLength: 1
+              maxLength: 160
+              example: Наименование организации или физического лица
+            Identification:
+              description: Идентификация юридического или физического лица.
+              type: array
+              maxItems: 12
+              items:
+                $ref: '#/components/schemas/IdentificationType'
+              minItems: 1
+            MerchantInformation:
+              $ref: '#/components/schemas/MerchantInfo'
+            PostalAddress:
+              description: Почтовый адрес
+              type: object
+              additionalProperties: false
+              properties:
+                townName:
+                  description: >-
+                    Наименование населённого пункта или территории, находящейся
+                    вне границ поселений
+                  type: string
+                  pattern: ^[\w\W]{1,35}$
+                  minLength: 1
+                  maxLength: 35
+                  example: Бигсити
+                country:
+                  $ref: '#/components/schemas/CountryCodeAlfa3'
+        DebtorAgent:
+          description: Финансовое организация, обслуживающая счет плательщика
+          allOf:
+            - $ref: '#/components/schemas/BranchAndFinancialInstitutionIdentification'
+        DebtorAccount:
+          description: >-
+            Уникальная идентификация счета плательщика, на котором будет сделана
+            дебетовая запись в результате операции
+          allOf:
+            - $ref: '#/components/schemas/CashAccount'
+          example:
+            name: Моя карта
+            schemeName: RU.CBR.PAN
+            identification: '**1234'
+        CreditorAgent:
+          description: >-
+            Финансовое организация, обслуживающая счет получателя  денежных
+            средств
+          allOf:
+            - $ref: '#/components/schemas/BranchAndFinancialInstitutionIdentification'
+        CreditorAccount:
+          description: >
+            Идентификатор счета получателя средств, на котором будет проведена
+            запись
+
+            о кредите в результате операции.
+
+            Применение: должен быть указан, если значение параметра
+            `creditDebitIndicator` равно `debit`
+          allOf:
+            - $ref: '#/components/schemas/CashAccount'
+        Creditor:
+          description: Получатель денежных средств
+          type: object
+          additionalProperties: false
+          required:
+            - name
+          properties:
+            name:
+              description: Наименование организации или имя физического лица
+              type: string
+              pattern: ^[\w\W]{1,160}$
+              minLength: 1
+              maxLength: 160
+              example: Наименование организации или физического лица
+            Identification:
+              description: Идентификация юридического или физического лица.
+              type: array
+              maxItems: 12
+              items:
+                $ref: '#/components/schemas/IdentificationType'
+              minItems: 1
+            MerchantInformation:
+              $ref: '#/components/schemas/MerchantInfo'
+            PostalAddress:
+              description: Почтовый адрес
+              type: object
+              additionalProperties: false
+              properties:
+                townName:
+                  description: >-
+                    Наименование населённого пункта или территории, находящейся
+                    вне границ поселений
+                  type: string
+                  pattern: ^[\w\W]{1,35}$
+                  minLength: 1
+                  maxLength: 35
+                  example: Бигсити
+                country:
+                  $ref: '#/components/schemas/CountryCodeAlfa3'
+          example:
+            name: Пятерочка
+            Identification:
+              - schemeName: RU.CBR.BBAN
+                identification: '6574836428347453'
+            PostalAddress:
+              townName: Бигсити
+              country: RUS
+            MerchantInformation:
+              merchantId: 19427360OFALLONMO
+              merchantCategoryCode: '1234'
+        CardTransaction:
+          description: >-
+            Предоставляет данные по карте (номер, платежная система), терминалу
+            (номер, идентификатор) и транзакционные данные, используемые для
+            уникальной идентификации операции по карте Объект
+            `Transaction.CardTransaction` не должен возвращаться, если нет
+            отсутствует разрешение `ReadPaymentCards`
+          allOf:
+            - $ref: '#/components/schemas/CardTransaction'
+        RemittanceInformation:
+          description: >-
+            Предоставляемая информация, позволяющая сопоставить запись с
+            позициями, для которых предназначен перевод, такими как коммерческие
+            счета в системе дебиторской задолженности
+          type: object
+          additionalProperties: false
+          required:
+            - unstructured
+          properties:
+            unstructured:
+              description: Текстовое назначение платежа
+              type: string
+              pattern: ^[\w\W]{1,140}$
+              minLength: 1
+              maxLength: 140
+              example: Назначение платежа - оплата за товары или услуги
+      required:
+        - transactionId
+        - accountId
+        - status
+        - bookingDateTime
+        - creditDebitIndicator
+        - BankTransactionCode
+    DataTransactionResponse:
+      description: Полезная нагрузка ответа на запрос об операциях по счету
+      type: object
+      additionalProperties: false
+      properties:
+        Transaction:
+          description: Список операций по счету
+          type: array
+          maxItems: 50
+          minItems: 0
+          items:
+            $ref: '#/components/schemas/TransactionHistory'
+    TransactionResponse:
+      type: object
+      additionalProperties: false
+      description: Ответ на запрос информации об операциях по счету
+      properties:
+        Data:
+          allOf:
+            - $ref: '#/components/schemas/DataTransactionResponse'
+          description: Полезная нагрузка ответа на запрос об операциях по счету
+        Links:
+          description: Раздел для указания ссылок
+          allOf:
+            - $ref: '#/components/schemas/Links'
+        Meta:
+          description: Раздел метаданных
+          allOf:
+            - $ref: '#/components/schemas/Meta'
+      required:
+        - Data
+      minProperties: 3
+      maxProperties: 3
+      example:
+        Data:
+          Transaction:
+            - transactionId: transaction-01
+              accountId: test-account-id-01
+              Amount:
+                amount: '200.00'
+                currency: RUB
+              creditDebitIndicator: Debit
+              status: AcceptedSettlementCompleted
+              BankTransactionCode:
+                code: Payments
+                subCode: MerchantCardTransactions
+              bookingDateTime: '2021-06-05T15:15:13+00:00'
+              valueDateTime: '2021-06-05T15:15:13+00:00'
+              ChargeAmount:
+                amount: '2.00'
+                currency: RUB
+              InstructedAmount:
+                amount: '202.00'
+                currency: RUB
+              DebtorAccount:
+                name: Моя карта
+                schemeName: RU.CBR.PAN
+                identification: '**1234'
+              Creditor:
+                name: Пятерочка
+                Identification:
+                  - schemeName: RU.CBR.BBAN
+                    identification: '6574836428347453'
+                PostalAddress:
+                  townName: Бигсити
+                  country: RUS
+                MerchantInformation:
+                  merchantId: 19427360OFALLONMO
+                  merchantCategoryCode: '1234'
+              CardTransaction:
+                Card:
+                  cardScheme: MIR
+                  additionalCardData: Дополнительные сведения
+                  PaymentCardData:
+                    PAN: '0001'
+                    expiryDate: 12/2025
+                Transaction:
+                  authorizationCode: '1234'
+              RemittanceInformation:
+                unstructured: Назначение платежа - оплата за товары или услуги
+            - transactionId: transaction-02
+              accountId: test-account-id-01
+              transactionInformation: Сообщение отправителя получателю денежных средств
+              Amount:
+                amount: '2000.00'
+                currency: RUB
+              creditDebitIndicator: Credit
+              status: AcceptedSettlementCompleted
+              BankTransactionCode:
+                code: Payments
+                subCode: ReceivedRealTimeCreditTransfers
+              bookingDateTime: '2021-06-05T16:15:13+00:00'
+              InstructedAmount:
+                amount: '200.00'
+                currency: RUB
+              CreditorAccount:
+                name: Моя карта
+                schemeName: RU.CBR.PAN
+                identification: '**1234'
+              Debtor:
+                name: Андрей В.
+        Links:
+          self: https://sb.example.ru/v1.3/exaple?page=1
+        Meta:
+          totalPages: 1
+    ProductType:
+      description: |
+        Тип банковского продукта
+        <table class=ScrollTableNormal border=1 cellspacing=0 cellpadding=0
+              style='width:100.0%;border-collapse:collapse;border:none'>
+          <thead>
+            <tr>
+                <th valign=top style='border:solid #DDDDDD 1.0pt;background:#F0F0F0; width:20.0%;
+                    padding:1.5pt 1.5pt 1.0pt 1.5pt'>
+                    <p class=MsoNormal><span lang=RU style='color:#262626'><b>Значение</b></span></p>
+                </th>
+                <th valign=top style='border:solid #DDDDDD 1.0pt;border-left:none;
+                    background:#F0F0F0;padding:1.5pt 1.5pt 1.0pt 1.5pt; width:80.0%'>
+                    <p class=MsoNormal><span lang=RU style='color:#262626'><b>Описание</b></span></p>
+                </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+               <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class=MsoNormal white-space: pre-line>DepositIndividual</p></td>
+               <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class=MsoNormal white-space: pre-line>Депозит физического лица</p></td>
+            </tr>
+            <tr>
+               <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class=MsoNormal white-space: pre-line>DepositLegalEntity</p></td>
+               <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class=MsoNormal white-space: pre-line>Депозит юридического лица</p></td>
+            </tr>
+            <tr>
+               <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class=MsoNormal white-space: pre-line>CAIndividual</p></td>
+               <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class=MsoNormal white-space: pre-line>Текущий счет физического лица</p></td>
+            </tr>
+            <tr>
+               <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class=MsoNormal white-space: pre-line>MCCAIndividual</p></td>
+               <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class=MsoNormal white-space: pre-line>Мультивалютный счет физического лица</p></td>
+            </tr>
+            <tr>
+               <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class=MsoNormal white-space: pre-line>CALegalEntity</p></td>
+               <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class=MsoNormal white-space: pre-line>Расчетный счет юридического лица</p></td>
+            </tr>
+            <tr>
+               <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class=MsoNormal white-space: pre-line>DebitCard</p></td>
+               <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class=MsoNormal white-space: pre-line>Дебетовая карта</p></td>
+            </tr>
+            <tr>
+               <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class=MsoNormal white-space: pre-line>CreditCard</p></td>
+               <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class=MsoNormal white-space: pre-line>Кредитная карта</p></td>
+            </tr>
+            <tr>
+               <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class=MsoNormal white-space: pre-line>LoanCar</p></td>
+               <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class=MsoNormal white-space: pre-line>Автокредит</p></td>
+            </tr>
+            <tr>
+               <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class=MsoNormal white-space: pre-line>LoanIndividual</p></td>
+               <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class=MsoNormal white-space: pre-line>Кредититование физичиского лица</p></td>
+            </tr>
+            <tr>
+               <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class=MsoNormal white-space: pre-line>LoanLegalEntity</p></td>
+               <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class=MsoNormal white-space: pre-line>Кредититование юридического лица</p></td>
+            </tr>
+            <tr>
+               <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class=MsoNormal white-space: pre-line>Mortgage</p></td>
+               <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class=MsoNormal white-space: pre-line>Ипотека</p></td>
+            </tr>
+            <tr>
+               <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class=MsoNormal white-space: pre-line>Investment</p></td>
+               <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class=MsoNormal white-space: pre-line>Инвестиционный продукт</p></td>
+            </tr>
+            <tr>
+               <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class=MsoNormal white-space: pre-line>Other</p></td>
+               <td valign=top style='border-top:none;border-left:none;border-bottom:solid #DDDDDD 1.0pt; border-right:solid #DDDDDD 1.0pt;padding:1.5pt 1.5pt 1.0pt 1.5pt'><p class=MsoNormal white-space: pre-line>Другой продукт</p></td>
+            </tr>
+          </tbody>
+        </table>
+      example: CreditCard
+      type: string
+      enum:
+        - DepositIndividual
+        - DepositLegalEntity
+        - CAIndividual
+        - MCCAIndividual
+        - CALegalEntity
+        - DebitCard
+        - CreditCard
+        - LoanCar
+        - LoanIndividual
+        - LoanLegalEntity
+        - Mortgage
+        - Investment
+        - Other
+      x-enum-descriptions:
+        - Депозит физического лица
+        - Депозит юридического лица
+        - Текущий счет физического лица
+        - Мультивалютный счет физического лица
+        - Расчетный счет юридического лица
+        - Дебетовая карта
+        - Кредитная карта
+        - Автокредит
+        - Кредит физическому лицу
+        - Кредит юридического лица
+        - Ипотека
+        - Инвестиционный продукт
+        - Другой продукт
+      x-enum-varnames:
+        - depositIndividual
+        - depositlegalEntity
+        - CAIndividual
+        - MCCAIndividual
+        - CALegalEntity
+        - debitCard
+        - creditCard
+        - loanCar
+        - loanIndividual
+        - loanLegalEntity
+        - mortgage
+        - investment
+        - Other
+    Brand:
+      description: Торговая марка продукта
+      type: object
+      properties:
+        brandName:
+          description: >-
+            Наименование собственного брэнда продукта или брэнд организации,
+            который используется для продвижения продукта
+          type: string
+          pattern: ^[\w\W]{1,140}$
+          minLength: 1
+          maxLength: 140
+          example: МойБанкГрупп
+        applicationUri:
+          description: URL-адрес для получения информации об условиях приобретения продукта
+          type: string
+          pattern: ^[\w\W]{1,2048}$
+          maxLength: 2048
+          example: https://mybank.ru/products/credit-card/applay
+      required:
+        - brandName
+        - applicationUri
+    AccountProductList:
+      type: object
+      description: >-
+        Общая информация о продукте кредитной организации связанной со счетом
+        Пользователя
+      required:
+        - accountId
+        - productType
+        - productName
+      properties:
+        accountId:
+          description: >-
+            Уникальный и неизменный идентификатор, используемый для
+            идентификации ресурса Счета
+          type: string
+          pattern: ^[a-zA-Z0-9-]{1,40}$
+          minLength: 1
+          maxLength: 40
+          example: this-is-a-slug-format-account-id
+        productId:
+          description: >-
+            Уникальный идентификатор, присвоенный финансовым учреждением внутри
+            ор каждому из банковских  продуктов
+          type: string
+          pattern: ^[a-zA-Z0-9-]{1,40}$
+          minLength: 1
+          maxLength: 40
+          example: 022eaab4-568b-4635-a5fb-fe91153e6cd6
+        productName:
+          description: Название продукта, используемого в маркетинговых целях
+          type: string
+          pattern: ^[\w\W]{1,64}$
+          minLength: 1
+          maxLength: 64
+          example: МойПродукт
+        productType:
+          description: Тип продукта
+          allOf:
+            - $ref: '#/components/schemas/ProductType'
+        productVersion:
+          description: Версия продукта
+          type: string
+          pattern: ^[1-9]{1,3}\.\d{1,3}\.[A-Za-z0-9-]{1,16}$
+          example: 13.201.001-rls
+        Brand:
+          $ref: '#/components/schemas/Brand'
+    AccountsProductListResponse:
+      type: object
+      required:
+        - Data
+      description: Ответ на запрос о банковских продуктах по счетам Пользователя
+      properties:
+        Data:
+          type: object
+          description: Раздел данных
+          properties:
+            Product:
+              description: Информация о банковских продуктах по счетам Пользователя
+              type: array
+              minItems: 0
+              maxItems: 5000
+              items:
+                type: object
+                allOf:
+                  - $ref: '#/components/schemas/AccountProductList'
+        Links:
+          description: Раздел для указания ссылок
+          allOf:
+            - $ref: '#/components/schemas/Links'
+          example:
+            self: https://sb.example.ru/v1.3/exaple
+        Meta:
+          description: Раздел метаданных
+          allOf:
+            - $ref: '#/components/schemas/Meta'
+      additionalProperties: false
+    PlainCardData2:
+      type: object
+      additionalProperties: false
+      description: Конфиденциальные данные платежной карты, ассоциированной со счетом
+      properties:
+        PAN:
+          description: >-
+            Маскированный учетный номер карты (PAN) или номер карты,
+            ограниченный последними 4 цифрами.
+          type: string
+          pattern: ^[0-9]{4}$
+          example: '0001'
+        effectiveDate:
+          description: Дата, начиная с которой карту можно использовать
+          allOf:
+            - $ref: '#/components/schemas/ISOYearMonth'
+          example: 12/2021
+        expiryDate:
+          description: Дата окончания срока действия карты
+          allOf:
+            - $ref: '#/components/schemas/ISOYearMonth'
+          example: 12/2025
+        cardStatus:
+          description: |-
+            Статус доступности карты:
+             - pending - Карта выпущена но еще не активирована Пользователем 
+             - active - Доступны все активные операции
+             - blocked - Все операции по карте заблокированы
+          type: string
+          enum:
+            - pending
+            - active
+            - blocked
+          example: active
+      required:
+        - PAN
+        - expiryDate
+        - cardStatus
+    AccountPaymentCardsData:
+      type: object
+      description: Информация о платежной карте, связанной со сетом клиента
+      required:
+        - accountId
+        - paymentCardId
+        - paymentCardType
+        - PaymentCardData
+        - paymentCardName
+        - cardScheme
+      properties:
+        accountId:
+          description: >-
+            Уникальный и неизменный идентификатор, используемый для
+            идентификации ресурса Счета
+          type: string
+          pattern: ^[a-zA-Z0-9-]{1,40}$
+          minLength: 1
+          maxLength: 40
+          example: this-is-a-slug-format-account-id
+        paymentCardId:
+          description: >-
+            Уникальный и неизменный идентификатор, используемый для
+            идентификации платежной карты
+          type: string
+          pattern: ^[a-zA-Z0-9-]{1,40}$
+          minLength: 1
+          maxLength: 40
+          example: this-is-a-slug-format-payment-card-id
+        paymentCardType:
+          description: Тип платежной карты
+          type: string
+          enum:
+            - debit
+            - credit
+          example: debit
+        paymentCardName:
+          description: >-
+            Наименование, ассоциированное с платежной картой конечного
+            Пользователя
+          type: string
+          pattern: ^[\w\W]{1,64}$
+          minLength: 1
+          maxLength: 64
+          example: Экономная карта
+        PaymentCardData:
+          $ref: '#/components/schemas/PlainCardData2'
+        cardScheme:
+          $ref: '#/components/schemas/CardSchemeNameCode'
+        iconUrl:
+          description: URL-адрес для получения информации в виде значка (icon)
+          type: string
+          pattern: ^[\w\W]{1,2048}$
+          minLength: 1
+          maxLength: 2048
+          example: https://mybank.ru/products/debit-card/mybrend.ico
+        designUrl:
+          description: URL-адрес для получения информации в виде изображения
+          type: string
+          pattern: ^[\w\W]{1,2048}$
+          minLength: 1
+          maxLength: 2048
+          example: https://mybank.ru/products/debit-card/mybrend.png
+    AccountPaymentCardsResponse:
+      type: object
+      additionalProperties: false
+      description: Список платежных карт и их идентификаторы
+      properties:
+        Data:
+          type: object
+          description: Раздел данных
+          properties:
+            PaymentCard:
+              type: array
+              minItems: 0
+              maxItems: 50
+              items:
+                type: object
+                allOf:
+                  - $ref: '#/components/schemas/AccountPaymentCardsData'
+        Links:
+          description: Раздел для указания ссылок
+          allOf:
+            - $ref: '#/components/schemas/Links'
+          example:
+            self: https://sb.example.ru/v1.3/exaple
+        Meta:
+          description: Раздел метаданных
+          allOf:
+            - $ref: '#/components/schemas/Meta'
+      required:
+        - Data
+      minProperties: 3
+      maxProperties: 3
+    PaymentCardBalance:
+      description: Остаток на счете
+      type: object
+      additionalProperties: false
+      properties:
+        accountId:
+          description: >-
+            Уникальный и неизменный идентификатор, используемый для
+            идентификации ресурса
+          type: string
+          pattern: ^[a-zA-Z0-9-]{1,40}$
+          minLength: 1
+          maxLength: 40
+          example: this-is-a-slug-format-account-id
+        paymentCardId:
+          description: >-
+            Уникальный и неизменный идентификатор, используемый для
+            идентификации платежной карты
+          type: string
+          pattern: ^[a-zA-Z0-9-]{1,40}$
+          minLength: 1
+          maxLength: 40
+          example: this-is-a-slug-format-payment-card-id
+        AvailableAmount:
+          description: Сумма остатка
+          allOf:
+            - $ref: '#/components/schemas/ActiveOrHistoricCurrencyAndAmount'
+        creditDebitIndicator:
+          description: Определяет является остаток кредитовым или дебетовым
+          allOf:
+            - $ref: '#/components/schemas/CreditDebitCode'
+      required:
+        - paymentCardId
+        - accountId
+        - AvailableAmount
+        - creditDebitIndicator
+    PaymentCardBalancesResponse:
+      type: object
+      required:
+        - Data
+      description: >-
+        Ответ на запрос об остатке денежных средств, в разрезе платежных карт по
+        всем счетам Пользователя, по которым он дал согласие
+      properties:
+        Data:
+          description: Полезная нагрузка ответа на запрос об остатке на счете по картам
+          type: object
+          additionalProperties: false
+          properties:
+            Balance:
+              type: array
+              maxItems: 100
+              items:
+                $ref: '#/components/schemas/PaymentCardBalance'
+              minItems: 0
+        Links:
+          description: Раздел для указания ссылок
+          allOf:
+            - $ref: '#/components/schemas/Links'
+          example:
+            self: https://sb.example.ru/v1.3/exaple
+        Meta:
+          description: Раздел метаданных
+          allOf:
+            - $ref: '#/components/schemas/Meta'
+  responses:
+    201AccountAccessConsentsCreated:
+      description: Ответ на создание ресурса согласия на доступ к счету
+      headers:
+        x-fapi-interaction-id:
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: >-
+            RFC4122 UID, используемый в качестве идентификатора корреляции. Если
+            необходимо, то Сторонний поставщик передает обратно значение
+            идентификатора корреляции в заголовке ответа x-fapi-interaction-id.
+        x-jws-signature:
+          required: true
+          description: Отделяемая подпись полезной нагрузки в формате JWS
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ConsentResponse'
+    400Error-req:
+      description: >-
+        Запрос имеет неверное, отсутствующее или несовместимое тело JSON,
+        параметры URL или поля заголовка
+      headers:
+        x-fapi-interaction-id:
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: >-
+            RFC4122 UID, используемый в качестве идентификатора корреляции. Если
+            необходимо, то Сторонний поставщик передает обратно значение
+            идентификатора корреляции в заголовке ответа x-fapi-interaction-id.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/OBRUErrorResponse'
+          example:
+            code: '400'
+            id: 4aca5b0d-1730-416f-a52b-6d353b687082
+            message: Bad Request
+            Errors:
+              - errorCode: RU.CBR.Field.Missing
+                message: >-
+                  Обязательное поле, необходимое для API, отсутствует в полезной
+                  нагрузке
+                path: Data.Model.Object.filled
+                url: https://example.com/error-description
+    401Error-req:
+      description: Заголовок авторизации отсутствует или неверный токен
+      headers:
+        x-fapi-interaction-id:
+          required: true
+          schema:
+            type: string
+            format: uuid
+        www-authenticate:
+          required: true
+          schema:
+            type: string
+            enum:
+              - Valid token required
+    403Error-req:
+      description: >-
+        Токен имеет неверную область действия или была нарушена политика
+        безопасности
+      headers:
+        x-fapi-interaction-id:
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: >-
+            RFC4122 UID, используемый в качестве идентификатора корреляции. Если
+            необходимо, то Сторонний поставщик передает обратно значение
+            идентификатора корреляции в заголовке ответа x-fapi-interaction-id.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/OBRUErrorResponse'
+          example:
+            code: '403'
+            id: ab41a751-619b-4947-bf0a-251f6e92f599
+            message: Forbidden
+            Errors:
+              - errorCode: RU.CBR.Authenticate.InvalidScope
+                message: >-
+                  Предъявленный токен доступа не содержит область действия
+                  (scope) необходимый для доступа к ресурсу
+                url: https://example.com/error-description
+    405Error-req:
+      description: >-
+        Сторонний Поставщик пытается получить доступ к ресурсу с помощью метода,
+        который не поддерживается
+      headers:
+        x-fapi-interaction-id:
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: >-
+            RFC4122 UID, используемый в качестве идентификатора корреляции. Если
+            необходимо, то Сторонний поставщик передает обратно значение
+            идентификатора корреляции в заголовке ответа x-fapi-interaction-id.
+    406Error-req:
+      description: >-
+        Запрос содержал параметр заголовка Accept, отличный от разрешенных media
+        types, и набор символов, отличный от UTF-8
+      headers:
+        x-fapi-interaction-id:
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: >-
+            RFC4122 UID, используемый в качестве идентификатора корреляции. Если
+            необходимо, то Сторонний поставщик передает обратно значение
+            идентификатора корреляции в заголовке ответа x-fapi-interaction-id.
+    429Error-req:
+      description: >-
+        Операция была отклонена, так как слишком много запросов было сделано в
+        течение определенного периода времени
+      headers:
+        x-fapi-interaction-id:
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: >-
+            RFC4122 UID, используемый в качестве идентификатора корреляции. Если
+            необходимо, то Сторонний поставщик передает обратно значение
+            идентификатора корреляции в заголовке ответа x-fapi-interaction-id.
+        Retry-After:
+          schema:
+            type: string
+    500Error-req:
+      description: Что-то пошло не так на стороне Стороннего поставщика.
+      headers:
+        x-fapi-interaction-id:
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: >-
+            RFC4122 UID, используемый в качестве идентификатора корреляции. Если
+            необходимо, то Сторонний поставщик передает обратно значение
+            идентификатора корреляции в заголовке ответа x-fapi-interaction-id.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/OBRUErrorResponse'
+          example:
+            code: '500'
+            id: af467d1b-985d-4a8e-972e-24a32287085f
+            message: Internal Server Error
+            Errors:
+              - errorCode: RU.CBR.UnexpectedError
+                message: Что-то пошло не так на стороне Поставщика услуг
+                path: Data.Model.Object.filled
+                url: https://example.com/error-description
+    501Error-req:
+      description: >-
+        Сторонний поставщик не поддерживает функции, необходимые для выполнения
+        запроса
+      headers:
+        x-fapi-interaction-id:
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: >-
+            RFC4122 UID, используемый в качестве идентификатора корреляции. Если
+            необходимо, то Сторонний поставщик передает обратно значение
+            идентификатора корреляции в заголовке ответа x-fapi-interaction-id.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/OBRUErrorResponse'
+          example:
+            code: '501'
+            id: 451f7718-2e96-46f0-b286-4b1c8370b87e
+            message: Not Implemented
+            Errors:
+              - errorCode: RU.CBR.UnexpectedError
+                message: >-
+                  Данный код ошибки можно использовать при возникновении
+                  непредвиденной ошибки
+                path: Data.Model.Object.filled
+                url: https://example.com/error-description
+    503Error-req:
+      description: Сервис временно не доступен
+      headers:
+        x-fapi-interaction-id:
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: >-
+            RFC4122 UID, используемый в качестве идентификатора корреляции. Если
+            необходимо, то Сторонний поставщик передает обратно значение
+            идентификатора корреляции в заголовке ответа x-fapi-interaction-id.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/OBRUErrorResponse'
+          example:
+            code: '503'
+            id: 63a8dddb-b92d-4ac7-82c3-c9a9efb878a5
+            message: Service Unavailable
+            Errors:
+              - errorCode: RU.CBR.UnexpectedError
+                message: Сервис временно не доступен
+                path: Data.Model.Object.filled
+                url: https://example.com/error-description
+    200AccountAccessConsentsConsentIdRead:
+      description: Информация о ресурсе согласия
+      headers:
+        x-fapi-interaction-id:
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: >-
+            RFC4122 UID, используемый в качестве идентификатора корреляции. Если
+            необходимо, то Сторонний поставщик передает обратно значение
+            идентификатора корреляции в заголовке ответа x-fapi-interaction-id.
+        x-jws-signature:
+          required: true
+          description: Отделяемая подпись полезной нагрузки в формате JWS
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ConsentResponse'
+    204Deleted:
+      description: Осутствует содержание
+      headers:
+        x-fapi-interaction-id:
+          schema:
+            type: string
+            format: uuid
+          description: >-
+            RFC4122 UID, используемый в качестве идентификатора корреляции. Если
+            необходимо, то Сторонний поставщик передает обратно значение
+            идентификатора корреляции в заголовке ответа x-fapi-interaction-id.
+    200GetAccounts:
+      description: >-
+        Полный список счетов (с идентификаторами accountId), которые были
+        авторизованы пользователем на стороне ППИУ
+      headers:
+        x-fapi-interaction-id:
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: >-
+            RFC4122 UID, используемый в качестве идентификатора корреляции. Если
+            необходимо, то Сторонний поставщик передает обратно значение
+            идентификатора корреляции в заголовке ответа x-fapi-interaction-id.
+        x-jws-signature:
+          required: true
+          description: Отделяемая подпись полезной нагрузки в формате JWS
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AccountResponse'
+    200GetAccountsaccountId:
+      description: >-
+        Полный список счетов (с идентификаторами accountId), которые были
+        авторизованы пользователем на стороне ППИУ
+      headers:
+        x-fapi-interaction-id:
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: >-
+            RFC4122 UID, используемый в качестве идентификатора корреляции. Если
+            необходимо, то Сторонний поставщик передает обратно значение
+            идентификатора корреляции в заголовке ответа x-fapi-interaction-id.
+        x-jws-signature:
+          required: true
+          description: Отделяемая подпись полезной нагрузки в формате JWS
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AccountResponse'
+    200GetAccountsaccountIdBalances:
+      description: Получение информации об остатке на счете с идентификатором accountId
+      headers:
+        x-fapi-interaction-id:
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: >-
+            RFC4122 UID, используемый в качестве идентификатора корреляции. Если
+            необходимо, то Сторонний поставщик передает обратно значение
+            идентификатора корреляции в заголовке ответа x-fapi-interaction-id.
+        x-jws-signature:
+          required: true
+          description: Отделяемая подпись полезной нагрузки в формате JWS
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BalanceResponse'
+    200GetBalances:
+      description: >-
+        Получение информации об остатке по всем банковским счетам, которые
+        Пользователь авторизовал с помощью согласия
+      headers:
+        x-fapi-interaction-id:
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: >-
+            RFC4122 UID, используемый в качестве идентификатора корреляции. Если
+            необходимо, то Сторонний поставщик передает обратно значение
+            идентификатора корреляции в заголовке ответа x-fapi-interaction-id.
+        x-jws-signature:
+          required: true
+          description: Отделяемая подпись полезной нагрузки в формате JWS
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BalanceResponse'
+    200GetAccountsaccountIdTransactions:
+      description: >-
+        Конечная точка извлекает ресурс операции по счету с идентификатором
+        accountId
+      headers:
+        x-fapi-interaction-id:
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: >-
+            RFC4122 UID, используемый в качестве идентификатора корреляции. Если
+            необходимо, то Сторонний поставщик передает обратно значение
+            идентификатора корреляции в заголовке ответа x-fapi-interaction-id.
+        x-jws-signature:
+          required: true
+          description: Отделяемая подпись полезной нагрузки в формате JWS
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TransactionResponse'
+    200GetTransactions:
+      description: >-
+        Конечная точка позволяет получить список операций по счету по всем
+        счетам, которые авторизованы пользователем с помощью согласия
+      headers:
+        x-fapi-interaction-id:
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: >-
+            RFC4122 UID, используемый в качестве идентификатора корреляции. Если
+            необходимо, то Сторонний поставщик передает обратно значение
+            идентификатора корреляции в заголовке ответа x-fapi-interaction-id.
+        x-jws-signature:
+          required: true
+          description: Отделяемая подпись полезной нагрузки в формате JWS
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TransactionResponse'
+    200AcoountsProductListRead:
+      description: Запрос успешно выполнен
+      headers:
+        x-fapi-interaction-id:
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: >-
+            RFC4122 UID, используемый в качестве идентификатора корреляции. Если
+            необходимо, то Сторонний поставщик передает обратно значение
+            идентификатора корреляции в заголовке ответа x-fapi-interaction-id.
+        x-jws-signature:
+          required: true
+          description: Отделяемая подпись полезной нагрузки в формате JWS
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AccountsProductListResponse'
+    200AcoountPaymentCardsRead:
+      description: Запрос успешно выполнен
+      headers:
+        x-fapi-interaction-id:
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: >-
+            RFC4122 UID, используемый в качестве идентификатора корреляции. Если
+            необходимо, то Сторонний поставщик передает обратно значение
+            идентификатора корреляции в заголовке ответа x-fapi-interaction-id.
+        x-jws-signature:
+          required: true
+          description: Отделяемая подпись полезной нагрузки в формате JWS
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AccountPaymentCardsResponse'
+    200PaymentCardBalancesRead:
+      description: Запрос успешно выполнен
+      headers:
+        x-fapi-interaction-id:
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: >-
+            RFC4122 UID, используемый в качестве идентификатора корреляции. Если
+            необходимо, то Сторонний поставщик передает обратно значение
+            идентификатора корреляции в заголовке ответа x-fapi-interaction-id.
+        x-jws-signature:
+          required: true
+          description: Отделяемая подпись полезной нагрузки в формате JWS
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PaymentCardBalancesResponse'

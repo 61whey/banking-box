@@ -1,0 +1,448 @@
+{
+    "Data": {
+        "Product": {
+            "accountId": "1002001",
+            "productId": "022eaab4-568b-4635-a5fb-fe91153e6c03",
+            "productName": "СберКарта Тревел",
+            "productType": "debitCard",
+            "productVersion": "1.1.123",
+            "Brand": {
+                "brandName": "СБЕР БАНК",
+                "applicationUri": "https://combank.ru/products/credit-card/applay"
+            },
+            "ProductDetails": {
+                "active": true,
+                "activeFrom": "2021-09-01T12:00:00+03:00",
+                "activeTo": "2022-09-01T12:00:00+03:00",
+                "feeFreeLength": 12,
+                "feeFreeLengthPeriod": "Month",
+                "productInsurance": false,
+                "DeliveryRegions": [
+                    {
+                        "DeliveryRegionAndAddress": [
+                            {
+                                "administrationZone": "45388000",
+                                "PostalAddress": {
+                                    "addressType": "DeliveryTo",
+                                    "townName": "Москва"
+                                }
+                            },
+                            {
+                                "administrationZone": "45388001",
+                                "PostalAddress": {
+                                    "addressType": "DeliveryTo",
+                                    "countrySubDivision": "Московская область"
+                                }
+                            }
+                        ]
+                    }
+                ],
+                "FeatureAndBenefit": {
+                    "FeatureAndBenefitGroup": [
+                        {
+                            "name": "Предложения розничного продавца",
+                            "type": "Cashback",
+                            "comments": [
+                                "кэшбэк до 15% у ряда крупных ритейлеров",
+                                "До конца года"
+                            ]
+                        },
+                        {
+                            "name": "Предложение сети кинотеатров",
+                            "type": "BulkDiscount",
+                            "comments": [
+                                "Доступ к ряду льготных тарифов и специальных предложений",
+                                "Услуга платная"
+                            ],
+                            "fee": "200.00",
+                            "applicationFrequency": "Monthly",
+                            "calculationFrequency": "Monthly",
+                            "FeatureAndBenefitItem": [
+                                {
+                                    "identification": "FB-item-ID01",
+                                    "type": "PercentageSales",
+                                    "name": "Удобное время",
+                                    "comments": [
+                                        "Доступно во всех кинотеатрах города"
+                                    ],
+                                    "indicator": true,
+                                    "textual": "Скидка 10% на билеты в кино по вторникам вечером",
+                                    "FeatureBenefitEligibility": [
+                                        {
+                                            "name": "Ограничения выходного дня",
+                                            "description": "Ограничение действия для праздничных и выходных дней",
+                                            "type": "Other",
+                                            "indicator": true
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "comments": [
+                    "СберКарта",
+                    "Карта, которая подходит всем"
+                ]
+            },
+            "CreditInterest": {
+                "TierBandSet": [
+                    {
+                        "tierBandMethod": "Fixed",
+                        "calculationMethod": "Compound",
+                        "destination": "CurrentAccount",
+                        "comments": [
+                            "Доход до 3%"
+                        ],
+                        "TierBandSetEligibility": [
+                            {
+                                "name": "По минимальной сумме списания",
+                                "description": "При тратах от 10 000 ₽ в месяц",
+                                "type": "MinimumTotalDebit",
+                                "amount": "10000.00",
+                                "indicator": true,
+                                "period": "Month"
+                            },
+                            {
+                                "name": "По минимальной сумме остатка",
+                                "description": "При неснижаемом остатке 100 000  ₽ в течении месяца",
+                                "type": "MinimumBalanceAmont",
+                                "amount": "100000.00",
+                                "indicator": true,
+                                "period": "Month"
+                            },
+                            {
+                                "name": "По минимальной сумме начисления",
+                                "description": "При начислении 80 000 ₽ в месяц",
+                                "type": "MinimumTotalCredit",
+                                "amount": "80000.00",
+                                "indicator": true,
+                                "period": "Month"
+                            }
+                        ],
+                        "TierBand": [
+                            {
+                                "string": "INFR",
+                                "AER": "1.00",
+                                "comments": [
+                                    "На любой остаток по счету",
+                                    "Без ограничений"
+                                ],
+                                "identification": "TBS-dc1-01",
+                                "tierCurrency": "RUB",
+                                "interestRate": "1.00",
+                                "interestRateType": "INFR",
+                                "tierValueMinimum": "0.00",
+                                "tierPrimaryValueMinimum": "0.00",
+                                "tierRemainValueMinimum": "0.00",
+                                "tierValueMinTerm": 1,
+                                "minTermPeriod": "Month",
+                                "applicationFrequency": "Monthly",
+                                "calculationFrequency": "Monthly"
+                            },
+                            {
+                                "string": "INFR",
+                                "AER": "2.00",
+                                "comments": [
+                                    "При минимальном остатке на счете"
+                                ],
+                                "identification": "TBS-dc1-02",
+                                "tierCurrency": "RUB",
+                                "interestRate": "2.00",
+                                "interestRateType": "INFR",
+                                "tierValueMinimum": "1000000.00",
+                                "tierPrimaryValueMinimum": "1000000.00",
+                                "tierRemainValueMinimum": "1000000.00",
+                                "tierValueMinTerm": 1,
+                                "minTermPeriod": "Month",
+                                "applicationFrequency": "Monthly",
+                                "calculationFrequency": "Monthly"
+                            },
+                            {
+                                "string": "INFR",
+                                "AER": "2.00",
+                                "comments": [
+                                    "При тратах со счета"
+                                ],
+                                "identification": "TBS-dc1-03",
+                                "tierCurrency": "RUB",
+                                "interestRate": "2.00",
+                                "interestRateType": "INFR",
+                                "tierValueMinimum": "0.00",
+                                "tierPrimaryValueMinimum": "0.00",
+                                "tierRemainValueMinimum": "0.00",
+                                "tierValueMinTerm": 1,
+                                "minTermPeriod": "Month",
+                                "applicationFrequency": "Monthly",
+                                "calculationFrequency": "Monthly"
+                            },
+                            {
+                                "string": "INFR",
+                                "AER": "3.00",
+                                "comments": [
+                                    "При поступлениях на счет"
+                                ],
+                                "identification": "TBS-dc1-04",
+                                "tierCurrency": "RUB",
+                                "interestRate": "3.00",
+                                "interestRateType": "INFR",
+                                "tierValueMinimum": "0.00",
+                                "tierPrimaryValueMinimum": "0.00",
+                                "tierRemainValueMinimum": "0.00",
+                                "tierValueMinTerm": 1,
+                                "minTermPeriod": "Month",
+                                "applicationFrequency": "Monthly",
+                                "calculationFrequency": "Monthly"
+                            },
+                            {
+                                "string": "INFR",
+                                "AER": "4.00",
+                                "comments": [
+                                    "При поступлениях на счет"
+                                ],
+                                "identification": "TBS-dc2-04",
+                                "tierCurrency": "RUB",
+                                "interestRate": "4.00",
+                                "interestRateType": "INFR",
+                                "tierValueMinimum": "0.00",
+                                "tierPrimaryValueMinimum": "0.00",
+                                "tierRemainValueMinimum": "0.00",
+                                "tierValueMinTerm": 1,
+                                "minTermPeriod": "Month",
+                                "applicationFrequency": "Monthly",
+                                "calculationFrequency": "Monthly"
+                            }
+                        ]
+                    },
+                    {
+                        "tierBandMethod": "Fixed",
+                        "calculationMethod": "Compound",
+                        "destination": "CurrentAccount",
+                        "comments": [
+                            "Доход до 3%",
+                            "Для зарплатных клиентов"
+                        ],
+                        "TierBandSetEligibility": [
+                            {
+                                "name": "Для зарплатных клиентов",
+                                "description": "Повышение процентной ставки зарплатным клиентам",
+                                "type": "ExistingCustomers",
+                                "amount": "1.00",
+                                "indicator": true,
+                                "period": "Month"
+                            },
+                            {
+                                "name": "По минимальной сумме списания",
+                                "description": "При тратах от 10 000 ₽ в месяц",
+                                "type": "MinimumTotalDebit",
+                                "amount": "10000.00",
+                                "indicator": true,
+                                "period": "Month"
+                            },
+                            {
+                                "name": "По минимальной сумме остатка",
+                                "description": "При неснижаемом остатке 100 000  ₽ в течении месяца",
+                                "type": "MinimumBalanceAmont",
+                                "amount": "100000.00",
+                                "indicator": true,
+                                "period": "Month"
+                            },
+                            {
+                                "name": "По минимальной сумме начисления",
+                                "description": "При начислении 80 000 ₽ в месяц",
+                                "type": "MinimumTotalCredit",
+                                "amount": "80000.00",
+                                "indicator": true,
+                                "period": "Month"
+                            }
+                        ],
+                        "TierBand": [
+                            {
+                                "string": "INFR",
+                                "AER": "2.00",
+                                "comments": [
+                                    "На любой остаток по счету",
+                                    "Без ограничений"
+                                ],
+                                "identification": "TBS-dc2-01",
+                                "tierCurrency": "RUB",
+                                "interestRate": "2.00",
+                                "interestRateType": "INFR",
+                                "tierValueMinimum": "0.00",
+                                "tierPrimaryValueMinimum": "0.00",
+                                "tierRemainValueMinimum": "0.00",
+                                "tierValueMinTerm": 1,
+                                "minTermPeriod": "Month",
+                                "applicationFrequency": "Monthly",
+                                "calculationFrequency": "Monthly"
+                            },
+                            {
+                                "string": "INFR",
+                                "AER": "3.00",
+                                "comments": [
+                                    "При минимальном остатке на счете"
+                                ],
+                                "identification": "TBS-dc2-02",
+                                "tierCurrency": "RUB",
+                                "interestRate": "3.00",
+                                "interestRateType": "INFR",
+                                "tierValueMinimum": "1000000.00",
+                                "tierPrimaryValueMinimum": "1000000.00",
+                                "tierRemainValueMinimum": "1000000.00",
+                                "tierValueMinTerm": 1,
+                                "minTermPeriod": "Month",
+                                "applicationFrequency": "Monthly",
+                                "calculationFrequency": "Monthly"
+                            },
+                            {
+                                "string": "INFR",
+                                "AER": "3.00",
+                                "comments": [
+                                    "При тратах со счета"
+                                ],
+                                "identification": "TBS-dc2-03",
+                                "tierCurrency": "RUB",
+                                "interestRate": "3.00",
+                                "interestRateType": "INFR",
+                                "tierValueMinimum": "0.00",
+                                "tierPrimaryValueMinimum": "0.00",
+                                "tierRemainValueMinimum": "0.00",
+                                "tierValueMinTerm": 1,
+                                "minTermPeriod": "Month",
+                                "applicationFrequency": "Monthly",
+                                "calculationFrequency": "Monthly"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "Overdraft": {
+                "comments": [
+                    "Предоставление краткосрочного кредита"
+                ],
+                "OverdraftTierBandSet": [
+                    {
+                        "string": "Tiered",
+                        "identification": "OVTBS-dc-01",
+                        "tierBandMethod": "Tiered",
+                        "overdraftType": "salaryOverdraft",
+                        "authorisedIndicator": true,
+                        "bufferAmount": "1000.00",
+                        "comments": [
+                            "Информация для клиента по овердрафту"
+                        ],
+                        "OverdraftTierBand": [
+                            {
+                                "ear": "15.00",
+                                "EAR": "15.00",
+                                "identification": "OVD-1000-01",
+                                "tierCurrency": "RUB",
+                                "tierValueMin": "1000.00",
+                                "tierValueMax": "4999.99",
+                                "agreementLengthMin": 0,
+                                "agreementLengthMax": 24,
+                                "agreementPeriod": "Hour",
+                                "overdraftInterestChargingCoverage": "Tiered",
+                                "bankGuaranteedIndicator": true
+                            },
+                            {
+                                "ear": "20.00",
+                                "EAR": "20.00",
+                                "identification": "OVD-1000-02",
+                                "tierCurrency": "RUB",
+                                "tierValueMin": "5000.00",
+                                "tierValueMax": "5000.00",
+                                "agreementLengthMin": 0,
+                                "agreementLengthMax": 360,
+                                "agreementPeriod": "Hour",
+                                "overdraftInterestChargingCoverage": "Tiered",
+                                "bankGuaranteedIndicator": true
+                            }
+                        ]
+                    }
+                ]
+            },
+            "OtherFeesCharges": [
+                {
+                    "tariffName": "Условия на дополнительные услуги",
+                    "FeeChargeDetail": [
+                        {
+                            "feeType": "smsNotificating",
+                            "feeAmount": "60.00",
+                            "applicationFrequency": "Monthly",
+                            "calculationFrequency": "Monthly",
+                            "comments": [
+                                "СМС оповещения"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "tariffName": "Условия при снятии в отделении",
+                    "FeeChargeDetail": [
+                        {
+                            "feeType": "transferOfFunds",
+                            "feeRate": "1.25",
+                            "feeRateType": "INFR",
+                            "applicationFrequency": "PerOccurrence",
+                            "calculationFrequency": "Monthly",
+                            "FeeApplicableRange": {
+                                "minimumAmount": "100000.00"
+                            },
+                            "comments": [
+                                "При переводе денежных средств"
+                            ]
+                        }
+                    ],
+                    "FeeChargeCap": [
+                        {
+                            "feeType": "transferOfFunds",
+                            "minMaxType": "Maximum",
+                            "feeCapOccurrence": "1",
+                            "feeCapAmount": "1500.00"
+                        }
+                    ]
+                }
+            ]
+        },
+        "SupplementaryData": {
+            "PaymentCards": [
+                {
+                    "PlainCardData": {
+                        "PAN": "*0001",
+                        "cardSequenceNumber": "01",
+                        "expiryDate": "03/2024",
+                        "serviceCode": "121",
+                        "CardSecurityCode": {
+                            "CSCManagement": "CSCPresent",
+                            "CSCValue": "123"
+                        }
+                    },
+                    "cardCountryCode": 643,
+                    "CardBrand": {
+                        "identification": "VISA"
+                    }
+                },
+                {
+                    "PlainCardData": {
+                        "PAN": "*0002",
+                        "cardSequenceNumber": "01",
+                        "expiryDate": "03/2024",
+                        "serviceCode": "121",
+                        "CardSecurityCode": {
+                            "CSCManagement": "CSCPresent",
+                            "CSCValue": "123"
+                        }
+                    },
+                    "cardCountryCode": 643,
+                    "CardBrand": {
+                        "identification": "MIR"
+                    }
+                }
+                
+            ]
+        }
+    },
+        "Links": {},
+        "Meta": {}
+    }

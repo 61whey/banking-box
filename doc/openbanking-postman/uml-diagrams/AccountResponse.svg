@@ -1,0 +1,423 @@
+<?xml version="1.0" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" font-family="monospace" width="105.8em" height="45.699999999999996em" style="background-color:white"><defs>
+	<marker id="Triangle"
+		viewBox="0 0 10 10" refX="0" refY="5" 
+		markerUnits="strokeWidth"
+		markerWidth="15" markerHeight="10"
+		orient="auto">
+		<path d="M 0 0 L 10 5 L 0 10 z" />
+	</marker>
+		
+		<marker id="Diamond"
+		viewBox="0 0 16 10" refX="0" refY="5" 
+		markerUnits="strokeWidth"
+		markerWidth="20" markerHeight="10"
+		orient="auto">
+		<path d="M 0 5 L 8 10 L 16 5 L 8 0 z" />
+	</marker>   
+</defs>
+<rect x="1em" y="1em" width="12em" height="3em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="7em" y="2.3em" fill="black">
+<title>Список счетов и их идентификаторы</title>
+AccountResponse
+</text>
+
+<rect x="19em" y="1em" width="3.2em" height="3em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="20.6em" y="2.3em" fill="black">
+<title>Полезная нагрузка ответа на запрос о списке счетов</title>
+Data
+</text>
+
+<rect x="28.2em" y="1em" width="21.6em" height="12.1em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="39em" y="2.3em" fill="black">
+<title>Счет</title>
+Account
+</text>
+
+<text x="29.2em" y="4.3em" fill="darkslateblue">
+
+Servicer [0..1]
+</text>
+
+<text x="29.2em" y="5.6em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 128
+Description: Краткое описание назначения счета или продукта, привязанного к счету
+Pattern: ^[\w\W]{1,128}$
+</title>
+accountDescription [1..1]
+</text>
+
+<text x="29.2em" y="6.9em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 40
+Description: Уникальный и неизменный идентификатор, используемый для идентификации ресурса
+Pattern: ^[a-zA-Z0-9-]{1,40}$
+</title>
+accountId [1..1]
+</text>
+
+<text x="29.2em" y="8.2em" fill="darkslateblue">
+<title>Type: string
+Description: Тип счета
+Values:
+ - Business
+ - Personal
+</title>
+accountType [1..1]
+</text>
+
+<text x="29.2em" y="9.5em" fill="darkslateblue">
+<title>Type: string
+Description: Код валюты, соответствующий международного стандарта ISO 4217
+Pattern: ^[A-Z]{3,3}$
+</title>
+currency [1..1]
+</text>
+
+<text x="29.2em" y="10.8em" fill="darkslateblue">
+<title>Type: string
+Description: Статус счета
+Values:
+ - Enabled
+ - Disabled
+ - Deleted
+</title>
+status [1..1]
+</text>
+
+<text x="29.2em" y="12.100000000000001em" fill="darkslateblue">
+<title>Type: string
+Format: date-time
+Description: Формат даты и времени
+</title>
+statusUpdateDateTime [0..1]
+</text>
+
+<rect x="55.8em" y="1em" width="16.8em" height="6.9em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="64.2em" y="2.3em" fill="black">
+<title>Идентификация счета</title>
+AccountDetails
+</text>
+
+<text x="56.8em" y="4.3em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 256
+Description: Идентификатор счета соответствующий схеме идентификации, известный владельцу счета (номер банковского счета, номер карты, номер телефона ...)
+Pattern: ^[\w\W]{1,256}$
+</title>
+identification [1..1]
+</text>
+
+<text x="56.8em" y="5.6em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 70
+Description: Наименование счета, присвоенное учреждением, обслуживающим счет, по согласованию с владельцем счета  для обеспечения дополнительных средств идентификации счета
+Pattern: ^[\w\W]{1,70}$
+</title>
+name [0..1]
+</text>
+
+<text x="56.8em" y="6.9em" fill="darkslateblue">
+<title>Type: string
+Description: Схема идентификации счета
+Values:
+ - RU.CBR.BBAN
+ - RU.CBR.EPID
+ - RU.CBR.PAN
+ - RU.CBR.MTEL
+ - RU.CBR.ORID
+</title>
+schemeName [1..1]
+</text>
+
+<rect x="55.8em" y="8.9em" width="20em" height="12.1em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="65.8em" y="10.200000000000001em" fill="black">
+<title>Информация об участнике, используемая для идентификации юридического или физического лица</title>
+Owner
+</text>
+
+<text x="56.8em" y="12.200000000000001em" fill="darkslateblue">
+<title>Type: string
+Format: date-time
+Description: Формат даты и времени
+</title>
+birthDate [0..1]
+</text>
+
+<text x="56.8em" y="13.500000000000002em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 35
+Description: Место рождения (город)
+Pattern: ^[\w\W]{1,35}$
+</title>
+cityOfBirth [0..1]
+</text>
+
+<text x="56.8em" y="14.8em" fill="darkslateblue">
+<title>Type: string
+Description: Код страны
+Pattern: ^[A-Z]{2,2}$
+</title>
+countryOfBirth [0..1]
+</text>
+
+<text x="56.8em" y="16.1em" fill="darkslateblue">
+<title>Type: string
+Description: Код страны
+Pattern: ^[A-Z]{2,2}$
+</title>
+countryOfResidence [0..1]
+</text>
+
+<text x="56.8em" y="17.400000000000002em" fill="darkslateblue">
+<title>Type: string
+Description: Номер мобильного телефона
+Pattern: ^((\&#43;7|7|8)([0-9]){10})$
+</title>
+mobileNumber [0..1]
+</text>
+
+<text x="56.8em" y="18.700000000000003em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 160
+Description: Наименование организации или имя физического лица
+Pattern: ^[\w\W]{1,160}$
+</title>
+name [1..1]
+</text>
+
+<text x="56.8em" y="20em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 35
+Description: Место рождения (область).
+Pattern: ^[\w\W]{1,35}$
+</title>
+provinceOfBirth [0..1]
+</text>
+
+<rect x="81.8em" y="8.9em" width="16.8em" height="5.6em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="90.2em" y="10.200000000000001em" fill="black">
+<title>Идентификация физического лица</title>
+Identification
+</text>
+
+<text x="82.8em" y="12.200000000000001em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 35
+Description: Уникальный и однозначный идентификатор участника, присвоенный идентифицирующей организацией.
+Pattern: ^[\w\W]{1,35}$
+</title>
+identification [1..1]
+</text>
+
+<text x="82.8em" y="13.500000000000002em" fill="darkslateblue">
+<title>Type: string
+MaxLength: 35
+Description: Схема идентификации юридического или физического лица
+Values:
+ - RU.CBR.TXID
+ - RU.CBR.LEI
+ - RU.CBR.PASP
+ - RU.CBR.CLID
+ - RU.CBR.QRST
+ - RU.CBR.TAXT
+ - RU.CBR.OGRN
+ - RU.CBR.SNILS
+ - RU.CBR.PAN
+ - RU.CBR.MTEL
+ - RU.CBR.BBAN
+</title>
+schemeName [1..1]
+</text>
+
+<rect x="81.8em" y="15.5em" width="20em" height="13.4em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="91.8em" y="16.8em" fill="black">
+<title>Почтовый адрес</title>
+PostalAddress
+</text>
+
+<text x="82.8em" y="18.8em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 70
+Description: Строка адреса
+Pattern: ^[\w\W]{1,70}$
+</title>
+addressLine [0..2]
+</text>
+
+<text x="82.8em" y="20.1em" fill="darkslateblue">
+<title>Type: string
+Description: Тип адреса
+Values:
+ - Business
+ - Correspondence
+ - DeliveryTo
+ - MailTo
+ - POBox
+ - Postal
+ - Residential
+ - Statement
+</title>
+addressType [0..1]
+</text>
+
+<text x="82.8em" y="21.400000000000002em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 16
+Description: Номер, который определяет положение здания на улице
+Pattern: ^[\w\W]{1,16}$
+</title>
+buildingNumber [0..1]
+</text>
+
+<text x="82.8em" y="22.700000000000003em" fill="darkslateblue">
+<title>Type: string
+Description: Код страны
+Pattern: ^[A-Z]{2,2}$
+</title>
+country [0..1]
+</text>
+
+<text x="82.8em" y="24em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 35
+Description: Наименование и тип субъекта Российской Федерации
+Pattern: ^[\w\W]{1,35}$
+</title>
+countrySubDivision [0..1]
+</text>
+
+<text x="82.8em" y="25.3em" fill="darkslateblue">
+<title>Type: string
+MinLength: 6
+MaxLength: 16
+Description: Почтовый индекс
+Pattern: ^[\w\W]{6,16}$
+</title>
+postCode [0..1]
+</text>
+
+<text x="82.8em" y="26.6em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 70
+Description: Наименование улицы или проспекта
+Pattern: ^[\w\W]{1,70}$
+</title>
+streetName [0..1]
+</text>
+
+<text x="82.8em" y="27.9em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 35
+Description: Наименование населённого пункта или территории, находящейся вне границ поселений
+Pattern: ^[\w\W]{1,35}$
+</title>
+townName [0..1]
+</text>
+
+<rect x="19em" y="29.9em" width="9.600000000000001em" height="9.5em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="23.8em" y="31.2em" fill="black">
+<title>Поставщик услуг предоставляет постраничный ответ для операций GET, которые возвращают множественные записи.</title>
+Links
+</text>
+
+<text x="20em" y="33.2em" fill="darkslateblue">
+<title>Type: string
+Format: uri
+Description: Первая ссылка
+</title>
+first [0..1]
+</text>
+
+<text x="20em" y="34.5em" fill="darkslateblue">
+<title>Type: string
+Format: uri
+Description: Последняя ссылка
+</title>
+last [0..1]
+</text>
+
+<text x="20em" y="35.800000000000004em" fill="darkslateblue">
+<title>Type: string
+Format: uri
+Description: Следующая ссылка
+</title>
+next [0..1]
+</text>
+
+<text x="20em" y="37.1em" fill="darkslateblue">
+<title>Type: string
+Format: uri
+Description: Предыдущая ссылка
+</title>
+prev [0..1]
+</text>
+
+<text x="20em" y="38.400000000000006em" fill="darkslateblue">
+<title>Type: string
+Format: uri
+Description: Текущая ссылка
+</title>
+self [1..1]
+</text>
+
+<rect x="19em" y="40.4em" width="13.600000000000001em" height="4.3em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="25.8em" y="41.699999999999996em" fill="black">
+<title>Дополнительные данные о запросе. «totalPages», указывает на количество передаваемых страниц. Если передается более одной страницы, то элемент «totalPages» обязательно присутствует.</title>
+Meta
+</text>
+
+<text x="20em" y="43.699999999999996em" fill="darkslateblue">
+<title>Type: integer
+Format: int32
+Description: Указывает на количество передаваемых страниц
+</title>
+totalPages [0..1]
+</text>
+
+<line x1="13em" y1="2em" x2="15em" y2="2em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="15em" y1="2em" x2="15em" y2="2em" stroke="black" />
+<line x1="15em" y1="2em" x2="18.2em" y2="2em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="15.5em" y="1.5em">1..1</text>
+<line x1="22.2em" y1="2em" x2="24.2em" y2="2em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="24.2em" y1="2em" x2="24.2em" y2="2em" stroke="black" />
+<line x1="24.2em" y1="2em" x2="27.4em" y2="2em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="24.7em" y="1.5em">0..*</text>
+<line x1="49.8em" y1="2em" x2="51.8em" y2="2em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="51.8em" y1="2em" x2="51.8em" y2="2em" stroke="black" />
+<line x1="51.8em" y1="2em" x2="55em" y2="2em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="52.3em" y="1.5em">0..*</text>
+<line x1="49.8em" y1="2em" x2="51.8em" y2="2em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="51.8em" y1="2em" x2="51.8em" y2="9.9em" stroke="black" />
+<line x1="51.8em" y1="9.9em" x2="55em" y2="9.9em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="52.3em" y="9.4em">0..1</text>
+<line x1="75.8em" y1="9.9em" x2="77.8em" y2="9.9em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="77.8em" y1="9.9em" x2="77.8em" y2="9.9em" stroke="black" />
+<line x1="77.8em" y1="9.9em" x2="81em" y2="9.9em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="78.3em" y="9.4em">1..*</text>
+<line x1="75.8em" y1="9.9em" x2="77.8em" y2="9.9em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="77.8em" y1="9.9em" x2="77.8em" y2="16.5em" stroke="black" />
+<line x1="77.8em" y1="16.5em" x2="81em" y2="16.5em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="78.3em" y="16em">0..1</text>
+<line x1="13em" y1="2em" x2="15em" y2="2em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="15em" y1="2em" x2="15em" y2="30.9em" stroke="black" />
+<line x1="15em" y1="30.9em" x2="18.2em" y2="30.9em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="15.5em" y="30.4em">1..1</text>
+<line x1="13em" y1="2em" x2="15em" y2="2em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="15em" y1="2em" x2="15em" y2="41.4em" stroke="black" />
+<line x1="15em" y1="41.4em" x2="18.2em" y2="41.4em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="15.5em" y="40.9em">1..1</text></svg>

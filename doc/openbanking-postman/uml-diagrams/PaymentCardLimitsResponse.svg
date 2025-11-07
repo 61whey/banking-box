@@ -1,0 +1,305 @@
+<?xml version="1.0" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" font-family="monospace" width="100.4em" height="43.199999999999996em" style="background-color:white"><defs>
+	<marker id="Triangle"
+		viewBox="0 0 10 10" refX="0" refY="5" 
+		markerUnits="strokeWidth"
+		markerWidth="15" markerHeight="10"
+		orient="auto">
+		<path d="M 0 0 L 10 5 L 0 10 z" />
+	</marker>
+		
+		<marker id="Diamond"
+		viewBox="0 0 16 10" refX="0" refY="5" 
+		markerUnits="strokeWidth"
+		markerWidth="20" markerHeight="10"
+		orient="auto">
+		<path d="M 0 5 L 8 10 L 16 5 L 8 0 z" />
+	</marker>   
+</defs>
+<rect x="1em" y="1em" width="20em" height="3em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="11em" y="2.3em" fill="black">
+<title>Ответ на запрос касательно ограничений, связанных с операциями по платежной карте c идентификатором `paymentCardId`</title>
+PaymentCardLimitsResponse
+</text>
+
+<rect x="27em" y="1em" width="26.400000000000002em" height="6.9em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="40.2em" y="2.3em" fill="black">
+<title>Список ограничений, связанных с операциями по платежной карте.\ Если параметр `limitOperationType` не указан то ограничения действуют на все операции</title>
+Data
+</text>
+
+<text x="28em" y="4.3em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 135
+Description: Описание ограничения.
+Pattern: ^[\w\W]*$
+</title>
+limitOperationDescriptions [0..1]
+</text>
+
+<text x="28em" y="5.6em" fill="darkslateblue">
+<title>Type: string
+MaxLength: 6
+Description: Виды операций:
+|англ.|рус.|Описание
+  - CashWithdrawal | НВ | Выдача наличных денежных средств
+  - CashAcceptanceGoods | НО | Прием наличных денежных средств в целях оплаты товаров (работ, услуг)
+  - CashAcceptanceOther | НП | Прием наличных денежных средств не в целях оплаты товаров (работ, услуг)\
+(например, погашение кредитов, зачисление на счета физических лиц, увеличение остатка электронных денежных средств)\
+  - CashlessPaymentGoods | БО | Безналичная оплата товаров (работ, услуг)
+  - CashlessPaymentOther | БП | Прочие безналичные операции
+
+Values:
+ - CashWithdrawal
+ - CashAcceptanceGoods
+ - CashAcceptanceOther
+ - CashlessPaymentGoods
+ - CashlessPaymentOther
+</title>
+limitOperationType [0..1]
+</text>
+
+<text x="28em" y="6.9em" fill="darkslateblue">
+<title>Type: string
+MinLength: 1
+MaxLength: 100
+Description: Уникальный и неизменный идентификатор, используемый для идентификации платежной карты
+Pattern: ^[\w\W]*$
+</title>
+paymentCardId [1..1]
+</text>
+
+<rect x="59.400000000000006em" y="1em" width="16.8em" height="5.6em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="67.80000000000001em" y="2.3em" fill="black">
+<title>Набор информации касательно ограничений, связанных с операциями</title>
+LimitDetails
+</text>
+
+<text x="60.400000000000006em" y="4.3em" fill="darkslateblue">
+<title>Type: string
+Description: Частота применения в периоде времени:
+ - Daily - Ежедневно
+ - Weekly - Еженедельно
+ - Monthly - Ежемесячно
+ - Quarterly - Поквартально
+ - Yearly - Ежегодно
+ - PerOccurrence - По возникновению события
+ - Never - Не установлено ограничение по времени
+ - Other - Другое
+
+Values:
+ - Daily
+ - Weekly
+ - Monthly
+ - Quarterly
+ - Yearly
+ - PerOccurrence
+ - Never
+ - Other
+</title>
+limitFrequency [0..1]
+</text>
+
+<text x="60.400000000000006em" y="5.6em" fill="darkslateblue">
+<title>Type: string
+Description: Текущий статус ограничения:
+ - Enabled - В настоящее время ограничение действует;
+ - Disabled - В настоящее время ограничение не действует 
+ - Deleted - Ограничение удалено или приостановлено
+ - Requested - Ограничение было инициировано но еще не действует
+
+Values:
+ - Enabled
+ - Disabled
+ - Deleted
+ - Requested
+</title>
+limitStatus [0..1]
+</text>
+
+<rect x="82.2em" y="1em" width="15.200000000000001em" height="5.6em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="89.8em" y="2.3em" fill="black">
+<title>Период, выраженный в датах начала и окончании</title>
+ValidityPeriod
+</text>
+
+<text x="83.2em" y="4.3em" fill="darkslateblue">
+<title>Type: string
+Format: date-time
+Description: Формат даты и времени
+</title>
+fromDateTime [1..1]
+</text>
+
+<text x="83.2em" y="5.6em" fill="darkslateblue">
+<title>Type: string
+Format: date-time
+Description: Формат даты и времени
+</title>
+toDateTime [1..1]
+</text>
+
+<rect x="82.2em" y="7.6em" width="12em" height="5.6em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="88.2em" y="8.9em" fill="black">
+<title>Сумма денежных средств и код валюты</title>
+availableAmount
+</text>
+
+<text x="83.2em" y="10.9em" fill="darkslateblue">
+<title>Type: string
+Description: Сумма денежных средств
+Pattern: ^\d{1,13}\.\d{2}$
+</title>
+amount [1..1]
+</text>
+
+<text x="83.2em" y="12.200000000000001em" fill="darkslateblue">
+<title>Type: string
+Description: Код валюты, соответствующий международного стандарта ISO 4217
+Pattern: ^[A-Z]{3,3}$
+</title>
+currency [1..1]
+</text>
+
+<rect x="82.2em" y="14.2em" width="12em" height="5.6em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="88.2em" y="15.5em" fill="black">
+<title>Сумма денежных средств и код валюты</title>
+limitAmount
+</text>
+
+<text x="83.2em" y="17.5em" fill="darkslateblue">
+<title>Type: string
+Description: Сумма денежных средств
+Pattern: ^\d{1,13}\.\d{2}$
+</title>
+amount [1..1]
+</text>
+
+<text x="83.2em" y="18.8em" fill="darkslateblue">
+<title>Type: string
+Description: Код валюты, соответствующий международного стандарта ISO 4217
+Pattern: ^[A-Z]{3,3}$
+</title>
+currency [1..1]
+</text>
+
+<rect x="82.2em" y="20.799999999999997em" width="12em" height="5.6em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="88.2em" y="22.099999999999998em" fill="black">
+<title>Сумма денежных средств и код валюты</title>
+usedAmount
+</text>
+
+<text x="83.2em" y="24.099999999999998em" fill="darkslateblue">
+<title>Type: string
+Description: Сумма денежных средств
+Pattern: ^\d{1,13}\.\d{2}$
+</title>
+amount [1..1]
+</text>
+
+<text x="83.2em" y="25.4em" fill="darkslateblue">
+<title>Type: string
+Description: Код валюты, соответствующий международного стандарта ISO 4217
+Pattern: ^[A-Z]{3,3}$
+</title>
+currency [1..1]
+</text>
+
+<rect x="27em" y="27.4em" width="9.600000000000001em" height="9.5em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="31.8em" y="28.7em" fill="black">
+<title>Поставщик услуг предоставляет постраничный ответ для операций GET, которые возвращают множественные записи.</title>
+Links
+</text>
+
+<text x="28em" y="30.7em" fill="darkslateblue">
+<title>Type: string
+Format: uri
+Description: Первая ссылка
+Pattern: ^[\w\W]*$
+</title>
+first [0..1]
+</text>
+
+<text x="28em" y="32em" fill="darkslateblue">
+<title>Type: string
+Format: uri
+Description: Последняя ссылка
+Pattern: ^[\w\W]*$
+</title>
+last [0..1]
+</text>
+
+<text x="28em" y="33.3em" fill="darkslateblue">
+<title>Type: string
+Format: uri
+Description: Следующая ссылка
+Pattern: ^[\w\W]*$
+</title>
+next [0..1]
+</text>
+
+<text x="28em" y="34.6em" fill="darkslateblue">
+<title>Type: string
+Format: uri
+Description: Предыдущая ссылка
+Pattern: ^[\w\W]*$
+</title>
+prev [0..1]
+</text>
+
+<text x="28em" y="35.9em" fill="darkslateblue">
+<title>Type: string
+Format: uri
+Description: Текущая ссылка
+Pattern: ^[\w\W]*$
+</title>
+self [1..1]
+</text>
+
+<rect x="27em" y="37.9em" width="13.600000000000001em" height="4.3em" fill="beige" stroke="black" stroke-width="2"/>
+<text style="font-weight:bold" text-anchor="middle" x="33.8em" y="39.199999999999996em" fill="black">
+<title>Раздел Meta обязателен, но может быть пустым. Необязательный элемент - «TotalPages», указывает на количество передаваемых страниц. Если передается более одной страницы, то элемент «TotalPages» обязательно присутствует.</title>
+Meta
+</text>
+
+<text x="28em" y="41.199999999999996em" fill="darkslateblue">
+<title>Type: integer
+Format: int32
+Description: Указывает на количество передаваемых страниц
+</title>
+totalPages [0..1]
+</text>
+
+<line x1="21em" y1="2em" x2="23em" y2="2em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="23em" y1="2em" x2="23em" y2="2em" stroke="black" />
+<line x1="23em" y1="2em" x2="26.2em" y2="2em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="23.5em" y="1.5em">1..*</text>
+<line x1="53.400000000000006em" y1="2em" x2="55.400000000000006em" y2="2em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="55.400000000000006em" y1="2em" x2="55.400000000000006em" y2="2em" stroke="black" />
+<line x1="55.400000000000006em" y1="2em" x2="58.60000000000001em" y2="2em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="55.900000000000006em" y="1.5em">1..1</text>
+<line x1="76.2em" y1="2em" x2="78.2em" y2="2em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="78.2em" y1="2em" x2="78.2em" y2="2em" stroke="black" />
+<line x1="78.2em" y1="2em" x2="81.4em" y2="2em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="78.7em" y="1.5em">0..1</text>
+<line x1="76.2em" y1="2em" x2="78.2em" y2="2em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="78.2em" y1="2em" x2="78.2em" y2="8.6em" stroke="black" />
+<line x1="78.2em" y1="8.6em" x2="81.4em" y2="8.6em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="78.7em" y="8.1em">1..1</text>
+<line x1="76.2em" y1="2em" x2="78.2em" y2="2em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="78.2em" y1="2em" x2="78.2em" y2="15.2em" stroke="black" />
+<line x1="78.2em" y1="15.2em" x2="81.4em" y2="15.2em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="78.7em" y="14.7em">1..1</text>
+<line x1="76.2em" y1="2em" x2="78.2em" y2="2em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="78.2em" y1="2em" x2="78.2em" y2="21.799999999999997em" stroke="black" />
+<line x1="78.2em" y1="21.799999999999997em" x2="81.4em" y2="21.799999999999997em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="78.7em" y="21.299999999999997em">0..1</text>
+<line x1="21em" y1="2em" x2="23em" y2="2em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="23em" y1="2em" x2="23em" y2="28.4em" stroke="black" />
+<line x1="23em" y1="28.4em" x2="26.2em" y2="28.4em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="23.5em" y="27.9em">0..1</text>
+<line x1="21em" y1="2em" x2="23em" y2="2em" stroke="black" marker-start="url(#Diamond)"/>
+<line x1="23em" y1="2em" x2="23em" y2="38.9em" stroke="black" />
+<line x1="23em" y1="38.9em" x2="26.2em" y2="38.9em" stroke="black" marker-end="url(#Triangle)"/>
+<text x="23.5em" y="38.4em">0..1</text></svg>

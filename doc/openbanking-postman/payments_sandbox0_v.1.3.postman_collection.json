@@ -1,0 +1,446 @@
+{
+	"info": {
+		"_postman_id": "c729b35f-75c6-49d2-a7a4-01bf23d7dcce",
+		"name": "Payments SandBox0 v.1.3",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "17442984"
+	},
+	"item": [
+		{
+			"name": "01 Access token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"tests[\"Response has access token\"] = responseBody.has(\"access_token\");\r",
+							"\r",
+							"var jsonData = JSON.parse(responseBody);\r",
+							"postman.setEnvironmentVariable(\"accesstoken_client\", jsonData.access_token);\r",
+							"\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "{{client_secret}}",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "{{client_id}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "grant_type",
+							"value": "client_credentials",
+							"type": "text"
+						},
+						{
+							"key": "scope",
+							"value": "payments",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{AS_URL}}/connect/token",
+					"host": [
+						"{{AS_URL}}"
+					],
+					"path": [
+						"connect",
+						"token"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "02 Create Consent",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"function base64url(source) {\r",
+							"\t// Encode in classical base64\r",
+							"\tencodedSource = CryptoJS.enc.Base64.stringify(source);\r",
+							"\r",
+							"\t// Remove padding equal characters\r",
+							"\tencodedSource = encodedSource.replace(/=+$/, '');\r",
+							"\r",
+							"\t// Replace characters according to base64url specifications\r",
+							"\tencodedSource = encodedSource.replace(/\\+/g, '-');\r",
+							"\tencodedSource = encodedSource.replace(/\\//g, '_');\r",
+							"\r",
+							"\treturn encodedSource;\r",
+							"}\r",
+							"\r",
+							"tests[\"Response has consentId\"] = responseBody.has(\"consentId\");\r",
+							"\r",
+							"var uuid = require('uuid');\r",
+							"var jsonData = JSON.parse(responseBody);\r",
+							"postman.setEnvironmentVariable(\"consentId\", jsonData.Data.consentId);\r",
+							"var audiURI = postman.getEnvironmentVariable(\"AS_URL\"); \r",
+							"var outputURI = postman.getEnvironmentVariable(\"AS_AUTH_URL\"); \r",
+							"var cl_id = postman.getEnvironmentVariable(\"client_id\"); \r",
+							"var re_uri = postman.getEnvironmentVariable(\"redirect_uri\"); \r",
+							"\r",
+							"let dataX = {\r",
+							" \"response_type\": \"code id_token\",\r",
+							" \"state\": uuid.v4(),\r",
+							" \"scope\": \"openid payments offline_access\",\r",
+							" \"nonce\": uuid.v4(),\r",
+							" \"exp\": (Math.floor(Date.now() / 1000)) + 86400,\r",
+							" \"max_age\": 86400,\r",
+							" \"claims\":\r",
+							" {\r",
+							" \"userinfo\":\r",
+							" {\r",
+							" \"openbanking_intent_id\":\r",
+							" {\r",
+							" \"value\": \"`${jsonData.Data.consentId}`\",\r",
+							" \"essential\": true\r",
+							" }\r",
+							" },\r",
+							" \"id_token\":\r",
+							" {\r",
+							" \"openbanking_intent_id\":\r",
+							" {\r",
+							" \"value\": \"5726f7df-df8a-4985-90f0-23805fa793e0\",\r",
+							" \"essential\": true\r",
+							" },\r",
+							" \"acr\":\r",
+							" {\r",
+							" \"values\": [\"urn:rubanking:sca\", \"urn:rubanking:ca\"],\r",
+							" \"essential\": true\r",
+							" }\r",
+							" }\r",
+							" }\r",
+							"}\r",
+							"dataX.aud = audiURI;\r",
+							"dataX.iss = cl_id;\r",
+							"dataX.client_id = cl_id;\r",
+							"dataX.redirect_uri = re_uri;\r",
+							"pm.environment.get(\"variable_key\");\r",
+							"dataX.claims.userinfo.openbanking_intent_id.value = jsonData.Data.consentId;\r",
+							"dataX.claims.id_token.openbanking_intent_id.value = jsonData.Data.consentId;\r",
+							"\r",
+							"var stringifiedData = CryptoJS.enc.Utf8.parse(JSON.stringify(dataX));\r",
+							"var encodedData = base64url(stringifiedData);\r",
+							"\r",
+							"\r",
+							"console.log(outputURI+\"/connect/authorize?client_id=\"+cl_id+\"&response_type=code%20id_token&state=\"+dataX.state+\"&redirect_uri=\"+re_uri+\"&nonce=\"+dataX.nonce+\"&scope=\"+dataX.scope+\"&request=ew0KICJ0eXAiOiAiSldUIiwNCiAiYWxnIjogIm5vbmUiDQp9.\"+encodedData+\".\");"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{accesstoken_client}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "x-idempotency-key",
+						"value": "{{$guid}}",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"Data\":{\"Initiation\":{\"instructionIdentification\":\"IID-001-pisp-00001\",\"endToEndIdentification\":\"EEID-001-XXXXXXXX-000021\",\"purpose\":\"1\",\"PaymentTypeInformation\":{\"localInstrument\":\"01\",\"сategoryPurpose\":\"0\",\"serviceLevel\":\"URGP\"},\"requestedExecutionDate\":\"2021-06-05T15:15:13+00:00\",\"InstructedAmount\":{\"amount\":\"200.00\",\"currency\":\"RUB\"},\"UltimateDebtor\":{\"name\":\"Наименование организации или физического лица\",\"mobileNumber\":\"79206001010\",\"countryOfResidence\":\"RU\",\"countryOfBirth\":\"RU\",\"provinceOfBirth\":\"Ставрапольский край\",\"cityOfBirth\":\"Ставраполь\",\"birthDate\":\"2021-06-05T15:15:13+00:00\",\"Identification\":[{\"schemeName\":\"RU.CBR.TXID\",\"identification\":\"7728240240\"}],\"PostalAddress\":{\"addressType\":\"Business\",\"addressLine\":[\"string\"],\"streetName\":\"Садовая\",\"buildingNumber\":\"34-1\",\"postCode\":\"115114\",\"townName\":\"Москва\",\"countrySubDivision\":\"Москва\",\"country\":\"RU\"}},\"Debtor\":{\"name\":\"Наименование организации или физического лица\",\"mobileNumber\":\"79206001010\",\"countryOfResidence\":\"RU\",\"countryOfBirth\":\"RU\",\"provinceOfBirth\":\"Ставрапольский край\",\"cityOfBirth\":\"Ставраполь\",\"birthDate\":\"2021-06-05T15:15:13+00:00\",\"Identification\":[{\"schemeName\":\"RU.CBR.TXID\",\"identification\":\"7728240240\"}],\"PostalAddress\":{\"addressType\":\"Business\",\"addressLine\":[\"string\"],\"streetName\":\"Садовая\",\"buildingNumber\":\"34-1\",\"postCode\":\"115114\",\"townName\":\"Москва\",\"countrySubDivision\":\"Москва\",\"country\":\"RU\"}},\"DebtorAgent\":{\"schemeName\":\"RU.CBR.BICFI\",\"identification\":\"44525533\"},\"DebtorAgentAccount\":{\"name\":\"Основной счет\",\"schemeName\":\"RU.CBR.BBAN\",\"identification\":\"40817810621234567890\"},\"DebtorAccount\":{\"name\":\"Основной счет\",\"schemeName\":\"RU.CBR.BBAN\",\"identification\":\"40817810621234567890\"},\"IntermediaryAgent\":{\"schemeName\":\"RU.CBR.BICFI\",\"identification\":\"44525533\"},\"IntermediaryAgentAccount\":{\"name\":\"Основной счет\",\"schemeName\":\"RU.CBR.BBAN\",\"identification\":\"40817810621234567890\"},\"CreditorAgent\":{\"schemeName\":\"RU.CBR.BICFI\",\"identification\":\"44525533\"},\"CreditorAccount\":{\"name\":\"Основной счет\",\"schemeName\":\"RU.CBR.BBAN\",\"identification\":\"40817810621234567890\"},\"CreditorAgentAccount\":{\"name\":\"Основной счет\",\"schemeName\":\"RU.CBR.BBAN\",\"identification\":\"40817810621234567890\"},\"Creditor\":{\"name\":\"Наименование организации или физического лица\",\"mobileNumber\":\"79206001010\",\"countryOfResidence\":\"RU\",\"countryOfBirth\":\"RU\",\"provinceOfBirth\":\"Ставрапольский край\",\"cityOfBirth\":\"Ставраполь\",\"birthDate\":\"2021-06-05T15:15:13+00:00\",\"Identification\":[{\"schemeName\":\"RU.CBR.TXID\",\"identification\":\"7728240240\"}],\"PostalAddress\":{\"addressType\":\"Business\",\"addressLine\":[\"string\"],\"streetName\":\"Садовая\",\"buildingNumber\":\"34-1\",\"postCode\":\"115114\",\"townName\":\"Москва\",\"countrySubDivision\":\"Москва\",\"country\":\"RU\"}},\"UltimateCreditor\":{\"name\":\"Наименование организации или физического лица\",\"mobileNumber\":\"79206001010\",\"countryOfResidence\":\"RU\",\"countryOfBirth\":\"RU\",\"provinceOfBirth\":\"Ставрапольский край\",\"cityOfBirth\":\"Ставраполь\",\"birthDate\":\"2021-06-05T15:15:13+00:00\",\"Identification\":[{\"schemeName\":\"RU.CBR.TXID\",\"identification\":\"7728240240\"}],\"PostalAddress\":{\"addressType\":\"Business\",\"addressLine\":[\"string\"],\"streetName\":\"Садовая\",\"buildingNumber\":\"34-1\",\"postCode\":\"115114\",\"townName\":\"Москва\",\"countrySubDivision\":\"Москва\",\"country\":\"RU\"}},\"RemittanceInformation\":{\"unstructured\":\"Назначение платежа - оплата за товары или услуги\",\"CreditorReferenceInformation\":{\"type\":\"ИПД\",\"reference\":\"CBR-130\"},\"TaxRemittance\":{\"administrationZone\":\"45388000\",\"referenceNumber\":\"0\",\"date\":\"2021-06-05T15:15:13+00:00\",\"creditor\":{\"taxType\":\"991230001\",\"registrationIdentification\":\"string\"},\"debtor\":{\"taxType\":\"991230001\",\"registrationIdentification\":\"string\"},\"Record\":{\"type\":\"string\",\"category\":\"TP\",\"categoryDetails\":\"18210301000011000000\",\"debtorStatus\":\"13\",\"Period\":[{\"year\":\"2021-01-01\",\"type\":\"MM02\",\"fromDate\":\"2021-06-05T15:15:13+00:00\",\"toDate\":\"2021-06-05T15:15:13+00:00\"}],\"TaxAmount\":{\"rate\":\"20\",\"totalAmount\":\"200.00\"}}}}},\"Authorisation\":{\"authorisationType\":\"Single\",\"completionDateTime\":\"2021-06-05T15:15:13+00:00\"},\"SCASupportData\":{\"requestedSCAExemptionType\":\"Parking\",\"appliedAuthenticationApproach\":\"CA\",\"referencePaymentOrderId\":\"32bae548-f4de-4874-b184-880a4363460d\"}},\"Risk\":{\"paymentContextCode\":\"BillPayment\",\"merchantCategoryCode\":\"7536\",\"merchantCustomerIdentification\":\"string\",\"DeliveryAddress\":[{\"addressType\":\"Business\",\"addressLine\":[\"string\"],\"streetName\":\"Садовая\",\"buildingNumber\":\"34-1\",\"postCode\":\"115114\",\"townName\":\"Москва\",\"countrySubDivision\":\"Москва\",\"country\":\"RU\"}]}}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{RS_PS_URL}}/payment-consents",
+					"host": [
+						"{{RS_PS_URL}}"
+					],
+					"path": [
+						"payment-consents"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "03 Access token hybrid",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"tests[\"Response has access token\"] = responseBody.has(\"access_token\");\r",
+							"\r",
+							"var jsonData = JSON.parse(responseBody);\r",
+							"postman.setEnvironmentVariable(\"accesstoken_hybrid\", jsonData.access_token);\r",
+							"postman.setEnvironmentVariable(\"refresh_token\", jsonData.refresh_token);\r",
+							"\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "client_id",
+							"value": "{{client_id}}",
+							"type": "text"
+						},
+						{
+							"key": "client_secret",
+							"value": "{{client_secret}}",
+							"type": "text"
+						},
+						{
+							"key": "grant_type",
+							"value": "authorization_code",
+							"type": "text"
+						},
+						{
+							"key": "code",
+							"value": "{{code}}",
+							"type": "text"
+						},
+						{
+							"key": "redirect_uri",
+							"value": "{{redirect_uri}}",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{AS_URL}}/connect/token",
+					"host": [
+						"{{AS_URL}}"
+					],
+					"path": [
+						"connect",
+						"token"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "04 /payment-consents/{consentId}",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{accesstoken_client}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "x-idempotency-key",
+						"value": "{{$guid}}",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{RS_PS_URL}}/payment-consents/{{consentId}}",
+					"host": [
+						"{{RS_PS_URL}}"
+					],
+					"path": [
+						"payment-consents",
+						"{{consentId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "05 /payments",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"tests[\"Response has access token\"] = responseBody.has(\"paymentId\");\r",
+							"\r",
+							"var jsonData = JSON.parse(responseBody);\r",
+							"postman.setEnvironmentVariable(\"paymentId\", jsonData.Data.paymentId);\r",
+							"\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{accesstoken_hybrid}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "x-idempotency-key",
+						"type": "text",
+						"value": "{{$guid}}"
+					},
+					{
+						"key": "Accept",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"Data\":{\"consentId\":\"{{consentId}}\",\"Initiation\":{\"instructionIdentification\":\"IID-001-pisp-00001\",\"endToEndIdentification\":\"EEID-001-XXXXXXXX-000021\",\"purpose\":\"1\",\"PaymentTypeInformation\":{\"localInstrument\":\"01\",\"сategoryPurpose\":\"0\",\"serviceLevel\":\"URGP\"},\"requestedExecutionDate\":\"2021-06-05T15:15:13+00:00\",\"InstructedAmount\":{\"amount\":\"200.00\",\"currency\":\"RUB\"},\"UltimateDebtor\":{\"name\":\"Наименование организации или физического лица\",\"mobileNumber\":\"79206001010\",\"countryOfResidence\":\"RU\",\"countryOfBirth\":\"RU\",\"provinceOfBirth\":\"Ставрапольский край\",\"cityOfBirth\":\"Ставраполь\",\"birthDate\":\"2021-06-05T15:15:13+00:00\",\"Identification\":[{\"schemeName\":\"RU.CBR.TXID\",\"identification\":\"7728240240\"}],\"PostalAddress\":{\"addressType\":\"Business\",\"addressLine\":[\"string\"],\"streetName\":\"Садовая\",\"buildingNumber\":\"34-1\",\"postCode\":\"115114\",\"townName\":\"Москва\",\"countrySubDivision\":\"Москва\",\"country\":\"RU\"}},\"Debtor\":{\"name\":\"Наименование организации или физического лица\",\"mobileNumber\":\"79206001010\",\"countryOfResidence\":\"RU\",\"countryOfBirth\":\"RU\",\"provinceOfBirth\":\"Ставрапольский край\",\"cityOfBirth\":\"Ставраполь\",\"birthDate\":\"2021-06-05T15:15:13+00:00\",\"Identification\":[{\"schemeName\":\"RU.CBR.TXID\",\"identification\":\"7728240240\"}],\"PostalAddress\":{\"addressType\":\"Business\",\"addressLine\":[\"string\"],\"streetName\":\"Садовая\",\"buildingNumber\":\"34-1\",\"postCode\":\"115114\",\"townName\":\"Москва\",\"countrySubDivision\":\"Москва\",\"country\":\"RU\"}},\"DebtorAgent\":{\"schemeName\":\"RU.CBR.BICFI\",\"identification\":\"44525533\"},\"DebtorAgentAccount\":{\"name\":\"Основной счет\",\"schemeName\":\"RU.CBR.BBAN\",\"identification\":\"40817810621234567890\"},\"DebtorAccount\":{\"name\":\"Основной счет\",\"schemeName\":\"RU.CBR.BBAN\",\"identification\":\"40817810621234567890\"},\"IntermediaryAgent\":{\"schemeName\":\"RU.CBR.BICFI\",\"identification\":\"44525533\"},\"IntermediaryAgentAccount\":{\"name\":\"Основной счет\",\"schemeName\":\"RU.CBR.BBAN\",\"identification\":\"40817810621234567890\"},\"CreditorAgent\":{\"schemeName\":\"RU.CBR.BICFI\",\"identification\":\"44525533\"},\"CreditorAccount\":{\"name\":\"Основной счет\",\"schemeName\":\"RU.CBR.BBAN\",\"identification\":\"40817810621234567890\"},\"CreditorAgentAccount\":{\"name\":\"Основной счет\",\"schemeName\":\"RU.CBR.BBAN\",\"identification\":\"40817810621234567890\"},\"Creditor\":{\"name\":\"Наименование организации или физического лица\",\"mobileNumber\":\"79206001010\",\"countryOfResidence\":\"RU\",\"countryOfBirth\":\"RU\",\"provinceOfBirth\":\"Ставрапольский край\",\"cityOfBirth\":\"Ставраполь\",\"birthDate\":\"2021-06-05T15:15:13+00:00\",\"Identification\":[{\"schemeName\":\"RU.CBR.TXID\",\"identification\":\"7728240240\"}],\"PostalAddress\":{\"addressType\":\"Business\",\"addressLine\":[\"string\"],\"streetName\":\"Садовая\",\"buildingNumber\":\"34-1\",\"postCode\":\"115114\",\"townName\":\"Москва\",\"countrySubDivision\":\"Москва\",\"country\":\"RU\"}},\"UltimateCreditor\":{\"name\":\"Наименование организации или физического лица\",\"mobileNumber\":\"79206001010\",\"countryOfResidence\":\"RU\",\"countryOfBirth\":\"RU\",\"provinceOfBirth\":\"Ставрапольский край\",\"cityOfBirth\":\"Ставраполь\",\"birthDate\":\"2021-06-05T15:15:13+00:00\",\"Identification\":[{\"schemeName\":\"RU.CBR.TXID\",\"identification\":\"7728240240\"}],\"PostalAddress\":{\"addressType\":\"Business\",\"addressLine\":[\"string\"],\"streetName\":\"Садовая\",\"buildingNumber\":\"34-1\",\"postCode\":\"115114\",\"townName\":\"Москва\",\"countrySubDivision\":\"Москва\",\"country\":\"RU\"}},\"RemittanceInformation\":{\"unstructured\":\"Назначение платежа - оплата за товары или услуги\",\"CreditorReferenceInformation\":{\"type\":\"ИПД\",\"reference\":\"CBR-130\"},\"TaxRemittance\":{\"administrationZone\":\"45388000\",\"referenceNumber\":\"0\",\"date\":\"2021-06-05T15:15:13+00:00\",\"creditor\":{\"taxType\":\"991230001\",\"registrationIdentification\":\"string\"},\"debtor\":{\"taxType\":\"991230001\",\"registrationIdentification\":\"string\"},\"Record\":{\"type\":\"string\",\"category\":\"TP\",\"categoryDetails\":\"18210301000011000000\",\"debtorStatus\":\"13\",\"Period\":[{\"year\":\"2021-01-01\",\"type\":\"MM02\",\"fromDate\":\"2021-06-05T15:15:13+00:00\",\"toDate\":\"2021-06-05T15:15:13+00:00\"}],\"TaxAmount\":{\"rate\":\"20\",\"totalAmount\":\"200.00\"}}}}},\"Authorisation\":{\"authorisationType\":\"Single\",\"completionDateTime\":\"2021-06-05T15:15:13+00:00\"},\"SCASupportData\":{\"requestedSCAExemptionType\":\"Parking\",\"appliedAuthenticationApproach\":\"CA\",\"referencePaymentOrderId\":\"32bae548-f4de-4874-b184-880a4363460d\"}},\"Risk\":{\"paymentContextCode\":\"BillPayment\",\"merchantCategoryCode\":\"7536\",\"merchantCustomerIdentification\":\"string\",\"DeliveryAddress\":[{\"addressType\":\"Business\",\"addressLine\":[\"string\"],\"streetName\":\"Садовая\",\"buildingNumber\":\"34-1\",\"postCode\":\"115114\",\"townName\":\"Москва\",\"countrySubDivision\":\"Москва\",\"country\":\"RU\"}]}}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{RS_PS_URL}}/payments",
+					"host": [
+						"{{RS_PS_URL}}"
+					],
+					"path": [
+						"payments"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "06 /payments/{paymentId}",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{accesstoken_hybrid}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "x-idempotency-key",
+						"type": "text",
+						"value": "{{$guid}}"
+					},
+					{
+						"key": "Accept",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{RS_PS_URL}}/payments/{{paymentId}}",
+					"host": [
+						"{{RS_PS_URL}}"
+					],
+					"path": [
+						"payments",
+						"{{paymentId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "06 /payments/{paymentId}payment-details",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{accesstoken_hybrid}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "x-idempotency-key",
+						"type": "text",
+						"value": "{{$guid}}"
+					},
+					{
+						"key": "Accept",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{RS_PS_URL}}/payments/{{paymentId}}/payment-details",
+					"host": [
+						"{{RS_PS_URL}}"
+					],
+					"path": [
+						"payments",
+						"{{paymentId}}",
+						"payment-details"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
