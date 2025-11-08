@@ -22,6 +22,20 @@ class Team(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
+class Bank(Base):
+    """Банк (внешний или наш)"""
+    __tablename__ = "banks"
+
+    id = Column(Integer, primary_key=True)
+    external = Column(Boolean)
+    code = Column(Text)
+    name = Column(Text)
+    description = Column(Text)
+    api_url = Column(Text)
+    api_user = Column(Text)
+    api_secret = Column(Text)
+
+
 class Client(Base):
     """Клиент банка"""
     __tablename__ = "clients"
