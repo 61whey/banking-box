@@ -56,7 +56,7 @@ class APILoggingMiddleware(BaseHTTPMiddleware):
             auth_header = request.headers.get("Authorization", "")
             if "Bearer" in auth_header:
                 try:
-                    import jwt
+                    from jose import jwt
                     import re
                     token = auth_header.replace("Bearer ", "")
                     # Декодировать без проверки (только для логирования)
@@ -95,6 +95,7 @@ class APILoggingMiddleware(BaseHTTPMiddleware):
                 cookie_header = request.headers.get("Cookie", "")
                 if "session_token=" in cookie_header or "access_token=" in cookie_header:
                     try:
+                        from jose import jwt
                         import re
                         # Попытка извлечь из cookie
                         cookies = {}

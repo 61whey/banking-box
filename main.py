@@ -12,7 +12,6 @@ from pathlib import Path
 from config import config
 from database import engine
 from middleware import APILoggingMiddleware
-from models import Base
 from api import (
     accounts, auth, consents, payments, admin, products, well_known,
     banker, product_agreements, product_agreement_consents,
@@ -27,10 +26,6 @@ async def lifespan(app: FastAPI):
     # Startup
     print(f"🏦 Starting {config.BANK_NAME} ({config.BANK_CODE})")
     print(f"📍 Database: {config.DATABASE_URL.split('@')[1] if '@' in config.DATABASE_URL else 'local'}")
-    
-    # Create tables (в production использовать Alembic)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
     
     yield
     
