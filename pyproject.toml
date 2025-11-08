@@ -25,3 +25,9 @@ dependencies = [
 [tool.uv]
 package = false
 
+[dependency-groups]
+dev = [
+    "ipykernel>=7.1.0",
+    "ipywidgets>=8.1.8",
+]
+
