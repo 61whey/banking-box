@@ -52,7 +52,7 @@ def upgrade() -> None:
         sa.Column('balance', sa.Numeric(precision=15, scale=2), nullable=True),
         sa.Column('currency', sa.String(length=3), nullable=True),
         sa.Column('status', sa.String(length=20), nullable=True),
-        sa.Column('opened_at', sa.DateTime(), nullable=True),
+        sa.Column('opened_at', sa.DateTime(), nullable=True, server_default=sa.text('NOW()')),
         sa.ForeignKeyConstraint(['client_id'], ['clients.id'], ),
         sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint('account_number')
