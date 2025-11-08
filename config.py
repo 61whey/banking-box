@@ -2,17 +2,18 @@
 Конфигурация банка
 Команды кастомизируют эти параметры
 """
-from pydantic_settings import BaseSettings
-from pydantic import ConfigDict
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from typing import Optional
 
 
 class BankConfig(BaseSettings):
     """Настройки банка"""
     
-    model_config = ConfigDict(
+    model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
-        extra="ignore"
+        extra="ignore",
+        case_sensitive=False
     )
     
     # 61whey: All default values removed for easy troubleshooting. Use .env file.
@@ -41,6 +42,17 @@ class BankConfig(BaseSettings):
     ADMIN_USERNAME: str
     ADMIN_PASSWORD: str
     DEMO_CLIENT_PASSWORD: str
+    
+    # Поля, используемые только в docker-compose, но не в приложении
+    # Добавлены для избежания ошибок валидации
+    TEAM_CLIENT_ID: Optional[str] = None
+    TEAM_CLIENT_SECRET: Optional[str] = None
+    POSTGRES_DATA_DIR: Optional[str] = None
+    POSTGRES_USER: Optional[str] = None
+    POSTGRES_PASSWORD: Optional[str] = None
+    POSTGRES_DB: Optional[str] = None
+    POSTGRES_EXTERNAL_PORT: Optional[str] = None
+    API_EXTERNAL_PORT: Optional[str] = None
 
 # Singleton instance
 config = BankConfig()

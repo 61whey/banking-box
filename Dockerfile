@@ -29,9 +29,15 @@ ENV PYTHONPATH="${PYTHONPATH}:/app"
 # Copy application code
 COPY . .
 
+# Copy and set entrypoint script
+COPY docker-entrypoint.sh /app/
+RUN chmod +x /app/docker-entrypoint.sh
+
 # Expose port
 EXPOSE 8000
 
-# Run application
+# Set entrypoint and default command
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["python", "run.py"]
+# CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
 

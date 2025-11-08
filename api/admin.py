@@ -37,7 +37,7 @@ async def get_capital(
                 "change": float(cap.capital - cap.initial_capital),
                 "total_deposits": float(cap.total_deposits),
                 "total_loans": float(cap.total_loans),
-                "updated_at": cap.updated_at.isoformat()
+                "updated_at": cap.updated_at.isoformat() if cap.updated_at else None
             }
             for cap in capitals
         ]
