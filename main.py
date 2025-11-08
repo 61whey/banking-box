@@ -16,7 +16,7 @@ from api import (
     accounts, auth, consents, payments, admin, products, well_known,
     banker, product_agreements, product_agreement_consents,
     product_applications, customer_leads, product_offers, product_offer_consents,
-    vrp_consents, vrp_payments, interbank, payment_consents, multibank_proxy
+    vrp_consents, vrp_payments, interbank, payment_consents, multibank_proxy, banks
 )
 
 
@@ -128,6 +128,7 @@ app.include_router(consents.router)
 app.include_router(payment_consents.router)
 app.include_router(payments.router)
 app.include_router(products.router)
+app.include_router(banks.router)
 app.include_router(product_agreements.router)
 app.include_router(product_agreement_consents.router)
 app.include_router(product_applications.router)

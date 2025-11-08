@@ -855,6 +855,10 @@
                 <span class="nav-icon">🔐</span>
                 <span>Согласия</span>
             </a>
+            <a href="#banks" class="nav-item" onclick="showSection('banks')">
+                <span class="nav-icon">🏦</span>
+                <span>Банки</span>
+            </a>
         </nav>
     </aside>
 
@@ -988,6 +992,32 @@
             </div>
         </section>
 
+        <!-- Banks Section -->
+        <section class="section" id="section-banks">
+            <div class="section-header">
+                <h2 class="section-title">🏦 Банки</h2>
+            </div>
+            <div id="banksLoading" style="text-align: center; padding: var(--spacing-xl); color: var(--text-muted);">
+                Загрузка банков...
+            </div>
+            <div id="banksTableContainer" class="hidden" style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid var(--border-color);">
+                            <th style="padding: var(--spacing-md); text-align: left; color: var(--text-secondary); font-weight: 600;">Код</th>
+                            <th style="padding: var(--spacing-md); text-align: left; color: var(--text-secondary); font-weight: 600;">Название</th>
+                        </tr>
+                    </thead>
+                    <tbody id="banksTableBody">
+                    </tbody>
+                </table>
+            </div>
+            <div id="banksEmpty" class="empty-state hidden">
+                <div class="empty-icon">🏦</div>
+                <div>Банки не найдены</div>
+            </div>
+        </section>
+
         <!-- Multibank Section -->
         <section class="section">
             <div class="section-header">
@@ -1026,6 +1056,10 @@
             <a href="consents.html" class="bottom-nav-item">
                 <span class="bottom-nav-icon">🔐</span>
                 <span>Еще</span>
+            </a>
+            <a href="#banks" class="bottom-nav-item" onclick="showSection('banks')">
+                <span class="bottom-nav-icon">🏦</span>
+                <span>Банки</span>
             </a>
         </div>
     </nav>
@@ -1207,6 +1241,11 @@
             const targetSection = document.getElementById(`section-${section}`);
             if (targetSection) {
                 targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            
+            // Load data for specific sections
+            if (section === 'banks') {
+                loadBanks();
             }
             
             // Close sidebar on mobile
@@ -2507,6 +2546,63 @@ ${agr.end_date ? `📅 Дата закрытия: ${new Date(agr.end_date).toLoc
             `;
 
             container.innerHTML = tableHTML;
+        }
+
+        // Banks
+        let banksData = [];
+
+        async function loadBanks() {
+            try {
+                const loading = document.getElementById('banksLoading');
+                const tableContainer = document.getElementById('banksTableContainer');
+                const empty = document.getElementById('banksEmpty');
+                
+                loading.classList.remove('hidden');
+                tableContainer.classList.add('hidden');
+                empty.classList.add('hidden');
+
+                const response = await fetch(`${apiBase}/banks`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Ошибка загрузки банков');
+
+                const data = await response.json();
+                banksData = data.data.bank || [];
+                
+                displayBanks(banksData);
+
+            } catch (error) {
+                console.error('Error loading banks:', error);
+                showToast(error.message, 'error', 'Ошибка');
+                document.getElementById('banksLoading').classList.add('hidden');
+                document.getElementById('banksEmpty').classList.remove('hidden');
+            }
+        }
+
+        function displayBanks(banks) {
+            const loading = document.getElementById('banksLoading');
+            const tableContainer = document.getElementById('banksTableContainer');
+            const tableBody = document.getElementById('banksTableBody');
+            const empty = document.getElementById('banksEmpty');
+            
+            loading.classList.add('hidden');
+            
+            if (banks.length === 0) {
+                empty.classList.remove('hidden');
+                tableContainer.classList.add('hidden');
+                return;
+            }
+
+            empty.classList.add('hidden');
+            tableContainer.classList.remove('hidden');
+            
+            tableBody.innerHTML = banks.map(bank => `
+                <tr style="border-bottom: 1px solid var(--border-color);">
+                    <td style="padding: var(--spacing-md); color: var(--text-primary); font-family: monospace; font-weight: 600;">${bank.code || ''}</td>
+                    <td style="padding: var(--spacing-md); color: var(--text-primary);">${bank.name || ''}</td>
+                </tr>
+            `).join('');
         }
 
         // Initial load
