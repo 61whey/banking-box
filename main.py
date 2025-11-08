@@ -12,6 +12,7 @@ from pathlib import Path
 from config import config
 from database import engine
 from middleware import APILoggingMiddleware
+from services.auth_service import get_external_bank_tokens
 from api import (
     accounts, auth, consents, payments, admin, products, well_known,
     banker, product_agreements, product_agreement_consents,
@@ -26,6 +27,10 @@ async def lifespan(app: FastAPI):
     # Startup
     print(f"🏦 Starting {config.BANK_NAME} ({config.BANK_CODE})")
     print(f"📍 Database: {config.DATABASE_URL.split('@')[1] if '@' in config.DATABASE_URL else 'local'}")
+    
+    # Initialize app.state.tokens for external banks
+    app.state.tokens = await get_external_bank_tokens()
+    print(f"🔑 Initialized tokens for {len(app.state.tokens)} external bank(s)")
     
     yield
     
