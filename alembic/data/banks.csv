@@ -1,0 +1,4 @@
+id,external,code,name,description,api_url,api_user,api_secret
+1,True,vbank,Virtual Bank,,https://vbank.open.bankingapi.ru,team025,jFWNiRoGLuz25TGxpUqmoGcy77VBKCxh
+2,True,abank,Awesome Bank,,https://abank.open.bankingapi.ru,team025,jFWNiRoGLuz25TGxpUqmoGcy77VBKCxh
+3,True,sbank,Smart Bank,,https://sbank.open.bankingapi.ru,team025,jFWNiRoGLuz25TGxpUqmoGcy77VBKCxh

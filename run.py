@@ -17,14 +17,7 @@ if __name__ == "__main__":
     # Импортируем app из модуля
     from main import app, config
     
-    # Определяем порт на основе bank_code
-    port_map = {
-        "vbank": 8001,
-        "abank": 8002,
-        "sbank": 8003
-    }
-    port = port_map.get(config.BANK_CODE, 8000)
-    
+    port=config.API_INTERNAL_PORT
     print(f"🏦 Starting {config.BANK_NAME} on port {port}")
     print(f"📍 Swagger UI: http://localhost:{port}/docs")
     print(f"📍 Client UI: http://localhost:{port}/client/")

@@ -56,11 +56,11 @@ class APILoggingMiddleware(BaseHTTPMiddleware):
             auth_header = request.headers.get("Authorization", "")
             if "Bearer" in auth_header:
                 try:
-                    import jwt
+                    from jose import jwt
                     import re
                     token = auth_header.replace("Bearer ", "")
                     # Декодировать без проверки (только для логирования)
-                    decoded = jwt.decode(token, options={"verify_signature": False})
+                    decoded = jwt.decode(token, "", options={"verify_signature": False})
                     
                     # Извлечь caller_id из разных полей
                     if "sub" in decoded:
@@ -95,6 +95,7 @@ class APILoggingMiddleware(BaseHTTPMiddleware):
                 cookie_header = request.headers.get("Cookie", "")
                 if "session_token=" in cookie_header or "access_token=" in cookie_header:
                     try:
+                        from jose import jwt
                         import re
                         # Попытка извлечь из cookie
                         cookies = {}
@@ -106,7 +107,7 @@ class APILoggingMiddleware(BaseHTTPMiddleware):
                         # Попробовать декодировать JWT из cookie
                         token = cookies.get('session_token') or cookies.get('access_token')
                         if token:
-                            decoded = jwt.decode(token, options={"verify_signature": False})
+                            decoded = jwt.decode(token, "", options={"verify_signature": False})
                             
                             if "sub" in decoded:
                                 sub_value = decoded["sub"]

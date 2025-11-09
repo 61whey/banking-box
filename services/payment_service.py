@@ -80,7 +80,7 @@ class PaymentService:
             payment.status = "AcceptedSettlementCompleted"
             payment.destination_bank = config.BANK_CODE
             payment.status_update_date_time = datetime.utcnow()
-            
+
             # Создать транзакцию для отправителя (Debit - списание)
             transaction_debit = Transaction(
                 account_id=from_account.id,
@@ -91,7 +91,7 @@ class PaymentService:
                 transaction_date=datetime.utcnow()
             )
             db.add(transaction_debit)
-            
+
             # Создать транзакцию для получателя (Credit - зачисление)
             transaction_credit = Transaction(
                 account_id=to_account.id,
@@ -102,16 +102,16 @@ class PaymentService:
                 transaction_date=datetime.utcnow()
             )
             db.add(transaction_credit)
-            
+
         else:
             # ===== Межбанковский перевод (РЕАЛИЗОВАНО) =====
-            
+
             # Определить банк получателя по номеру счета
             # В реальности это делается через БИК или банковский роутинг
             # В нашей MVP-версии: передается в creditorAccount.bank_code из API
             # Если не передано, попробуем определить автоматически (для демо)
             target_bank = await PaymentService._detect_target_bank(to_account_number)
-            
+
             if not target_bank:
                 # Счет не найден ни в каком банке - откат транзакции
                 await db.rollback()
@@ -128,7 +128,7 @@ class PaymentService:
                 status="processing"
             )
             db.add(interbank_transfer)
-            
+
             # Создать транзакцию для отправителя (Debit - списание)
             transaction_debit = Transaction(
                 account_id=from_account.id,
@@ -139,10 +139,10 @@ class PaymentService:
                 transaction_date=datetime.utcnow()
             )
             db.add(transaction_debit)
-            
+
             # Сохранить локальные изменения (списание со счета)
             await db.commit()
-            
+
             # Вызвать API другого банка
             try:
                 success = await PaymentService._send_interbank_transfer(
@@ -152,30 +152,30 @@ class PaymentService:
                     amount=amount,
                     description=description
                 )
-                
+
                 if success:
                     # Перевод успешен
                     payment.status = "AcceptedSettlementCompleted"
                     payment.destination_bank = target_bank
                     interbank_transfer.status = "completed"
                     interbank_transfer.completed_at = datetime.utcnow()
-                    
+
                     # Обновить капитал банка-отправителя (-amount)
                     await PaymentService.update_bank_capital(
                         db=db,
                         amount_change=-amount,
                         reason=f"Outgoing transfer to {target_bank}: {transfer_id}"
                     )
-                    
+
                     logger.info(f"Interbank transfer {transfer_id} completed: {config.BANK_CODE} -> {target_bank}, {amount} RUB")
                 else:
                     # Перевод не удался - откат
                     payment.status = "Rejected"
                     interbank_transfer.status = "failed"
-                    
+
                     # Вернуть деньги отправителю
                     from_account.balance += amount
-                    
+
                     # Создать корректирующую транзакцию (возврат)
                     transaction_refund = Transaction(
                         account_id=from_account.id,
@@ -186,18 +186,18 @@ class PaymentService:
                         transaction_date=datetime.utcnow()
                     )
                     db.add(transaction_refund)
-                    
+
                     logger.warning(f"Interbank transfer {transfer_id} failed, refunded to sender")
-                    
+
             except Exception as e:
                 # Ошибка при вызове API - откат
                 logger.error(f"Interbank transfer {transfer_id} error: {str(e)}")
                 payment.status = "Rejected"
                 interbank_transfer.status = "failed"
-                
+
                 # Вернуть деньги отправителю
                 from_account.balance += amount
-                
+
                 # Создать корректирующую транзакцию (возврат)
                 transaction_refund = Transaction(
                     account_id=from_account.id,
@@ -208,9 +208,9 @@ class PaymentService:
                     transaction_date=datetime.utcnow()
                 )
                 db.add(transaction_refund)
-            
+
             payment.status_update_date_time = datetime.utcnow()
-        
+
         await db.commit()
         await db.refresh(payment)
         
@@ -262,29 +262,29 @@ class PaymentService:
         await db.commit()
         
         return capital_record
-    
+
     @staticmethod
     async def _detect_target_bank(account_number: str) -> Optional[str]:
         """
         Определить банк-получатель по номеру счета
-        
+
         В реальности это делается через БИК (БИК включен в платежных реквизитах).
         В MVP: пытаемся найти счет во всех банках через HTTP запросы.
-        
+
         Returns:
             Код банка (vbank/abank/sbank) или None
         """
         banks = ["vbank", "abank", "sbank"]
-        
+
         # Исключить свой банк из поиска
         banks = [b for b in banks if b != config.BANK_CODE]
-        
+
         # Проверяем каждый банк через локальные адреса (внутри Docker сети)
         for bank_code in banks:
             try:
                 # В Docker сети банки доступны по именам сервисов
                 bank_url = f"http://{bank_code}:8000"
-                
+
                 async with httpx.AsyncClient(timeout=5.0) as client:
                     # Проверяем существование счета через GET /accounts (упрощенная проверка)
                     # В продакшене: специальный endpoint для проверки существования счета
@@ -292,17 +292,17 @@ class PaymentService:
                         f"{bank_url}/interbank/check-account/{account_number}",
                         headers={"x-bank-auth-token": config.BANK_CODE}
                     )
-                    
+
                     if response.status_code == 200:
                         logger.info(f"Account {account_number} found in {bank_code}")
                         return bank_code
-                        
+
             except Exception as e:
                 logger.debug(f"Failed to check account in {bank_code}: {str(e)}")
                 continue
-        
+
         return None
-    
+
     @staticmethod
     async def _send_interbank_transfer(
         transfer_id: str,
@@ -313,14 +313,14 @@ class PaymentService:
     ) -> bool:
         """
         Отправить межбанковский перевод через HTTP API
-        
+
         Returns:
             True если успешно, False если ошибка
         """
         try:
             # URL банка-получателя (в Docker сети)
             bank_url = f"http://{to_bank}:8000"
-            
+
             # Подготовить данные для отправки
             transfer_data = {
                 "transfer_id": transfer_id,
@@ -330,7 +330,7 @@ class PaymentService:
                 "currency": "RUB",
                 "description": description
             }
-            
+
             # Отправить POST запрос
             async with httpx.AsyncClient(timeout=10.0) as client:
                 response = await client.post(
@@ -341,7 +341,7 @@ class PaymentService:
                         "Content-Type": "application/json"
                     }
                 )
-                
+
                 if response.status_code == 201:
                     result = response.json()
                     logger.info(f"Interbank transfer {transfer_id} sent successfully to {to_bank}: {result}")
@@ -349,7 +349,7 @@ class PaymentService:
                 else:
                     logger.error(f"Interbank transfer {transfer_id} failed: {response.status_code} - {response.text}")
                     return False
-                    
+
         except Exception as e:
             logger.error(f"Failed to send interbank transfer {transfer_id}: {str(e)}")
             return False

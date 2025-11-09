@@ -9,30 +9,21 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
 
-try:
-    # Попытка относительного импорта (для пакетного режима)
-    from .config import config
-    from .database import engine
-    from .models import Base
-    from .middleware import APILoggingMiddleware
-    from .api import (
-        accounts, auth, consents, payments, admin, products, well_known, 
-        banker, product_agreements, product_agreement_consents,
-        product_applications, customer_leads, product_offers, product_offer_consents,
-        vrp_consents, vrp_payments, interbank, payment_consents
-    )
-except ImportError:
-    # Абсолютный импорт (для прямого запуска)
-    from config import config
-    from database import engine
-    from models import Base
-    from middleware import APILoggingMiddleware
-    from api import (
-        accounts, auth, consents, payments, admin, products, well_known, 
-        banker, product_agreements, product_agreement_consents,
-        product_applications, customer_leads, product_offers, product_offer_consents,
-        vrp_consents, vrp_payments, interbank, payment_consents, multibank_proxy
-    )
+from config import config
+from database import engine
+from middleware import APILoggingMiddleware
+from services.auth_service import get_external_bank_tokens
+from api import (
+    accounts, auth, consents, payments, admin, products, well_known,
+    banker, product_agreements, product_agreement_consents,
+    product_applications, customer_leads, product_offers, product_offer_consents,
+    vrp_consents, vrp_payments, interbank, payment_consents, multibank_proxy, banks
+)
+
+# FastAPI Cache imports
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.redis import RedisBackend
+from redis import asyncio as aioredis
 
 
 @asynccontextmanager
@@ -41,13 +32,29 @@ async def lifespan(app: FastAPI):
     # Startup
     print(f"🏦 Starting {config.BANK_NAME} ({config.BANK_CODE})")
     print(f"📍 Database: {config.DATABASE_URL.split('@')[1] if '@' in config.DATABASE_URL else 'local'}")
-    
-    # Create tables (в production использовать Alembic)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    
+
+    # Initialize app.state.tokens for external banks
+    app.state.tokens = await get_external_bank_tokens()
+    print(f"🔑 Initialized tokens for {len(app.state.tokens)} external bank(s)")
+
+    # Initialize Redis cache
+    try:
+        redis_client = await aioredis.from_url(
+            config.REDIS_URL,
+            encoding="utf-8",
+            decode_responses=True
+        )
+        FastAPICache.init(
+            RedisBackend(redis_client),
+            prefix="banking-box"
+        )
+        print(f"💾 Initialized Redis cache at {config.REDIS_URL}")
+    except Exception as e:
+        print(f"⚠️  Warning: Could not connect to Redis: {e}")
+        print("   Cache will be disabled")
+
     yield
-    
+
     # Shutdown
     print(f"🛑 Stopping {config.BANK_NAME}")
     await engine.dispose()
@@ -147,6 +154,7 @@ app.include_router(consents.router)
 app.include_router(payment_consents.router)
 app.include_router(payments.router)
 app.include_router(products.router)
+app.include_router(banks.router)
 app.include_router(product_agreements.router)
 app.include_router(product_agreement_consents.router)
 app.include_router(product_applications.router)
@@ -183,7 +191,7 @@ async def root():
 async def developer_page():
     """
     Публичная страница регистрации команды
-    
+
     Доступна всем без авторизации для самостоятельной регистрации команд
     """
     from pathlib import Path
@@ -206,13 +214,4 @@ async def health():
 if __name__ == "__main__":
     import uvicorn
     
-    # Определяем порт на основе bank_code
-    port_map = {
-        "vbank": 8001,
-        "abank": 8002,
-        "sbank": 8003
-    }
-    port = port_map.get(config.BANK_CODE, 8001)
-    
-    uvicorn.run(app, host="0.0.0.0", port=port)
-
+    uvicorn.run(app, host="0.0.0.0", port=config.API_INTERNAL_PORT)

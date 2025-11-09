@@ -34,12 +34,12 @@ async def login(
 ):
     """
     Авторизация клиента в веб-интерфейсе банка
-    
+
     ⚠️ **Для встроенного UI банка, НЕ для внешних приложений**
-    
+
     Этот endpoint используется клиентским интерфейсом банка для входа пользователя.
     Внешние приложения должны использовать стандартный OAuth 2.0 flow.
-    
+
     **Пример:**
     ```json
     {
@@ -52,7 +52,7 @@ async def login(
     - `access_token` — JWT токен (валиден 24 часа)
     - `token_type` — "bearer"
     - `client_id` — ID клиента
-    
+
     Используйте токен в заголовке: `Authorization: Bearer <token>`
     """
     
@@ -65,43 +65,45 @@ async def login(
     if not client:
         raise HTTPException(401, "Invalid credentials")
     
+    # 61whey: TODO: We need to change all this authentication
     # В MVP: простая проверка пароля (для упрощения тестирования)
     # В production: проверять хешированный пароль
-    
+
     # Определяем правильный пароль для клиента
     expected_password = None
-    
-    if request.username.startswith("demo-"):
+
+    if request.username.startswith("demo-"):  # Like demo-client-001
         # Demo клиенты: пароль = "password"
-        expected_password = "password"
-    elif request.username.startswith("team"):
+        expected_password = config.DEMO_CLIENT_PASSWORD
+    elif request.username.startswith("team"):  # Like team025-1
         # Командные клиенты: проверяем пароль из таблицы teams
         # Извлекаем номер команды из person_id (team010-1 → team010)
         import re
         match = re.match(r'(team\d+)-\d+', request.username)
         if match:
             team_id = match.group(1)
-            
+
             # Ищем команду в БД
             team_result = await db.execute(
                 select(Team).where(Team.client_id == team_id)
             )
             team = team_result.scalar_one_or_none()
-            
+
             if team:
                 # Используем client_secret из таблицы teams как пароль
                 expected_password = team.client_secret
             else:
-                # Команда не найдена в БД - используем fallback "password" для локальной разработки
-                expected_password = "password"
+                # Команда не найдена в БД
+                raise HTTPException(401, "Invalid credentials")
         else:
-            # Неправильный формат - используем fallback
-            expected_password = "password"
+            # Неправильный формат
+            raise HTTPException(401, "Invalid credentials")
     else:
+        raise HTTPException(401, "Invalid credentials")
         # Старые клиенты: пароль = username или "password"
-        if request.password in [request.username, "password"]:
-            expected_password = request.password
-    
+        # if request.password in [request.username, "password"]:
+        #     expected_password = request.password
+
     # Проверка пароля
     if not expected_password or request.password != expected_password:
         raise HTTPException(401, "Invalid credentials")
@@ -142,26 +144,26 @@ async def create_bank_token(
 ):
     """
     ## 🎯 Получение токена для работы с API банка
-    
+
     **Этот endpoint - точка входа для всех участников хакатона!**
-    
+
     Токен выдается банком, У КОТОРОГО вы запрашиваете данные.
     Каждый банк подписывает токен своим приватным ключом (RS256).
-    
+
     ### Где взять credentials?
-    
+
     Получите у организаторов хакатона:
     - `client_id` — код вашей команды (например: team200)
     - `client_secret` — ваш секретный ключ (API key)
-    
+
     ### Пример запроса:
-    
+
     ```bash
     # Получить токен для запросов к VBank
     POST https://vbank.open.bankingapi.ru/auth/bank-token
     ?client_id=team200
     &client_secret=5OAaa4DYzYKfnOU6zbR34ic5qMm7VSMB
-    
+
     # Ответ:
     {
       "access_token": "eyJ...",
@@ -170,24 +172,24 @@ async def create_bank_token(
       "expires_in": 86400
     }
     ```
-    
+
     ### Использование токена:
-    
+
     ```bash
     GET https://vbank.open.bankingapi.ru/accounts
     Headers:
       Authorization: Bearer eyJ...
     ```
-    
+
     ### Важно:
     
     - Токен валиден 24 часа
     - Для каждого банка нужен свой токен (VBank, ABank, SBank)
     - Токен подписан приватным ключом банка (RS256)
     - Публичный ключ: `/.well-known/jwks.json`
-    
+
     ### Межбанковые запросы:
-    
+
     Для получения данных клиента из другого банка добавьте:
     ```
     X-Requesting-Bank: your_client_id
@@ -207,10 +209,10 @@ async def create_bank_token(
     
     if not team:
         raise HTTPException(401, "Invalid client_id")
-    
+
     if team.client_secret != client_secret:
         raise HTTPException(401, "Invalid client_secret")
-    
+
     # Создать токен с HS256 подписью (для упрощения в sandbox)
     access_token = create_access_token(
         data={
@@ -242,11 +244,12 @@ async def banker_login(
     
     Для доступа к Banker UI и управления продуктами банка.
     """
-    # Проверка учетных данных (для хакатона - упрощенная схема)
-    if username != "admin" or password != "admin":
-        raise HTTPException(401, "Invalid credentials")
-    
     from config import config
+
+    # 61whey: TODO: We need to change this authentication
+    # Проверка учетных данных (для хакатона - упрощенная схема)
+    if username != config.ADMIN_USERNAME or password != config.ADMIN_PASSWORD:
+        raise HTTPException(401, "Invalid credentials")
     
     # Создать токен банкира
     banker_token = create_access_token(
@@ -285,7 +288,7 @@ class TeamRegisterRequest(BaseModel):
 async def get_random_demo_client(db: AsyncSession = Depends(get_db)):
     """
     Получить случайного клиента для тестирования
-    
+
     Возвращает случайного клиента с богатой историей транзакций
     для быстрого тестирования интерфейса.
     """
@@ -294,10 +297,10 @@ async def get_random_demo_client(db: AsyncSession = Depends(get_db)):
         select(Client).where(Client.person_id.like('demo-%')).order_by(func.random()).limit(1)
     )
     client = result.scalar_one_or_none()
-    
+
     if not client:
         raise HTTPException(404, "No demo clients found")
-    
+
     return RandomClientResponse(
         person_id=client.person_id,
         full_name=client.full_name,
@@ -312,12 +315,12 @@ async def register_team(
 ):
     """
     Регистрация команды для участия в хакатоне
-    
+
     Создает учетные данные для доступа к API банка:
     - client_id для межбанковских запросов
     - client_secret для аутентификации
     - 10 тестовых клиентов для UI
-    
+
     **Пример:**
     ```json
     {
@@ -332,23 +335,23 @@ async def register_team(
     import string
     from datetime import datetime
     import re
-    
+
     # Validate client_id format
     if not re.match(r'^team[0-9]+$', request.client_id):
         raise HTTPException(400, "Client ID must match pattern: team<number> (e.g., team201)")
-    
+
     client_id = request.client_id
-    
+
     # Check if already exists
     existing = await db.execute(
         select(Team).where(Team.client_id == client_id)
     )
     if existing.scalar_one_or_none():
         raise HTTPException(400, f"Client ID '{client_id}' уже занят. Попробуйте другой.")
-    
+
     # Generate secure client secret
     client_secret = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(32))
-    
+
     # Create team
     # Формируем team_name с контактной информацией
     team_info_parts = [request.team_name]
@@ -358,9 +361,9 @@ async def register_team(
         team_info_parts.append(f"👤 {request.contact_person}")
     if request.telegram:
         team_info_parts.append(f"📱 {request.telegram}")
-    
+
     team_name_with_contacts = " | ".join(team_info_parts)
-    
+
     new_team = Team(
         client_id=client_id,
         client_secret=client_secret,
@@ -369,7 +372,7 @@ async def register_team(
         created_at=datetime.utcnow()
     )
     db.add(new_team)
-    
+
     # Create 10 test clients for this team
     test_clients = []
     for i in range(1, 11):
@@ -384,7 +387,7 @@ async def register_team(
         )
         db.add(client)
         test_clients.append(f"{client_id}-{i}")
-    
+
     try:
         await db.commit()
     except Exception as e:
@@ -394,7 +397,7 @@ async def register_team(
             raise HTTPException(400, f"Тестовые клиенты для '{client_id}' уже существуют. Попробуйте другой Client ID.")
         # Re-raise other exceptions
         raise HTTPException(500, f"Ошибка при создании команды: {str(e)}")
-    
+
     # Determine base URL for links
     # Use 8080 for Docker deployment (regardless of PUBLIC_URL setting)
     # This can be overridden by setting PUBLIC_URL in .env
@@ -404,7 +407,7 @@ async def register_team(
     else:
         # Custom URL provided
         base_url = config.PUBLIC_URL
-    
+
     return {
         "success": True,
         "message": "Команда успешно зарегистрирована!",

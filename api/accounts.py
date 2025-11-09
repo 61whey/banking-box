@@ -2,10 +2,10 @@
 Accounts API - Получение информации о счетах клиента
 OpenBanking Russia v2.1 compatible
 """
-from fastapi import APIRouter, Depends, HTTPException, Header
+from fastapi import APIRouter, Depends, HTTPException, Header, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from typing import Optional, List
+from typing import Optional
 from datetime import datetime
 from pydantic import BaseModel
 from decimal import Decimal
@@ -15,6 +15,13 @@ from database import get_db
 from models import Account, Client, Transaction, BankCapital
 from services.auth_service import get_current_client, get_optional_client
 from services.consent_service import ConsentService
+from services.account_service import get_external_accounts_for_client
+from services.cache_utils import client_key_builder, invalidate_client_cache
+from fastapi import Request
+from log import logger
+from fastapi_cache.decorator import cache
+from config import config
+from redis import asyncio as aioredis
 
 
 router = APIRouter(prefix="/accounts", tags=["2 Счета и балансы"])
@@ -55,7 +62,7 @@ async def get_accounts(
                 detail={
                     "error": "CONSENT_REQUIRED",
                     "message": "Требуется согласие клиента",
-                    "consent_request_url": f"/account-consents/request"
+                    "consent_request_url": "/account-consents/request"
                 }
             )
         
@@ -113,6 +120,129 @@ async def get_accounts(
             "totalPages": 1
         }
     }
+
+
+@router.get("/external", summary="Получить счета из внешних банков", include_in_schema=False)
+@cache(expire=config.CACHE_EXPIRE_SECONDS, key_builder=client_key_builder)
+async def get_external_accounts(
+    request: Request,
+    response: Response,
+    force_refresh: bool = False,
+    current_client: dict = Depends(get_current_client),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Получить счета клиента из всех внешних банков
+
+    Использует токены из app.state.tokens для запросов к внешним банкам
+
+    Кэшируется на 5 минут (300 секунд) для каждого клиента.
+    Заголовок X-FastAPI-Cache: HIT/MISS показывает, получен ли ответ из кэша.
+
+    Args:
+        force_refresh: Если True, обходит кэш и получает свежие данные
+    """
+    if not current_client:
+        logger.warning("Unauthorized request to get_external_accounts")
+        raise HTTPException(401, "Unauthorized")
+    
+    client_id = current_client["client_id"]
+    logger.info(f"Fetching external accounts for client_id={client_id}")
+    
+    # Получить токены из app.state
+    tokens = getattr(request.app.state, "tokens", {})
+    logger.debug(f"Retrieved {len(tokens)} tokens from app.state")
+    
+    # Получить счета из всех внешних банков
+    try:
+        accounts = await get_external_accounts_for_client(
+            client_person_id=client_id,
+            db=db,
+            app_state_tokens=tokens
+        )
+        logger.info(f"Fetched {len(accounts)} account responses from external banks")
+    except Exception as e:
+        logger.error(f"Error fetching external accounts for client_id={client_id}: {e}", exc_info=True)
+        raise
+    
+    # Подсчитать статистику
+    total_accounts = len([acc for acc in accounts if acc.get("account") is not None])
+    banks_with_accounts = len(set(acc["bank_code"] for acc in accounts if acc.get("account") is not None))
+    
+    logger.info(
+        f"External accounts summary for client_id={client_id}: "
+        f"total_accounts={total_accounts}, banks_count={banks_with_accounts}"
+    )
+
+    # Add cache-busting headers if force_refresh is requested
+    if force_refresh:
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        logger.info(f"Force refresh requested, added cache-busting headers for client_id={client_id}")
+
+    return {
+        "data": {
+            "accounts": accounts
+        },
+        "meta": {
+            "total": total_accounts,
+            "banks_count": banks_with_accounts
+        }
+    }
+
+
+@router.post("/external/refresh", summary="Обновить кэш счетов из внешних банков", include_in_schema=False)
+async def refresh_external_accounts(
+    current_client: dict = Depends(get_current_client),
+):
+    """
+    Инвалидировать кэш счетов из внешних банков для текущего клиента
+    
+    После вызова этого endpoint следующий запрос к /accounts/external
+    получит свежие данные из внешних банков.
+    """
+    if not current_client:
+        logger.warning("Unauthorized request to refresh_external_accounts")
+        raise HTTPException(401, "Unauthorized")
+    
+    client_id = current_client["client_id"]
+    logger.info(f"Invalidating cache for external accounts, client_id={client_id}")
+    
+    redis_client = None
+    try:
+        # Create Redis connection
+        redis_client = await aioredis.from_url(
+            config.REDIS_URL,
+            encoding="utf-8",
+            decode_responses=True
+        )
+        
+        # Invalidate cache for this client
+        deleted_keys = await invalidate_client_cache(redis_client, client_id)
+        
+        logger.info(f"Cache invalidated for client_id={client_id}, deleted {deleted_keys} keys")
+        
+        return {
+            "data": {
+                "message": "Cache invalidated successfully",
+                "client_id": client_id,
+                "deleted_keys": deleted_keys
+            },
+            "meta": {
+                "message": "Кэш успешно обновлен"
+            }
+        }
+    except Exception as e:
+        logger.error(f"Error invalidating cache for client_id={client_id}: {e}", exc_info=True)
+        raise HTTPException(500, f"Error invalidating cache: {str(e)}")
+    finally:
+        # Close Redis connection if it was created
+        if redis_client:
+            try:
+                await redis_client.close()
+            except Exception as close_error:
+                logger.warning(f"Error closing Redis connection: {close_error}")
 
 
 @router.get("/{account_id}", summary="Получить счет")
@@ -477,8 +607,6 @@ async def close_account_with_balance(
         
     elif request.action == "donate":
         # Подарить банку (увеличить capital)
-        from config import config
-        
         capital_result = await db.execute(
             select(BankCapital).where(BankCapital.bank_code == config.BANK_CODE)
         )

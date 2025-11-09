@@ -9,8 +9,11 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pathlib import Path
 import httpx
+from sqlalchemy import select
 
 from config import config
+from models import Bank
+from database import get_db
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -224,4 +227,89 @@ def hash_password(password: str) -> str:
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Проверка пароля"""
     return pwd_context.verify(plain_password, hashed_password)
+
+
+async def get_access_token(
+    team_id: str, client_secret: str, bank_url: str
+) -> dict:
+    """
+    Obtain bank access token for inter-bank operations.
+    
+    Args:
+        team_id: Team identifier (e.g., "team200")
+        client_secret: API key for secure requests
+        bank_url: Base URL of the bank API
+    
+    Returns:
+        dict: Token response containing access_token, token_type, client_id, expires_in
+    """
+    async with httpx.AsyncClient(base_url=bank_url, timeout=30.0) as client:
+        response = await client.post(
+            "/auth/bank-token",
+            params={
+                "client_id": team_id,
+                "client_secret": client_secret
+            }
+        )
+        response.raise_for_status()
+        return response.json()
+
+
+async def get_external_bank_tokens() -> dict:
+    """
+    Get access tokens for all external banks from the banks table.
+    
+    Uses get_db() generator for consistency with codebase patterns.
+    
+    Returns:
+        dict: Dictionary with bank_code as keys and token info as values
+              Format: {bank_code: {"token": str, "expires_in": int, "expiration_time": datetime}}
+              On failure: {bank_code: {"token": None, "expires_in": None, "expiration_time": None}}
+    """
+    tokens = {}
+    
+    # Use get_db() generator for consistency with codebase (like in middleware.py)
+    async for db in get_db():
+        # Query all external banks
+        result = await db.execute(
+            select(Bank).where(Bank.external.is_(True))
+        )
+        external_banks = result.scalars().all()
+        
+        # Get token for each external bank
+        for bank in external_banks:
+            if not bank.code or not bank.api_url or not bank.api_user or not bank.api_secret:
+                # Skip banks with missing required fields
+                tokens[bank.code] = {
+                    "token": None,
+                    "expires_in": None,
+                    "expiration_time": None
+                }
+                continue
+            
+            try:
+                token_response = await get_access_token(
+                    team_id=bank.api_user,
+                    client_secret=bank.api_secret,
+                    bank_url=bank.api_url
+                )
+                
+                expires_in = token_response.get("expires_in", 86400)
+                expiration_time = datetime.utcnow() + timedelta(seconds=expires_in)
+                
+                tokens[bank.code] = {
+                    "token": token_response.get("access_token"),
+                    "expires_in": expires_in,
+                    "expiration_time": expiration_time
+                }
+            except Exception as e:
+                print(f"Failed to get token for bank {bank.code}: {e}")
+                tokens[bank.code] = {
+                    "token": None,
+                    "expires_in": None,
+                    "expiration_time": None
+                }
+        break  # Only need one iteration since get_db() yields one session
+    
+    return tokens
 

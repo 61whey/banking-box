@@ -2,37 +2,61 @@
 Конфигурация банка
 Команды кастомизируют эти параметры
 """
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from typing import Optional
 
 
 class BankConfig(BaseSettings):
     """Настройки банка"""
     
-    # === ИДЕНТИФИКАЦИЯ БАНКА (КАСТОМИЗИРУЙ!) ===
-    BANK_CODE: str = "vbank"
-    BANK_NAME: str = "Virtual Bank"
-    BANK_DESCRIPTION: str = "Виртуальный банк - эмуляция от организаторов"
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+        case_sensitive=False
+    )
+    
+    # 61whey: All default values removed for easy troubleshooting. Use .env file.
+    # === ИДЕНТИФИКАЦИЯ БАНКА ===
+    BANK_CODE: str
+    BANK_NAME: str
+    BANK_DESCRIPTION: str
     
     # === DATABASE ===
-    DATABASE_URL: str = "postgresql://hackapi_user:hackapi_pass@localhost:5432/vbank_db"
+    DATABASE_URL: str
     
     # === SECURITY ===
-    SECRET_KEY: str = "your-secret-key-change-in-production"
-    ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440  # 24 hours
+    SECRET_KEY: str
+    ALGORITHM: str
+    ACCESS_TOKEN_EXPIRE_MINUTES: int
     
     # === API ===
-    API_VERSION: str = "2.1"
-    API_BASE_PATH: str = ""
+    API_VERSION: str
+    API_BASE_PATH: str
     
     # === REGISTRY (для федеративной архитектуры) ===
-    REGISTRY_URL: str = "http://localhost:3000"
-    PUBLIC_URL: str = "http://localhost:8001"
-    
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    REGISTRY_URL: str
+    PUBLIC_URL: str
 
+    API_INTERNAL_PORT: int = 8000  # Default port for API
+    ADMIN_USERNAME: str
+    ADMIN_PASSWORD: str
+    DEMO_CLIENT_PASSWORD: str
+    
+    # === CACHE ===
+    REDIS_URL: str = "redis://localhost:6379"
+    CACHE_EXPIRE_SECONDS: int = 300
+    
+    # Поля, используемые только в docker-compose, но не в приложении
+    # Добавлены для избежания ошибок валидации
+    TEAM_CLIENT_ID: Optional[str] = None
+    TEAM_CLIENT_SECRET: Optional[str] = None
+    POSTGRES_DATA_DIR: Optional[str] = None
+    POSTGRES_USER: Optional[str] = None
+    POSTGRES_PASSWORD: Optional[str] = None
+    POSTGRES_DB: Optional[str] = None
+    POSTGRES_EXTERNAL_PORT: Optional[str] = None
+    API_EXTERNAL_PORT: Optional[str] = None
 
 # Singleton instance
 config = BankConfig()

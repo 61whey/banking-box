@@ -37,7 +37,7 @@ async def get_capital(
                 "change": float(cap.capital - cap.initial_capital),
                 "total_deposits": float(cap.total_deposits),
                 "total_loans": float(cap.total_loans),
-                "updated_at": cap.updated_at.isoformat()
+                "updated_at": cap.updated_at.isoformat() if cap.updated_at else None
             }
             for cap in capitals
         ]
@@ -293,7 +293,7 @@ async def update_bank_settings(
 async def get_all_teams(db: AsyncSession = Depends(get_db)):
     """
     Получить все зарегистрированные команды
-    
+
     Для админ панели. Показывает все команды включая приостановленные.
     """
     result = await db.execute(
@@ -301,7 +301,7 @@ async def get_all_teams(db: AsyncSession = Depends(get_db)):
         .order_by(Team.created_at.desc())
     )
     teams = result.scalars().all()
-    
+
     return {
         "teams": [
             {
@@ -320,20 +320,20 @@ async def get_all_teams(db: AsyncSession = Depends(get_db)):
 async def suspend_team(client_id: str, db: AsyncSession = Depends(get_db)):
     """
     Приостановить команду
-    
+
     Блокирует возможность делать запросы к API
     """
     result = await db.execute(
         select(Team).where(Team.client_id == client_id)
     )
     team = result.scalar_one_or_none()
-    
+
     if not team:
         raise HTTPException(404, "Team not found")
-    
+
     team.is_active = False
     await db.commit()
-    
+
     return {
         "success": True,
         "message": f"Команда {client_id} приостановлена"
@@ -344,20 +344,20 @@ async def suspend_team(client_id: str, db: AsyncSession = Depends(get_db)):
 async def activate_team(client_id: str, db: AsyncSession = Depends(get_db)):
     """
     Активировать команду
-    
+
     Восстанавливает возможность делать запросы к API
     """
     result = await db.execute(
         select(Team).where(Team.client_id == client_id)
     )
     team = result.scalar_one_or_none()
-    
+
     if not team:
         raise HTTPException(404, "Team not found")
-    
+
     team.is_active = True
     await db.commit()
-    
+
     return {
         "success": True,
         "message": f"Команда {client_id} активирована"
@@ -368,7 +368,7 @@ async def activate_team(client_id: str, db: AsyncSession = Depends(get_db)):
 async def delete_team(client_id: str, db: AsyncSession = Depends(get_db)):
     """
     Удалить команду
-    
+
     Удаляет команду и всех её тестовых клиентов из базы данных
     """
     # Find team
@@ -376,20 +376,20 @@ async def delete_team(client_id: str, db: AsyncSession = Depends(get_db)):
         select(Team).where(Team.client_id == client_id)
     )
     team = result.scalar_one_or_none()
-    
+
     if not team:
         raise HTTPException(404, "Team not found")
-    
+
     # Delete team's test clients
     await db.execute(
         select(Client).where(Client.person_id.like(f"{client_id}-%"))
     )
     # Note: Cascade delete should handle this, but we can be explicit
-    
+
     # Delete team
     await db.delete(team)
     await db.commit()
-    
+
     return {
         "success": True,
         "message": f"Команда {client_id} удалена"
@@ -400,7 +400,7 @@ async def delete_team(client_id: str, db: AsyncSession = Depends(get_db)):
 async def get_all_consents(db: AsyncSession = Depends(get_db)):
     """
     Получить все согласия
-    
+
     Для админ панели - показывает как ConsentRequest (запросы), так и Consent (авторизованные)
     """
     # Get all consent requests
@@ -410,7 +410,7 @@ async def get_all_consents(db: AsyncSession = Depends(get_db)):
         .order_by(ConsentRequest.created_at.desc())
     )
     consent_requests = consent_requests_result.all()
-    
+
     # Get all authorized consents
     consents_result = await db.execute(
         select(Consent, Client)
@@ -418,9 +418,9 @@ async def get_all_consents(db: AsyncSession = Depends(get_db)):
         .order_by(Consent.creation_date_time.desc())
     )
     consents = consents_result.all()
-    
+
     all_consents = []
-    
+
     # Add consent requests
     for cr, client in consent_requests:
         all_consents.append({
@@ -432,7 +432,7 @@ async def get_all_consents(db: AsyncSession = Depends(get_db)):
             "created_at": cr.created_at.isoformat() if cr.created_at else None,
             "expiration_date": None
         })
-    
+
     # Add authorized consents
     for c, client in consents:
         all_consents.append({
@@ -444,7 +444,7 @@ async def get_all_consents(db: AsyncSession = Depends(get_db)):
             "created_at": c.creation_date_time.isoformat() if c.creation_date_time else None,
             "expiration_date": c.expiration_date_time.isoformat() if c.expiration_date_time else None
         })
-    
+
     return {
         "consents": all_consents
     }
