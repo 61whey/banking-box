@@ -227,11 +227,6 @@
 
     <main class="main-content">
         <div class="section">
-            <h2>🔔 Запросы на подписание</h2>
-            <div id="pendingRequests" class="loading">Загрузка...</div>
-        </div>
-
-        <div class="section">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2 style="margin: 0;">🟢 Активные согласия</h2>
                 <button id="requestAllBanksBtn" class="btn-request-all" onclick="requestConsentsFromAllBanks()" style="display: flex; align-items: center; gap: 8px;">
@@ -240,6 +235,11 @@
                 </button>
             </div>
             <div id="activeConsents" class="loading">Загрузка...</div>
+        </div>
+
+        <div class="section">
+            <h2>🔔 Запросы на подписание</h2>
+            <div id="pendingRequests" class="loading">Загрузка...</div>
         </div>
     </div>
 
@@ -511,30 +511,33 @@
             }
         }
 
+        // Theme management (встроенная, вместо theme-switcher.js)
+        function toggleTheme() {
+            const body = document.body;
+            const button = document.querySelector('.theme-toggle');
+            
+            if (body.classList.contains('dark')) {
+                body.classList.remove('dark');
+                button.textContent = '🌙';
+                localStorage.setItem('theme', 'light');
+            } else {
+                body.classList.add('dark');
+                button.textContent = '☀️';
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark');
+            const button = document.querySelector('.theme-toggle');
+            if (button) button.textContent = '☀️';
+        }
+
         // Загрузка при открытии страницы
         Promise.all([loadPendingRequests(), loadActiveConsents()]);
     </script>
-    <script src="theme-switcher.js"></script>
-    
-    <!-- Bank Switcher Component (встроен) -->
-    <div style="position: fixed; bottom: 20px; right: 20px; background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; width: 200px;">
-        <div style="font-size: 12px; color: #666; margin-bottom: 10px; font-weight: 600;">Перейти в другой банк:</div>
-        <div id="bankSwitcher"></div>
-        <script>
-            (function() {
-                const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-                const getBankUrl = (code, port) => isDev ? `http://localhost:${port}` : `https://${code}.open.bankingapi.ru`;
-                const banks = [
-                    { code: 'vbank', name: 'Virtual Bank', port: '8001', color: '#667eea' },
-                    { code: 'abank', name: 'Awesome Bank', port: '8002', color: '#e74c3c' },
-                    { code: 'sbank', name: 'Smart Bank', port: '8003', color: '#27ae60' }
-                ];
-                document.getElementById('bankSwitcher').innerHTML = banks.map(b => 
-                    `<a href="${getBankUrl(b.code, b.port)}/client/" style="display: block; padding: 8px; margin-bottom: 8px; text-decoration: none; color: ${b.color}; border: 1px solid ${b.color}; border-radius: 5px; font-size: 13px; text-align: center;">🏦 ${b.name}</a>`
-                ).join('');
-            })();
-        </script>
-    </div>
 </body>
 </html>
 
