@@ -226,7 +226,16 @@ def hash_password(password: str) -> str:
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Проверка пароля"""
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        # Используем прямой вызов bcrypt для совместимости
+        import bcrypt
+        return bcrypt.checkpw(
+            plain_password.encode('utf-8'),
+            hashed_password.encode('utf-8')
+        )
+    except Exception:
+        # Fallback на passlib если bcrypt недоступен
+        return pwd_context.verify(plain_password, hashed_password)
 
 
 async def get_access_token(

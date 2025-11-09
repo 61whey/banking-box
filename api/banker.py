@@ -10,7 +10,7 @@ from datetime import datetime
 import uuid
 
 from database import get_db
-from models import Product, ConsentRequest, Client, Account, ProductAgreement
+from models import Product, ConsentRequest, Client, Account, ProductAgreement, Transaction, APICallLog, Consent
 
 router = APIRouter(prefix="/banker", tags=["Internal: Banker"], include_in_schema=False)
 
@@ -351,4 +351,103 @@ async def get_client_details(
             ]
         }
     }
+
+
+@router.get("/stats")
+async def get_banker_stats(db: AsyncSession = Depends(get_db)):
+    """
+    Получить статистику банка для панели банкира
+    """
+    # Подсчет клиентов
+    clients_count_result = await db.execute(select(func.count(Client.id)))
+    clients_count = clients_count_result.scalar() or 0
+    
+    # Подсчет счетов
+    accounts_count_result = await db.execute(select(func.count(Account.id)))
+    accounts_count = accounts_count_result.scalar() or 0
+    
+    # Подсчет транзакций
+    transactions_count_result = await db.execute(select(func.count(Transaction.id)))
+    transactions_count = transactions_count_result.scalar() or 0
+    
+    # Общий баланс
+    total_balance_result = await db.execute(select(func.sum(Account.balance)))
+    total_balance = total_balance_result.scalar() or 0
+    
+    # Активные согласия
+    active_consents_result = await db.execute(
+        select(func.count(Consent.id)).where(Consent.status == "Authorised")
+    )
+    active_consents = active_consents_result.scalar() or 0
+    
+    return {
+        "total_clients": clients_count,
+        "total_accounts": accounts_count,
+        "total_transactions": transactions_count,
+        "total_balance": float(total_balance),
+        "active_consents": active_consents,
+    }
+
+
+@router.get("/api-logs")
+async def get_api_logs(
+    limit: int = 50,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Получить логи API вызовов для мониторинга
+    """
+    result = await db.execute(
+        select(APICallLog)
+        .order_by(APICallLog.created_at.desc())
+        .limit(limit)
+    )
+    logs = result.scalars().all()
+    
+    return [
+        {
+            "id": log.id,
+            "timestamp": log.created_at.isoformat() if log.created_at else None,
+            "method": log.method,
+            "path": log.endpoint,
+            "status_code": log.status_code,
+            "duration_ms": log.response_time_ms,
+            "client_id": log.person_id or log.caller_id,
+            "team_client_id": log.caller_id if log.caller_type == "team" else None,
+            "ip_address": log.ip_address,
+            "user_agent": log.user_agent,
+        }
+        for log in logs
+    ]
+
+
+@router.get("/transactions")
+async def get_all_transactions(
+    limit: int = 50,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Получить все транзакции банка для мониторинга
+    """
+    result = await db.execute(
+        select(Transaction)
+        .order_by(Transaction.transaction_date.desc())
+        .limit(limit)
+    )
+    transactions = result.scalars().all()
+    
+    return [
+        {
+            "transaction_id": tx.transaction_id,
+            "account_id": tx.account_id,
+            "amount": float(tx.amount),
+            "currency": "RUB",
+            "transaction_type": tx.direction or "debit",
+            "description": tx.description or "",
+            "created_at": tx.transaction_date.isoformat() if tx.transaction_date else None,
+            "status": "completed",
+            "counterparty": tx.counterparty,
+        }
+        for tx in transactions
+    ]
 

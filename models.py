@@ -16,7 +16,8 @@ class Team(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     client_id = Column(String(100), unique=True, nullable=False)  # team200
-    client_secret = Column(String(255), nullable=False)  # api_key
+    client_secret = Column(String(255), nullable=False)  # OAuth client_secret (JWT подпись)
+    password_hash = Column(String(255), nullable=False)  # Хеш пароля для входа (bcrypt)
     team_name = Column(String(255))  # название команды
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -42,6 +43,7 @@ class Client(Base):
     
     id = Column(Integer, primary_key=True)
     person_id = Column(String(100), unique=True)  # ID из общей базы людей
+    password_hash = Column(String(255), nullable=False)  # Хеш пароля (bcrypt)
     client_type = Column(String(20))  # individual / legal
     full_name = Column(String(255), nullable=False)
     segment = Column(String(50))  # employee, student, pensioner, etc.

@@ -53,3 +53,18 @@ services:
       - ./frontend:/app/frontend:ro
     restart: unless-stopped
 
+  # React Frontend
+  frontend:
+    build:
+      context: ./frontend-react
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:${API_EXTERNAL_PORT}
+        VITE_BANK_CODE: ${BANK_CODE}
+    container_name: bank-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - bank
+    restart: unless-stopped
+

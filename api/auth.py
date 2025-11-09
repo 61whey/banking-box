@@ -65,47 +65,8 @@ async def login(
     if not client:
         raise HTTPException(401, "Invalid credentials")
     
-    # 61whey: TODO: We need to change all this authentication
-    # В MVP: простая проверка пароля (для упрощения тестирования)
-    # В production: проверять хешированный пароль
-
-    # Определяем правильный пароль для клиента
-    expected_password = None
-
-    if request.username.startswith("demo-"):  # Like demo-client-001
-        # Demo клиенты: пароль = "password"
-        expected_password = config.DEMO_CLIENT_PASSWORD
-    elif request.username.startswith("team"):  # Like team025-1
-        # Командные клиенты: проверяем пароль из таблицы teams
-        # Извлекаем номер команды из person_id (team010-1 → team010)
-        import re
-        match = re.match(r'(team\d+)-\d+', request.username)
-        if match:
-            team_id = match.group(1)
-
-            # Ищем команду в БД
-            team_result = await db.execute(
-                select(Team).where(Team.client_id == team_id)
-            )
-            team = team_result.scalar_one_or_none()
-
-            if team:
-                # Используем client_secret из таблицы teams как пароль
-                expected_password = team.client_secret
-            else:
-                # Команда не найдена в БД
-                raise HTTPException(401, "Invalid credentials")
-        else:
-            # Неправильный формат
-            raise HTTPException(401, "Invalid credentials")
-    else:
-        raise HTTPException(401, "Invalid credentials")
-        # Старые клиенты: пароль = username или "password"
-        # if request.password in [request.username, "password"]:
-        #     expected_password = request.password
-
-    # Проверка пароля
-    if not expected_password or request.password != expected_password:
+    # Проверка пароля через bcrypt
+    if not verify_password(request.password, client.password_hash):
         raise HTTPException(401, "Invalid credentials")
     
     # Создать JWT токен

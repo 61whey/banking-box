@@ -55,7 +55,7 @@ pytest tests/test_api_endpoints.py
 - Internal: HS256 JWT with `SECRET_KEY`
 - Inter-bank: RS256 JWT with keys in [shared/keys/](shared/keys/), public key at `/well-known/jwks.json`
 - Headers: `Authorization: Bearer <token>`, `x-consent-id`, `x-requesting-bank`
-- **TODO:** Passwords are plain text ([auth.py:68-69](api/auth.py#L68-L69), [init.sql:221](shared/database/init.sql#L221))
+- Passwords: bcrypt hashes stored in `clients.password_hash` and `teams.password_hash` (migration `007_add_password_hash.py`)
 
 ## Configuration
 
@@ -71,6 +71,7 @@ See [.env.example](.env.example). Key vars: `BANK_CODE`, `PUBLIC_URL`, `TEAM_CLI
 - [middleware.py](middleware.py) - API logging to `APICallLog`
 - [shared/database/init.sql](shared/database/init.sql) - DB init with seed data
 - [frontend/](frontend/) - Vanilla HTML/CSS/JS (no build): `/client/`, `/banker/`, `developer.html`
+- [frontend-react/](frontend-react/) - React + TypeScript frontend: `/app/client/*`, `/app/banker/*`, `/app/developer/register`
 
 ## Common Tasks
 
@@ -80,4 +81,12 @@ See [.env.example](.env.example). Key vars: `BANK_CODE`, `PUBLIC_URL`, `TEAM_CLI
 
 **Debug:** `docker compose logs -f bank` | Swagger: `/docs` | Admin UI: `/admin`
 
-**Docs:** [README.VTB.md](README.VTB.md) (Russian, comprehensive) | [doc/TODO.md](doc/TODO.md) | [docs/diagrams/](docs/diagrams/)
+**Frontend:**
+- React frontend: `http://localhost:3000/app/` (Docker) или `http://localhost:5173/app/` (dev)
+- Старый HTML frontend: `http://localhost:8001/client/` и `/banker/`
+- Оба фронтенда работают параллельно, используют одинаковые API endpoints
+- Название банка (`BANK_NAME` из `.env`) загружается динамически из `GET /` и отображается в заголовках
+- Все API запросы преобразуют данные из формата OpenBanking Russia v2.1 в упрощенный формат для UI
+- Платежи автоматически преобразуются из упрощенного формата в OpenBanking формат перед отправкой
+
+**Docs:** [README.VTB.md](README.VTB.md) (Russian, comprehensive) | [doc/TODO.md](doc/TODO.md) | [docs/diagrams/](docs/diagrams/) | [frontend-react/README.md](frontend-react/README.md)
