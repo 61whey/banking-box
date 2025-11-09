@@ -136,7 +136,8 @@ class Consent(Base):
     id = Column(Integer, primary_key=True)
     consent_id = Column(String(100), unique=True, nullable=False)
     request_id = Column(Integer, ForeignKey("consent_requests.id"))
-    client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
+    client_id = Column(Integer, ForeignKey("clients.id"), nullable=True)
+    client_id_external = Column(Text, nullable=True)
     bank_id = Column(Integer, ForeignKey("banks.id"), nullable=True)
     granted_to = Column(String(100), nullable=False)  # bank_code
     permissions = Column(ARRAY(String), nullable=False)
