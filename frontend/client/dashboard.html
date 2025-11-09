@@ -913,6 +913,9 @@
         <section class="section" id="section-multibank-accounts">
             <div class="section-header">
                 <h2 class="section-title">🏦 Мои счета Мультибанк</h2>
+                <button class="btn btn-secondary" onclick="refreshMultibankAccounts()">
+                    <span>Обновить</span>
+                </button>
             </div>
             <div id="multibankAccountsLoading" style="text-align: center; padding: var(--spacing-xl); color: var(--text-muted);">
                 Загрузка счетов из внешних банков...
@@ -2787,21 +2790,33 @@ ${agr.end_date ? `📅 Дата закрытия: ${new Date(agr.end_date).toLoc
         }
 
         // Multibank Accounts
-        async function loadMultibankAccounts() {
+        async function loadMultibankAccounts(forceRefresh = false) {
             const loading = document.getElementById('multibankAccountsLoading');
             const tableContainer = document.getElementById('multibankAccountsTableContainer');
             const tableBody = document.getElementById('multibankAccountsTableBody');
             const empty = document.getElementById('multibankAccountsEmpty');
-            
+
             // Show loading, hide table and empty
             loading.classList.remove('hidden');
             tableContainer.classList.add('hidden');
             empty.classList.add('hidden');
-            
+
             try {
-                const response = await fetch(`${apiBase}/accounts/external`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                // Build URL with cache-busting parameters if forceRefresh is true
+                const timestamp = Date.now();
+                const url = forceRefresh
+                    ? `${apiBase}/accounts/external?force_refresh=true&_t=${timestamp}`
+                    : `${apiBase}/accounts/external`;
+
+                const headers = { 'Authorization': `Bearer ${token}` };
+
+                // Add cache-busting headers if forceRefresh is true
+                if (forceRefresh) {
+                    headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+                    headers['Pragma'] = 'no-cache';
+                }
+
+                const response = await fetch(url, { headers });
                 
                 if (!response.ok) {
                     throw new Error('Ошибка загрузки счетов из внешних банков');
@@ -2856,6 +2871,46 @@ ${agr.end_date ? `📅 Дата закрытия: ${new Date(agr.end_date).toLoc
                 tableContainer.classList.add('hidden');
                 // Clear multibank transfer dropdowns on error
                 populateMultibankTransferDropdowns([]);
+            }
+        }
+
+        // Refresh multibank accounts
+        async function refreshMultibankAccounts() {
+            const loading = document.getElementById('multibankAccountsLoading');
+            const tableContainer = document.getElementById('multibankAccountsTableContainer');
+            const empty = document.getElementById('multibankAccountsEmpty');
+
+            // Show loading state
+            loading.classList.remove('hidden');
+            tableContainer.classList.add('hidden');
+            empty.classList.add('hidden');
+
+            try {
+                // Call refresh endpoint to invalidate cache
+                const refreshResponse = await fetch(`${apiBase}/accounts/external/refresh`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Cache-Control': 'no-cache'
+                    }
+                });
+
+                if (!refreshResponse.ok) {
+                    throw new Error('Ошибка обновления кэша');
+                }
+
+                console.log('Cache invalidated, fetching fresh data...');
+
+                // Reload accounts with force refresh to bypass any remaining cache
+                await loadMultibankAccounts(true);
+
+            } catch (error) {
+                console.error('Error refreshing multibank accounts:', error);
+                loading.classList.add('hidden');
+                empty.classList.remove('hidden');
+                tableContainer.classList.add('hidden');
+                // Show error message
+                alert('Ошибка при обновлении счетов. Попробуйте еще раз.');
             }
         }
 
