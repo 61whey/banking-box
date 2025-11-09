@@ -855,6 +855,10 @@
                 <span class="nav-icon">🔐</span>
                 <span>Согласия</span>
             </a>
+            <a href="#banks" class="nav-item" onclick="showSection('banks')">
+                <span class="nav-icon">🏦</span>
+                <span>Банки</span>
+            </a>
         </nav>
     </aside>
 
@@ -902,6 +906,34 @@
                 <div class="empty-icon">💳</div>
                 <div>У вас пока нет счетов</div>
                 <button class="btn btn-primary" style="margin-top: var(--spacing-md);" onclick="openNewAccountModal()">Открыть первый счет</button>
+            </div>
+        </section>
+
+        <!-- Multibank Accounts Section -->
+        <section class="section" id="section-multibank-accounts">
+            <div class="section-header">
+                <h2 class="section-title">🏦 Мои счета Мультибанк</h2>
+            </div>
+            <div id="multibankAccountsLoading" style="text-align: center; padding: var(--spacing-xl); color: var(--text-muted);">
+                Загрузка счетов из внешних банков...
+            </div>
+            <div id="multibankAccountsTableContainer" class="hidden" style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid var(--border-color);">
+                            <th style="padding: var(--spacing-md); text-align: left; color: var(--text-secondary); font-weight: 600;">Банк</th>
+                            <th style="padding: var(--spacing-md); text-align: left; color: var(--text-secondary); font-weight: 600;">Номер счета</th>
+                            <th style="padding: var(--spacing-md); text-align: left; color: var(--text-secondary); font-weight: 600;">Тип</th>
+                            <th style="padding: var(--spacing-md); text-align: right; color: var(--text-secondary); font-weight: 600;">Баланс</th>
+                        </tr>
+                    </thead>
+                    <tbody id="multibankAccountsTableBody">
+                    </tbody>
+                </table>
+            </div>
+            <div id="multibankAccountsEmpty" class="empty-state hidden">
+                <div class="empty-icon">🏦</div>
+                <div>Нет счетов во внешних банках</div>
             </div>
         </section>
 
@@ -988,6 +1020,32 @@
             </div>
         </section>
 
+        <!-- Banks Section -->
+        <section class="section" id="section-banks">
+            <div class="section-header">
+                <h2 class="section-title">🏦 Банки</h2>
+            </div>
+            <div id="banksLoading" style="text-align: center; padding: var(--spacing-xl); color: var(--text-muted);">
+                Загрузка банков...
+            </div>
+            <div id="banksTableContainer" class="hidden" style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid var(--border-color);">
+                            <th style="padding: var(--spacing-md); text-align: left; color: var(--text-secondary); font-weight: 600;">Код</th>
+                            <th style="padding: var(--spacing-md); text-align: left; color: var(--text-secondary); font-weight: 600;">Название</th>
+                        </tr>
+                    </thead>
+                    <tbody id="banksTableBody">
+                    </tbody>
+                </table>
+            </div>
+            <div id="banksEmpty" class="empty-state hidden">
+                <div class="empty-icon">🏦</div>
+                <div>Банки не найдены</div>
+            </div>
+        </section>
+
         <!-- Multibank Section -->
         <section class="section">
             <div class="section-header">
@@ -1026,6 +1084,10 @@
             <a href="consents.html" class="bottom-nav-item">
                 <span class="bottom-nav-icon">🔐</span>
                 <span>Еще</span>
+            </a>
+            <a href="#banks" class="bottom-nav-item" onclick="showSection('banks')">
+                <span class="bottom-nav-icon">🏦</span>
+                <span>Банки</span>
             </a>
         </div>
     </nav>
@@ -1182,16 +1244,22 @@
             window.location.href = 'index.html';
         }
         
-        const bankNames = {
-            'vbank': 'Virtual Bank',
-            'abank': 'Awesome Bank',
-            'sbank': 'Smart Bank'
-        };
-        
         const apiBase = window.location.origin;
 
+        // Fetch bank name from API
+        async function loadBankName() {
+            try {
+                const response = await fetch(`${apiBase}/`);
+                const data = await response.json();
+                document.getElementById('bankLogo').textContent = data.bank || 'Bank';
+            } catch (error) {
+                console.error('Failed to load bank name:', error);
+                document.getElementById('bankLogo').textContent = 'Bank';
+            }
+        }
+
         // Update UI with user info
-        document.getElementById('bankLogo').textContent = bankNames[bankCode];
+        loadBankName();
         document.getElementById('userName').textContent = clientId;
         document.getElementById('userAvatar').textContent = clientId.charAt(4).toUpperCase();
 
@@ -1207,6 +1275,11 @@
             const targetSection = document.getElementById(`section-${section}`);
             if (targetSection) {
                 targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            
+            // Load data for specific sections
+            if (section === 'banks') {
+                loadBanks();
             }
             
             // Close sidebar on mobile
@@ -2509,14 +2582,166 @@ ${agr.end_date ? `📅 Дата закрытия: ${new Date(agr.end_date).toLoc
             container.innerHTML = tableHTML;
         }
 
+        // Banks
+        let banksData = [];
+
+        async function loadBanks() {
+            try {
+                const loading = document.getElementById('banksLoading');
+                const tableContainer = document.getElementById('banksTableContainer');
+                const empty = document.getElementById('banksEmpty');
+                
+                loading.classList.remove('hidden');
+                tableContainer.classList.add('hidden');
+                empty.classList.add('hidden');
+
+                // Build headers - Authorization is optional since endpoint doesn't require auth
+                const headers = {};
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+
+                const response = await fetch(`${apiBase}/banks`, {
+                    headers: headers
+                });
+
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    console.error('Banks API error:', response.status, data);
+                    throw new Error(`Ошибка загрузки банков: ${response.status} ${JSON.stringify(data)}`);
+                }
+
+                console.log('Banks API response:', data);
+                banksData = data.data?.bank || [];
+                console.log('Banks data:', banksData);
+                
+                if (banksData.length === 0) {
+                    console.warn('No banks found in response');
+                }
+                
+                displayBanks(banksData);
+
+            } catch (error) {
+                console.error('Error loading banks:', error);
+                console.error('Error details:', error.message, error.stack);
+                showToast(error.message || 'Ошибка загрузки банков', 'error', 'Ошибка');
+                const loading = document.getElementById('banksLoading');
+                const empty = document.getElementById('banksEmpty');
+                if (loading) loading.classList.add('hidden');
+                if (empty) empty.classList.remove('hidden');
+            }
+        }
+
+        function displayBanks(banks) {
+            const loading = document.getElementById('banksLoading');
+            const tableContainer = document.getElementById('banksTableContainer');
+            const tableBody = document.getElementById('banksTableBody');
+            const empty = document.getElementById('banksEmpty');
+            
+            loading.classList.add('hidden');
+            
+            if (banks.length === 0) {
+                empty.classList.remove('hidden');
+                tableContainer.classList.add('hidden');
+                return;
+            }
+
+            empty.classList.add('hidden');
+            tableContainer.classList.remove('hidden');
+            
+            tableBody.innerHTML = banks.map(bank => `
+                <tr style="border-bottom: 1px solid var(--border-color);">
+                    <td style="padding: var(--spacing-md); color: var(--text-primary); font-family: monospace; font-weight: 600;">${bank.code || ''}</td>
+                    <td style="padding: var(--spacing-md); color: var(--text-primary);">${bank.name || ''}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Multibank Accounts
+        async function loadMultibankAccounts() {
+            const loading = document.getElementById('multibankAccountsLoading');
+            const tableContainer = document.getElementById('multibankAccountsTableContainer');
+            const tableBody = document.getElementById('multibankAccountsTableBody');
+            const empty = document.getElementById('multibankAccountsEmpty');
+            
+            // Show loading, hide table and empty
+            loading.classList.remove('hidden');
+            tableContainer.classList.add('hidden');
+            empty.classList.add('hidden');
+            
+            try {
+                const response = await fetch(`${apiBase}/accounts/external`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Ошибка загрузки счетов из внешних банков');
+                }
+                
+                const data = await response.json();
+                const accounts = data.data.accounts || [];
+                
+                // Hide loading
+                loading.classList.add('hidden');
+                
+                // Filter out accounts with errors (keep only successful ones)
+                const validAccounts = accounts.filter(acc => acc.account !== null && acc.error === null);
+                
+                if (validAccounts.length === 0) {
+                    // Show empty state
+                    empty.classList.remove('hidden');
+                    tableContainer.classList.add('hidden');
+                    return;
+                }
+                
+                // Show table, hide empty
+                empty.classList.add('hidden');
+                tableContainer.classList.remove('hidden');
+                
+                // Populate table
+                tableBody.innerHTML = validAccounts.map(acc => {
+                    const account = acc.account;
+                    const accountNumber = account.account && account.account[0] ? account.account[0].identification : 'N/A';
+                    const accountType = account.accountSubType || account.accountType || 'N/A';
+                    const balance = acc.balance ? parseFloat(acc.balance).toLocaleString('ru-RU') + ' ₽' : 'N/A';
+                    
+                    return `
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: var(--spacing-md); color: var(--text-primary); font-weight: 600;">${acc.bank_name}</td>
+                            <td style="padding: var(--spacing-md); color: var(--text-primary); font-family: monospace;">${accountNumber}</td>
+                            <td style="padding: var(--spacing-md); color: var(--text-primary);">${accountType}</td>
+                            <td style="padding: var(--spacing-md); color: var(--text-primary); text-align: right; font-weight: 600;">${balance}</td>
+                        </tr>
+                    `;
+                }).join('');
+                
+            } catch (error) {
+                console.error('Error loading multibank accounts:', error);
+                loading.classList.add('hidden');
+                empty.classList.remove('hidden');
+                tableContainer.classList.add('hidden');
+            }
+        }
+
         // Initial load
         async function initDashboard() {
             await loadAccounts();
+            await loadMultibankAccounts();
             await loadProductAgreements();
             await loadAllTransactions();
+            // Always load banks since the section is visible on the page
+            await loadBanks();
         }
         
         initDashboard();
+        
+        // Handle hash navigation
+        window.addEventListener('hashchange', () => {
+            if (window.location.hash === '#banks') {
+                loadBanks();
+            }
+        });
 
         // Click outside sidebar to close (mobile)
         document.addEventListener('click', (e) => {

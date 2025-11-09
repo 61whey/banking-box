@@ -5,7 +5,7 @@ OpenBanking Russia v2.1 compatible
 from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from typing import Optional, List
+from typing import Optional
 from datetime import datetime
 from pydantic import BaseModel
 from decimal import Decimal
@@ -15,6 +15,9 @@ from database import get_db
 from models import Account, Client, Transaction, BankCapital
 from services.auth_service import get_current_client, get_optional_client
 from services.consent_service import ConsentService
+from services.account_service import get_external_accounts_for_client
+from fastapi import Request
+from log import logger
 
 
 router = APIRouter(prefix="/accounts", tags=["2 Счета и балансы"])
@@ -55,7 +58,7 @@ async def get_accounts(
                 detail={
                     "error": "CONSENT_REQUIRED",
                     "message": "Требуется согласие клиента",
-                    "consent_request_url": f"/account-consents/request"
+                    "consent_request_url": "/account-consents/request"
                 }
             )
         
@@ -111,6 +114,60 @@ async def get_accounts(
         },
         "meta": {
             "totalPages": 1
+        }
+    }
+
+
+@router.get("/external", summary="Получить счета из внешних банков", include_in_schema=False)
+async def get_external_accounts(
+    request: Request,
+    current_client: dict = Depends(get_current_client),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Получить счета клиента из всех внешних банков
+    
+    Использует токены из app.state.tokens для запросов к внешним банкам
+    """
+    if not current_client:
+        logger.warning("Unauthorized request to get_external_accounts")
+        raise HTTPException(401, "Unauthorized")
+    
+    client_id = current_client["client_id"]
+    logger.info(f"Fetching external accounts for client_id={client_id}")
+    
+    # Получить токены из app.state
+    tokens = getattr(request.app.state, "tokens", {})
+    logger.debug(f"Retrieved {len(tokens)} tokens from app.state")
+    
+    # Получить счета из всех внешних банков
+    try:
+        accounts = await get_external_accounts_for_client(
+            client_person_id=client_id,
+            db=db,
+            app_state_tokens=tokens
+        )
+        logger.info(f"Fetched {len(accounts)} account responses from external banks")
+    except Exception as e:
+        logger.error(f"Error fetching external accounts for client_id={client_id}: {e}", exc_info=True)
+        raise
+    
+    # Подсчитать статистику
+    total_accounts = len([acc for acc in accounts if acc.get("account") is not None])
+    banks_with_accounts = len(set(acc["bank_code"] for acc in accounts if acc.get("account") is not None))
+    
+    logger.info(
+        f"External accounts summary for client_id={client_id}: "
+        f"total_accounts={total_accounts}, banks_count={banks_with_accounts}"
+    )
+    
+    return {
+        "data": {
+            "accounts": accounts
+        },
+        "meta": {
+            "total": total_accounts,
+            "banks_count": banks_with_accounts
         }
     }
 

@@ -134,6 +134,13 @@ def downgrade() -> None:
     op.execute("DELETE FROM bank_capital WHERE bank_code = 'convolute'")
     op.execute("DELETE FROM bank_settings WHERE key IN ('bank_code', 'bank_name', 'public_address', 'capital', 'key_rate', 'auto_approve_consents')")
     op.execute("DELETE FROM transactions WHERE transaction_id LIKE 'tx-%'")
-    op.execute("DELETE FROM accounts WHERE account_number LIKE '4081781%'")
+    # Delete accounts first, using client_id to ensure all accounts are deleted
+    op.execute("""
+        DELETE FROM accounts 
+        WHERE client_id IN (
+            SELECT id FROM clients 
+            WHERE person_id LIKE 'team025-%' OR person_id LIKE 'demo-client-%'
+        )
+    """)
     op.execute("DELETE FROM clients WHERE person_id LIKE 'team025-%' OR person_id LIKE 'demo-client-%'")
 

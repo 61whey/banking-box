@@ -22,6 +22,20 @@ class Team(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
+class Bank(Base):
+    """Банк (внешний или наш)"""
+    __tablename__ = "banks"
+
+    id = Column(Integer, primary_key=True)
+    external = Column(Boolean)
+    code = Column(Text)
+    name = Column(Text)
+    description = Column(Text)
+    api_url = Column(Text)
+    api_user = Column(Text)
+    api_secret = Column(Text)
+
+
 class Client(Base):
     """Клиент банка"""
     __tablename__ = "clients"
@@ -122,7 +136,9 @@ class Consent(Base):
     id = Column(Integer, primary_key=True)
     consent_id = Column(String(100), unique=True, nullable=False)
     request_id = Column(Integer, ForeignKey("consent_requests.id"))
-    client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
+    client_id = Column(Integer, ForeignKey("clients.id"), nullable=True)
+    client_id_external = Column(Text, nullable=True)
+    bank_id = Column(Integer, ForeignKey("banks.id"), nullable=True)
     granted_to = Column(String(100), nullable=False)  # bank_code
     permissions = Column(ARRAY(String), nullable=False)
     status = Column(String(20), default="active")  # active / revoked / expired
@@ -135,6 +151,7 @@ class Consent(Base):
     
     # Relationships
     client = relationship("Client")
+    bank = relationship("Bank")
 
 
 class Notification(Base):
