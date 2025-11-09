@@ -298,7 +298,7 @@ class Payment(Base):
     id = Column(Integer, primary_key=True)
     payment_id = Column(String(100), unique=True, nullable=False)
     payment_consent_id = Column(String(100))  # Ссылка на согласие (если использовалось)
-    account_id = Column(Integer, ForeignKey("accounts.id"), nullable=False)  # Счет-отправитель
+    account_id = Column(Integer, ForeignKey("accounts.id"), nullable=True)  # Счет-отправитель
     amount = Column(Numeric(15, 2), nullable=False)
     currency = Column(String(3), default="RUB")
     destination_account = Column(String(255))  # Номер счета получателя
@@ -308,6 +308,20 @@ class Payment(Base):
     # AcceptedSettlementInProcess, AcceptedSettlementCompleted, Rejected
     creation_date_time = Column(DateTime, default=datetime.utcnow)
     status_update_date_time = Column(DateTime, default=datetime.utcnow)
+    
+    # Interbank payment fields
+    payment_direction = Column(Text, nullable=True)
+    source_bank_id = Column(Integer, nullable=True)
+    source_bank = Column(Text, nullable=True)
+    source_account = Column(Text, nullable=True)
+    destination_bank_id = Column(Integer, nullable=True)
+    external_payment_id = Column(Text, nullable=True)
+    interbank_transfer_id = Column(Text, nullable=True)
+    instruction_identification = Column(Text, nullable=True)
+    end_to_end_identification = Column(Text, nullable=True)
+    debtor_name = Column(Text, nullable=True)
+    creditor_name = Column(Text, nullable=True)
+    remittance_information = Column(Text, nullable=True)
     
     # Relationships
     account = relationship("Account")
