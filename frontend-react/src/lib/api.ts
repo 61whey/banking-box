@@ -59,12 +59,12 @@ const api = createApiInstance()
 // Authentication API
 export const authAPI = {
   login: async (data: LoginRequest): Promise<LoginResponse> => {
-    const response = await api.post('/auth/login', data)
+    const response = await api.post('/auth/token', data)
     return response.data
   },
 
   bankerLogin: async (data: BankerLoginRequest): Promise<BankerLoginResponse> => {
-    const response = await api.post('/auth/banker-login', data)
+    const response = await api.post('/auth/banker/token', data)
     return response.data
   },
 

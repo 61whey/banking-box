@@ -14,23 +14,23 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/auth': {
-        target: 'http://localhost:8001',
+        target: 'http://localhost:54080',
         changeOrigin: true,
       },
       '/accounts': {
-        target: 'http://localhost:8001',
+        target: 'http://localhost:54080',
         changeOrigin: true,
       },
       '/consents': {
-        target: 'http://localhost:8001',
+        target: 'http://localhost:54080',
         changeOrigin: true,
       },
       '/payments': {
-        target: 'http://localhost:8001',
+        target: 'http://localhost:54080',
         changeOrigin: true,
       },
       '/api': {
-        target: 'http://localhost:8001',
+        target: 'http://localhost:54080',
         changeOrigin: true,
       },
     },

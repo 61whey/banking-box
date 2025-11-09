@@ -92,6 +92,7 @@ allowed_origins = [
     "http://localhost",       # Прокси (dev)
     "http://localhost:3000",  # React Frontend (docker) / Directory (dev)
     "http://localhost:5173",  # React Frontend (dev server)
+    "http://localhost:54080",  # API Backend (dev)
     "https://vbank.open.bankingapi.ru",  # VBank (prod)
     "https://abank.open.bankingapi.ru",  # ABank (prod)
     "https://sbank.open.bankingapi.ru",  # SBank (prod)
