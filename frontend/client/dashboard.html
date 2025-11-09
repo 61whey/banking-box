@@ -913,6 +913,9 @@
         <section class="section" id="section-multibank-accounts">
             <div class="section-header">
                 <h2 class="section-title">🏦 Мои счета Мультибанк</h2>
+                <button class="btn btn-secondary" onclick="refreshMultibankAccounts()">
+                    <span>Обновить</span>
+                </button>
             </div>
             <div id="multibankAccountsLoading" style="text-align: center; padding: var(--spacing-xl); color: var(--text-muted);">
                 Загрузка счетов из внешних банков...
@@ -954,6 +957,35 @@
                 <div class="empty-icon">📦</div>
                 <div>У вас нет активных продуктов</div>
                 <button class="btn btn-primary" style="margin-top: var(--spacing-md);" onclick="openProductModal()">Открыть продукт</button>
+            </div>
+        </section>
+
+        <!-- Multibank Transfers Section -->
+        <section class="section" id="section-multibank-transfers">
+            <div class="section-header">
+                <h2 class="section-title">💸 Переводы Мультибанк</h2>
+            </div>
+            <div class="transfer-form">
+                <div class="form-group" style="margin: 0;">
+                    <label class="form-label">Откуда</label>
+                    <select class="form-select" id="multibankFromAccount">
+                        <option value="">Выберите счет</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin: 0;">
+                    <label class="form-label">Куда</label>
+                    <select class="form-select" id="multibankToAccount">
+                        <option value="">Выберите счет</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin: 0;">
+                    <label class="form-label">Сумма (₽)</label>
+                    <input type="number" class="form-input" id="multibankAmount" placeholder="1000">
+                </div>
+                <div class="form-group" style="margin: 0;">
+                    <label class="form-label">&nbsp;</label>
+                    <button class="btn btn-primary" onclick="makeMultibankPayment()" style="width: 100%;">Перевести</button>
+                </div>
             </div>
         </section>
 
@@ -2114,6 +2146,68 @@ ${agr.end_date ? `📅 Дата закрытия: ${new Date(agr.end_date).toLoc
             }
         }
 
+        // Multibank Payment
+        async function makeMultibankPayment() {
+            const fromAccount = document.getElementById('multibankFromAccount').value;
+            const toAccount = document.getElementById('multibankToAccount').value;
+            const amount = document.getElementById('multibankAmount').value;
+
+            if (!fromAccount || !toAccount || !amount) {
+                showToast('Заполните все поля!', 'error', '⚠️ Внимание');
+                return;
+            }
+
+            if (parseFloat(amount) <= 0) {
+                showToast('Сумма должна быть больше нуля!', 'error', '⚠️ Внимание');
+                return;
+            }
+
+            try {
+                showToast('Выполняется платеж через внешний банк...', 'info', '⏳ Обработка');
+
+                const response = await fetch(`${apiBase}/payments/external`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        from_account: fromAccount,
+                        to_account: toAccount,
+                        amount: parseFloat(amount),
+                        description: 'Перевод через Мультибанк'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showToast(
+                        `Платеж выполнен! ID: ${data.payment_id || data.external_payment_id}\nСтатус: ${data.status}`,
+                        'success',
+                        '✅ Успех'
+                    );
+
+                    // Clear form
+                    document.getElementById('multibankFromAccount').value = '';
+                    document.getElementById('multibankToAccount').value = '';
+                    document.getElementById('multibankAmount').value = '';
+
+                    // Reload accounts after a short delay
+                    setTimeout(() => {
+                        loadAccounts();
+                        loadMultibankAccounts();
+                    }, 1000);
+                } else {
+                    throw new Error(data.error || data.detail || 'Ошибка создания платежа');
+                }
+
+            } catch (error) {
+                console.error('Multibank payment error:', error);
+                showToast(error.message, 'error', '❌ Ошибка платежа');
+            }
+        }
+
         // Multibank
         async function loadBankAccounts(bankCode, url, bankName) {
             const container = document.getElementById('multibankAccounts');
@@ -2658,22 +2752,71 @@ ${agr.end_date ? `📅 Дата закрытия: ${new Date(agr.end_date).toLoc
             `).join('');
         }
 
+        // Populate multibank transfer dropdowns
+        function populateMultibankTransferDropdowns(accounts) {
+            const fromSelect = document.getElementById('multibankFromAccount');
+            const toSelect = document.getElementById('multibankToAccount');
+
+            if (!fromSelect || !toSelect) {
+                return;
+            }
+
+            // Clear existing options except the first one
+            fromSelect.innerHTML = '<option value="">Выберите счет</option>';
+            toSelect.innerHTML = '<option value="">Выберите счет</option>';
+
+            // Populate both dropdowns with the same accounts
+            accounts.forEach(acc => {
+                const account = acc.account;
+                const accountNumber = account.account && account.account[0] ? account.account[0].identification : null;
+
+                if (!accountNumber) {
+                    return;
+                }
+
+                // Create display text: Bank Name - Account Number
+                const displayText = `${acc.bank_name} - ${accountNumber}`;
+
+                // Create option element
+                // Value format: "bank_code:account_id" for API compatibility
+                const option = document.createElement('option');
+                option.value = `${acc.bank_code}:${accountNumber}`;
+                option.textContent = displayText;
+
+                // Add to both dropdowns
+                fromSelect.appendChild(option.cloneNode(true));
+                toSelect.appendChild(option);
+            });
+        }
+
         // Multibank Accounts
-        async function loadMultibankAccounts() {
+        async function loadMultibankAccounts(forceRefresh = false) {
             const loading = document.getElementById('multibankAccountsLoading');
             const tableContainer = document.getElementById('multibankAccountsTableContainer');
             const tableBody = document.getElementById('multibankAccountsTableBody');
             const empty = document.getElementById('multibankAccountsEmpty');
-            
+
             // Show loading, hide table and empty
             loading.classList.remove('hidden');
             tableContainer.classList.add('hidden');
             empty.classList.add('hidden');
-            
+
             try {
-                const response = await fetch(`${apiBase}/accounts/external`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                // Build URL with cache-busting parameters if forceRefresh is true
+                const timestamp = Date.now();
+                const url = forceRefresh
+                    ? `${apiBase}/accounts/external?force_refresh=true&_t=${timestamp}`
+                    : `${apiBase}/accounts/external`;
+
+                const headers = { 'Authorization': `Bearer ${token}` };
+
+                // Add cache-busting headers if forceRefresh is true
+                if (forceRefresh) {
+                    headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+                    headers['Pragma'] = 'no-cache';
+                }
+
+                const response = await fetch(url, { headers });
                 
                 if (!response.ok) {
                     throw new Error('Ошибка загрузки счетов из внешних банков');
@@ -2692,6 +2835,8 @@ ${agr.end_date ? `📅 Дата закрытия: ${new Date(agr.end_date).toLoc
                     // Show empty state
                     empty.classList.remove('hidden');
                     tableContainer.classList.add('hidden');
+                    // Clear multibank transfer dropdowns
+                    populateMultibankTransferDropdowns([]);
                     return;
                 }
                 
@@ -2716,11 +2861,56 @@ ${agr.end_date ? `📅 Дата закрытия: ${new Date(agr.end_date).toLoc
                     `;
                 }).join('');
                 
+                // Populate multibank transfer dropdowns
+                populateMultibankTransferDropdowns(validAccounts);
+                
             } catch (error) {
                 console.error('Error loading multibank accounts:', error);
                 loading.classList.add('hidden');
                 empty.classList.remove('hidden');
                 tableContainer.classList.add('hidden');
+                // Clear multibank transfer dropdowns on error
+                populateMultibankTransferDropdowns([]);
+            }
+        }
+
+        // Refresh multibank accounts
+        async function refreshMultibankAccounts() {
+            const loading = document.getElementById('multibankAccountsLoading');
+            const tableContainer = document.getElementById('multibankAccountsTableContainer');
+            const empty = document.getElementById('multibankAccountsEmpty');
+
+            // Show loading state
+            loading.classList.remove('hidden');
+            tableContainer.classList.add('hidden');
+            empty.classList.add('hidden');
+
+            try {
+                // Call refresh endpoint to invalidate cache
+                const refreshResponse = await fetch(`${apiBase}/accounts/external/refresh`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Cache-Control': 'no-cache'
+                    }
+                });
+
+                if (!refreshResponse.ok) {
+                    throw new Error('Ошибка обновления кэша');
+                }
+
+                console.log('Cache invalidated, fetching fresh data...');
+
+                // Reload accounts with force refresh to bypass any remaining cache
+                await loadMultibankAccounts(true);
+
+            } catch (error) {
+                console.error('Error refreshing multibank accounts:', error);
+                loading.classList.add('hidden');
+                empty.classList.remove('hidden');
+                tableContainer.classList.add('hidden');
+                // Show error message
+                alert('Ошибка при обновлении счетов. Попробуйте еще раз.');
             }
         }
 
