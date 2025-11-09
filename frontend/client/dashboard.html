@@ -957,6 +957,35 @@
             </div>
         </section>
 
+        <!-- Multibank Transfers Section -->
+        <section class="section" id="section-multibank-transfers">
+            <div class="section-header">
+                <h2 class="section-title">💸 Переводы Мультибанк</h2>
+            </div>
+            <div class="transfer-form">
+                <div class="form-group" style="margin: 0;">
+                    <label class="form-label">Откуда</label>
+                    <select class="form-select" id="multibankFromAccount">
+                        <option value="">Выберите счет</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin: 0;">
+                    <label class="form-label">Куда</label>
+                    <select class="form-select" id="multibankToAccount">
+                        <option value="">Выберите счет</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin: 0;">
+                    <label class="form-label">Сумма (₽)</label>
+                    <input type="number" class="form-input" id="multibankAmount" placeholder="1000">
+                </div>
+                <div class="form-group" style="margin: 0;">
+                    <label class="form-label">&nbsp;</label>
+                    <button class="btn btn-primary" onclick="makeMultibankPayment()" style="width: 100%;">Перевести</button>
+                </div>
+            </div>
+        </section>
+
         <!-- Transfers Section -->
         <section class="section" id="section-transfers">
             <div class="section-header">
@@ -2658,6 +2687,42 @@ ${agr.end_date ? `📅 Дата закрытия: ${new Date(agr.end_date).toLoc
             `).join('');
         }
 
+        // Populate multibank transfer dropdowns
+        function populateMultibankTransferDropdowns(accounts) {
+            const fromSelect = document.getElementById('multibankFromAccount');
+            const toSelect = document.getElementById('multibankToAccount');
+            
+            if (!fromSelect || !toSelect) {
+                return;
+            }
+            
+            // Clear existing options except the first one
+            fromSelect.innerHTML = '<option value="">Выберите счет</option>';
+            toSelect.innerHTML = '<option value="">Выберите счет</option>';
+            
+            // Populate both dropdowns with the same accounts
+            accounts.forEach(acc => {
+                const account = acc.account;
+                const accountNumber = account.account && account.account[0] ? account.account[0].identification : null;
+                
+                if (!accountNumber) {
+                    return;
+                }
+                
+                // Create display text: Bank Name - Account Number
+                const displayText = `${acc.bank_name} - ${accountNumber}`;
+                
+                // Create option element
+                const option = document.createElement('option');
+                option.value = accountNumber;
+                option.textContent = displayText;
+                
+                // Add to both dropdowns
+                fromSelect.appendChild(option.cloneNode(true));
+                toSelect.appendChild(option);
+            });
+        }
+
         // Multibank Accounts
         async function loadMultibankAccounts() {
             const loading = document.getElementById('multibankAccountsLoading');
@@ -2692,6 +2757,8 @@ ${agr.end_date ? `📅 Дата закрытия: ${new Date(agr.end_date).toLoc
                     // Show empty state
                     empty.classList.remove('hidden');
                     tableContainer.classList.add('hidden');
+                    // Clear multibank transfer dropdowns
+                    populateMultibankTransferDropdowns([]);
                     return;
                 }
                 
@@ -2716,11 +2783,16 @@ ${agr.end_date ? `📅 Дата закрытия: ${new Date(agr.end_date).toLoc
                     `;
                 }).join('');
                 
+                // Populate multibank transfer dropdowns
+                populateMultibankTransferDropdowns(validAccounts);
+                
             } catch (error) {
                 console.error('Error loading multibank accounts:', error);
                 loading.classList.add('hidden');
                 empty.classList.remove('hidden');
                 tableContainer.classList.add('hidden');
+                // Clear multibank transfer dropdowns on error
+                populateMultibankTransferDropdowns([]);
             }
         }
 
