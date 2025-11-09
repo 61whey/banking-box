@@ -647,16 +647,52 @@ async def request_consents_from_all_banks(
                     })
                     continue
                 
-                # Создать запись согласия в базе данных
+                # Получить детали согласия для получения expiration_date_time
                 expiration_date = None
-                if consent_response.get("expires_at"):
-                    try:
-                        expiration_date = datetime.fromisoformat(
-                            consent_response["expires_at"].replace("Z", "")
-                        )
-                    except:
-                        pass
+                try:
+                    detail_response = await http_client.get(
+                        f"/account-consents/{consent_id}",
+                        headers={
+                            "Authorization": f"Bearer {access_token}",
+                            "Content-Type": "application/json"
+                        }
+                    )
+                    
+                    if detail_response.status_code == 200:
+                        detail_data = detail_response.json()
+                        # Проверить различные возможные пути к expirationDateTime
+                        expiration_str = None
+                        if "data" in detail_data:
+                            data = detail_data["data"]
+                            expiration_str = data.get("expirationDateTime") or data.get("expiration_date_time") or data.get("expires_at")
+                        else:
+                            expiration_str = detail_data.get("expirationDateTime") or detail_data.get("expiration_date_time") or detail_data.get("expires_at")
+                        
+                        if expiration_str:
+                            try:
+                                # Убрать 'Z' в конце если есть
+                                expiration_str_clean = expiration_str.replace("Z", "")
+                                expiration_date = datetime.fromisoformat(expiration_str_clean)
+                            except (ValueError, AttributeError):
+                                pass
+                except Exception:
+                    # Если не удалось получить детали, продолжим с дефолтным значением
+                    pass
                 
+                # Если не удалось получить expiration из деталей, попробуем из исходного ответа
+                if not expiration_date:
+                    expiration_fields = ["expires_at", "expiration_date_time", "expirationDateTime", "expiresAt", "expiration_date"]
+                    for field in expiration_fields:
+                        if consent_response.get(field):
+                            try:
+                                expiration_str = consent_response[field]
+                                expiration_str_clean = expiration_str.replace("Z", "")
+                                expiration_date = datetime.fromisoformat(expiration_str_clean)
+                                break
+                            except (ValueError, AttributeError):
+                                continue
+                
+                # Если все еще нет expiration_date, использовать значение по умолчанию
                 if not expiration_date:
                     expiration_date = datetime.utcnow() + timedelta(days=365)
                 
