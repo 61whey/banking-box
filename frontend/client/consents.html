@@ -358,7 +358,10 @@
                         </div>
                         <div class="metadata">
                             <strong>ID:</strong> <code style="background: rgba(102, 126, 234, 0.1); padding: 2px 6px; border-radius: 3px; font-size: 11px;">${c.consent_id}</code><br>
+                            <strong>Bank Code:</strong> <code style="background: rgba(102, 126, 234, 0.1); padding: 2px 6px; border-radius: 3px; font-size: 11px;">${c.bank_code || 'N/A'}</code><br>
+                            <strong>Bank Name:</strong> <code style="background: rgba(102, 126, 234, 0.1); padding: 2px 6px; border-radius: 3px; font-size: 11px;">${c.bank_name || 'N/A'}</code><br>
                             <strong>Client ID:</strong> <code style="background: rgba(102, 126, 234, 0.1); padding: 2px 6px; border-radius: 3px; font-size: 11px;">${c.client_id || 'N/A'}</code><br>
+                            <strong>Client ID External:</strong> <code style="background: rgba(102, 126, 234, 0.1); padding: 2px 6px; border-radius: 3px; font-size: 11px;">${c.client_id_external || 'N/A'}</code><br>
                             <strong>Granted to:</strong> <code style="background: rgba(102, 126, 234, 0.1); padding: 2px 6px; border-radius: 3px; font-size: 11px;">${c.granted_to || 'N/A'}</code><br>
                             Подписано: ${c.signed_at ? new Date(c.signed_at).toLocaleString('ru-RU', {timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone}) : 'N/A'}<br>
                             Истекает: ${c.expires_at ? new Date(c.expires_at).toLocaleString('ru-RU', {timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone}) : 'N/A'}
@@ -382,7 +385,10 @@
                         </div>
                         <div class="metadata">
                             <strong>ID:</strong> <code style="background: rgba(149, 165, 166, 0.1); padding: 2px 6px; border-radius: 3px; font-size: 11px;">${c.consent_id}</code><br>
+                            <strong>Bank Code:</strong> <code style="background: rgba(149, 165, 166, 0.1); padding: 2px 6px; border-radius: 3px; font-size: 11px;">${c.bank_code || 'N/A'}</code><br>
+                            <strong>Bank Name:</strong> <code style="background: rgba(149, 165, 166, 0.1); padding: 2px 6px; border-radius: 3px; font-size: 11px;">${c.bank_name || 'N/A'}</code><br>
                             <strong>Client ID:</strong> <code style="background: rgba(149, 165, 166, 0.1); padding: 2px 6px; border-radius: 3px; font-size: 11px;">${c.client_id || 'N/A'}</code><br>
+                            <strong>Client ID External:</strong> <code style="background: rgba(149, 165, 166, 0.1); padding: 2px 6px; border-radius: 3px; font-size: 11px;">${c.client_id_external || 'N/A'}</code><br>
                             <strong>Granted to:</strong> <code style="background: rgba(149, 165, 166, 0.1); padding: 2px 6px; border-radius: 3px; font-size: 11px;">${c.granted_to || 'N/A'}</code><br>
                             Отозвано: ${c.revoked_at ? new Date(c.revoked_at).toLocaleString('ru-RU', {timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone}) : 'N/A'}
                         </div>

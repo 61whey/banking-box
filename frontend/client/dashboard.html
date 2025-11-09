@@ -909,6 +909,34 @@
             </div>
         </section>
 
+        <!-- Multibank Accounts Section -->
+        <section class="section" id="section-multibank-accounts">
+            <div class="section-header">
+                <h2 class="section-title">🏦 Мои счета Мультибанк</h2>
+            </div>
+            <div id="multibankAccountsLoading" style="text-align: center; padding: var(--spacing-xl); color: var(--text-muted);">
+                Загрузка счетов из внешних банков...
+            </div>
+            <div id="multibankAccountsTableContainer" class="hidden" style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid var(--border-color);">
+                            <th style="padding: var(--spacing-md); text-align: left; color: var(--text-secondary); font-weight: 600;">Банк</th>
+                            <th style="padding: var(--spacing-md); text-align: left; color: var(--text-secondary); font-weight: 600;">Номер счета</th>
+                            <th style="padding: var(--spacing-md); text-align: left; color: var(--text-secondary); font-weight: 600;">Тип</th>
+                            <th style="padding: var(--spacing-md); text-align: right; color: var(--text-secondary); font-weight: 600;">Баланс</th>
+                        </tr>
+                    </thead>
+                    <tbody id="multibankAccountsTableBody">
+                    </tbody>
+                </table>
+            </div>
+            <div id="multibankAccountsEmpty" class="empty-state hidden">
+                <div class="empty-icon">🏦</div>
+                <div>Нет счетов во внешних банках</div>
+            </div>
+        </section>
+
         <!-- Products Section -->
         <section class="section" id="section-products">
             <div class="section-header">
@@ -2605,9 +2633,76 @@ ${agr.end_date ? `📅 Дата закрытия: ${new Date(agr.end_date).toLoc
             `).join('');
         }
 
+        // Multibank Accounts
+        async function loadMultibankAccounts() {
+            const loading = document.getElementById('multibankAccountsLoading');
+            const tableContainer = document.getElementById('multibankAccountsTableContainer');
+            const tableBody = document.getElementById('multibankAccountsTableBody');
+            const empty = document.getElementById('multibankAccountsEmpty');
+            
+            // Show loading, hide table and empty
+            loading.classList.remove('hidden');
+            tableContainer.classList.add('hidden');
+            empty.classList.add('hidden');
+            
+            try {
+                const response = await fetch(`${apiBase}/accounts/external`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Ошибка загрузки счетов из внешних банков');
+                }
+                
+                const data = await response.json();
+                const accounts = data.data.accounts || [];
+                
+                // Hide loading
+                loading.classList.add('hidden');
+                
+                // Filter out accounts with errors (keep only successful ones)
+                const validAccounts = accounts.filter(acc => acc.account !== null && acc.error === null);
+                
+                if (validAccounts.length === 0) {
+                    // Show empty state
+                    empty.classList.remove('hidden');
+                    tableContainer.classList.add('hidden');
+                    return;
+                }
+                
+                // Show table, hide empty
+                empty.classList.add('hidden');
+                tableContainer.classList.remove('hidden');
+                
+                // Populate table
+                tableBody.innerHTML = validAccounts.map(acc => {
+                    const account = acc.account;
+                    const accountNumber = account.account && account.account[0] ? account.account[0].identification : 'N/A';
+                    const accountType = account.accountSubType || account.accountType || 'N/A';
+                    const balance = acc.balance ? parseFloat(acc.balance).toLocaleString('ru-RU') + ' ₽' : 'N/A';
+                    
+                    return `
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: var(--spacing-md); color: var(--text-primary); font-weight: 600;">${acc.bank_name}</td>
+                            <td style="padding: var(--spacing-md); color: var(--text-primary); font-family: monospace;">${accountNumber}</td>
+                            <td style="padding: var(--spacing-md); color: var(--text-primary);">${accountType}</td>
+                            <td style="padding: var(--spacing-md); color: var(--text-primary); text-align: right; font-weight: 600;">${balance}</td>
+                        </tr>
+                    `;
+                }).join('');
+                
+            } catch (error) {
+                console.error('Error loading multibank accounts:', error);
+                loading.classList.add('hidden');
+                empty.classList.remove('hidden');
+                tableContainer.classList.add('hidden');
+            }
+        }
+
         // Initial load
         async function initDashboard() {
             await loadAccounts();
+            await loadMultibankAccounts();
             await loadProductAgreements();
             await loadAllTransactions();
         }

@@ -362,8 +362,9 @@ async def get_my_consents(
         raise HTTPException(404, "Client not found")
     
     # Получить все согласия (поддержка как client_id, так и client_id_external)
+    # Join с Bank для получения bank_code и bank_name
     result = await db.execute(
-        select(Consent).where(
+        select(Consent, Bank).outerjoin(Bank, Consent.bank_id == Bank.id).where(
             or_(
                 Consent.client_id == client.id,
                 Consent.client_id_external == current_client["client_id"]
@@ -371,13 +372,16 @@ async def get_my_consents(
         )
         .order_by(Consent.creation_date_time.desc())
     )
-    consents = result.scalars().all()
+    consents_data = result.all()
     
     return {
         "consents": [
             {
                 "consent_id": c.consent_id,
-                "client_id": client.person_id,
+                "client_id": c.client_id if c.client_id else None,
+                "client_id_external": c.client_id_external if c.client_id_external else None,
+                "bank_code": bank.code if bank else None,
+                "bank_name": bank.name if bank else None,
                 "granted_to": c.granted_to,
                 "permissions": c.permissions,
                 "status": c.status,
@@ -385,7 +389,7 @@ async def get_my_consents(
                 "expires_at": c.expiration_date_time.isoformat() if c.expiration_date_time else None,
                 "last_accessed": c.last_accessed_at.isoformat() if c.last_accessed_at else None
             }
-            for c in consents
+            for c, bank in consents_data
         ]
     }
 
