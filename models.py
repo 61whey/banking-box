@@ -137,6 +137,7 @@ class Consent(Base):
     consent_id = Column(String(100), unique=True, nullable=False)
     request_id = Column(Integer, ForeignKey("consent_requests.id"))
     client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
+    bank_id = Column(Integer, ForeignKey("banks.id"), nullable=True)
     granted_to = Column(String(100), nullable=False)  # bank_code
     permissions = Column(ARRAY(String), nullable=False)
     status = Column(String(20), default="active")  # active / revoked / expired
@@ -149,6 +150,7 @@ class Consent(Base):
     
     # Relationships
     client = relationship("Client")
+    bank = relationship("Bank")
 
 
 class Notification(Base):
