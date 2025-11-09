@@ -112,6 +112,29 @@ export const bankerAPI = {
     const response = await api.get('/admin/logs')
     return response.data
   },
+
+  getAllConsents: async (): Promise<any[]> => {
+    const response = await api.get('/admin/consents')
+    return response.data
+  },
+
+  approveConsent: async (requestId: string): Promise<void> => {
+    await api.post(`/admin/consents/${requestId}/approve`)
+  },
+
+  rejectConsent: async (requestId: string): Promise<void> => {
+    await api.post(`/admin/consents/${requestId}/reject`)
+  },
+
+  getAPILogs: async (): Promise<APILog[]> => {
+    const response = await api.get('/admin/logs')
+    return response.data
+  },
+
+  getTransactions: async (): Promise<Transaction[]> => {
+    const response = await api.get('/admin/transactions')
+    return response.data
+  },
 }
 
 // Admin API (for team management)
