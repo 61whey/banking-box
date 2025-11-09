@@ -20,6 +20,7 @@ from services.cache_utils import client_key_builder
 from fastapi import Request
 from log import logger
 from fastapi_cache.decorator import cache
+from config import config
 
 
 router = APIRouter(prefix="/accounts", tags=["2 Счета и балансы"])
@@ -121,7 +122,7 @@ async def get_accounts(
 
 
 @router.get("/external", summary="Получить счета из внешних банков", include_in_schema=False)
-@cache(expire=300, key_builder=client_key_builder)
+@cache(expire=config.CACHE_EXPIRE_SECONDS, key_builder=client_key_builder)
 async def get_external_accounts(
     request: Request,
     current_client: dict = Depends(get_current_client),
@@ -540,8 +541,6 @@ async def close_account_with_balance(
         
     elif request.action == "donate":
         # Подарить банку (увеличить capital)
-        from config import config
-        
         capital_result = await db.execute(
             select(BankCapital).where(BankCapital.bank_code == config.BANK_CODE)
         )

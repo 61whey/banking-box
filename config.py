@@ -45,6 +45,7 @@ class BankConfig(BaseSettings):
     
     # === CACHE ===
     REDIS_URL: str = "redis://localhost:6379"
+    CACHE_EXPIRE_SECONDS: int = 300
     
     # Поля, используемые только в docker-compose, но не в приложении
     # Добавлены для избежания ошибок валидации
