@@ -20,6 +20,11 @@ from api import (
     vrp_consents, vrp_payments, interbank, payment_consents, multibank_proxy, banks
 )
 
+# FastAPI Cache imports
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.redis import RedisBackend
+from redis import asyncio as aioredis
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -27,13 +32,29 @@ async def lifespan(app: FastAPI):
     # Startup
     print(f"🏦 Starting {config.BANK_NAME} ({config.BANK_CODE})")
     print(f"📍 Database: {config.DATABASE_URL.split('@')[1] if '@' in config.DATABASE_URL else 'local'}")
-    
+
     # Initialize app.state.tokens for external banks
     app.state.tokens = await get_external_bank_tokens()
     print(f"🔑 Initialized tokens for {len(app.state.tokens)} external bank(s)")
-    
+
+    # Initialize Redis cache
+    try:
+        redis_client = await aioredis.from_url(
+            config.REDIS_URL,
+            encoding="utf-8",
+            decode_responses=True
+        )
+        FastAPICache.init(
+            RedisBackend(redis_client),
+            prefix="banking-box"
+        )
+        print(f"💾 Initialized Redis cache at {config.REDIS_URL}")
+    except Exception as e:
+        print(f"⚠️  Warning: Could not connect to Redis: {e}")
+        print("   Cache will be disabled")
+
     yield
-    
+
     # Shutdown
     print(f"🛑 Stopping {config.BANK_NAME}")
     await engine.dispose()

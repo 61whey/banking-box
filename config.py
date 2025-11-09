@@ -43,6 +43,9 @@ class BankConfig(BaseSettings):
     ADMIN_PASSWORD: str
     DEMO_CLIENT_PASSWORD: str
     
+    # === CACHE ===
+    REDIS_URL: str = "redis://localhost:6379"
+    
     # Поля, используемые только в docker-compose, но не в приложении
     # Добавлены для избежания ошибок валидации
     TEAM_CLIENT_ID: Optional[str] = None

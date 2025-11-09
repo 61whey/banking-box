@@ -16,8 +16,10 @@ from models import Account, Client, Transaction, BankCapital
 from services.auth_service import get_current_client, get_optional_client
 from services.consent_service import ConsentService
 from services.account_service import get_external_accounts_for_client
+from services.cache_utils import client_key_builder
 from fastapi import Request
 from log import logger
+from fastapi_cache.decorator import cache
 
 
 router = APIRouter(prefix="/accounts", tags=["2 Счета и балансы"])
@@ -119,6 +121,7 @@ async def get_accounts(
 
 
 @router.get("/external", summary="Получить счета из внешних банков", include_in_schema=False)
+@cache(expire=300, key_builder=client_key_builder)
 async def get_external_accounts(
     request: Request,
     current_client: dict = Depends(get_current_client),
@@ -126,8 +129,11 @@ async def get_external_accounts(
 ):
     """
     Получить счета клиента из всех внешних банков
-    
+
     Использует токены из app.state.tokens для запросов к внешним банкам
+
+    Кэшируется на 5 минут (300 секунд) для каждого клиента.
+    Заголовок X-FastAPI-Cache: HIT/MISS показывает, получен ли ответ из кэша.
     """
     if not current_client:
         logger.warning("Unauthorized request to get_external_accounts")
