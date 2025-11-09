@@ -252,14 +252,21 @@
             window.location.href = 'index.html';
         }
 
-        const bankNames = {
-            'vbank': 'Virtual Bank',
-            'abank': 'Awesome Bank',
-            'sbank': 'Smart Bank'
-        };
-        
-        document.getElementById('bankName').textContent = bankNames[bankCode];
         const apiBase = window.location.origin;
+
+        // Fetch bank name from API
+        async function loadBankName() {
+            try {
+                const response = await fetch(`${apiBase}/`);
+                const data = await response.json();
+                document.getElementById('bankName').textContent = data.bank || 'Bank';
+            } catch (error) {
+                console.error('Failed to load bank name:', error);
+                document.getElementById('bankName').textContent = 'Bank';
+            }
+        }
+
+        loadBankName();
 
         function logout() {
             localStorage.clear();
@@ -350,7 +357,7 @@
                 ...active.map(c => `
                     <div class="consent-card active">
                         <div class="consent-header">
-                            <div class="bank-info">${c.granted_to}</div>
+                            <div class="bank-info">${c.bank_name || c.granted_to || 'N/A'}</div>
                             <span class="status-badge status-active">Активно</span>
                         </div>
                         <div class="permissions">
@@ -377,7 +384,7 @@
                 ...revoked.map(c => `
                     <div class="consent-card revoked">
                         <div class="consent-header">
-                            <div class="bank-info">${c.granted_to}</div>
+                            <div class="bank-info">${c.bank_name || c.granted_to || 'N/A'}</div>
                             <span class="status-badge status-revoked">Отозвано</span>
                         </div>
                         <div class="permissions">
