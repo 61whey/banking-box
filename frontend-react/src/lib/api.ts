@@ -17,8 +17,10 @@ import type {
 
 // Create axios instance with default config
 const createApiInstance = (): AxiosInstance => {
+  // Use relative URL in development to leverage Vite proxy, absolute URL in production
+  const isDev = import.meta.env.DEV
   const instance = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:54080',
+    baseURL: isDev ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:54080'),
     timeout: 10000,
     headers: {
       'Content-Type': 'application/json',
