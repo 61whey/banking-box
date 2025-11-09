@@ -18,7 +18,7 @@ OpenBanking Russia v2.1 compatible
 from fastapi import APIRouter, Depends, HTTPException, Header, Request
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_
+from sqlalchemy import select, and_, or_
 from typing import Optional, List
 from datetime import datetime, timedelta
 import uuid
@@ -361,9 +361,14 @@ async def get_my_consents(
     if not client:
         raise HTTPException(404, "Client not found")
     
-    # Получить все согласия
+    # Получить все согласия (поддержка как client_id, так и client_id_external)
     result = await db.execute(
-        select(Consent).where(Consent.client_id == client.id)
+        select(Consent).where(
+            or_(
+                Consent.client_id == client.id,
+                Consent.client_id_external == current_client["client_id"]
+            )
+        )
         .order_by(Consent.creation_date_time.desc())
     )
     consents = result.scalars().all()
@@ -529,15 +534,6 @@ async def request_consents_from_all_banks(
     if not current_client:
         raise HTTPException(401, "Unauthorized")
     
-    # Получить client.id
-    client_result = await db.execute(
-        select(Client).where(Client.person_id == current_client["client_id"])
-    )
-    client = client_result.scalar_one_or_none()
-    
-    if not client:
-        raise HTTPException(404, "Client not found")
-    
     # Получить все внешние банки
     banks_result = await db.execute(
         select(Bank).where(Bank.external.is_(True))
@@ -630,7 +626,7 @@ async def request_consents_from_all_banks(
                     select(Consent).where(
                         and_(
                             Consent.consent_id == consent_id,
-                            Consent.client_id == client.id,
+                            Consent.client_id_external == current_client["client_id"],
                             Consent.granted_to == bank.api_user
                         )
                     )
@@ -699,7 +695,9 @@ async def request_consents_from_all_banks(
                 consent = Consent(
                     consent_id=consent_id,
                     request_id=None,  # Нет локального request_id для внешних согласий
-                    client_id=client.id,
+                    client_id=None,
+                    client_id_external=current_client["client_id"],
+                    bank_id=bank.id,
                     granted_to=bank.api_user,
                     permissions=permissions,
                     status="active" if auto_approved else "pending",
