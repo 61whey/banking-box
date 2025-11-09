@@ -2143,6 +2143,68 @@ ${agr.end_date ? `📅 Дата закрытия: ${new Date(agr.end_date).toLoc
             }
         }
 
+        // Multibank Payment
+        async function makeMultibankPayment() {
+            const fromAccount = document.getElementById('multibankFromAccount').value;
+            const toAccount = document.getElementById('multibankToAccount').value;
+            const amount = document.getElementById('multibankAmount').value;
+
+            if (!fromAccount || !toAccount || !amount) {
+                showToast('Заполните все поля!', 'error', '⚠️ Внимание');
+                return;
+            }
+
+            if (parseFloat(amount) <= 0) {
+                showToast('Сумма должна быть больше нуля!', 'error', '⚠️ Внимание');
+                return;
+            }
+
+            try {
+                showToast('Выполняется платеж через внешний банк...', 'info', '⏳ Обработка');
+
+                const response = await fetch(`${apiBase}/payments/external`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        from_account: fromAccount,
+                        to_account: toAccount,
+                        amount: parseFloat(amount),
+                        description: 'Перевод через Мультибанк'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showToast(
+                        `Платеж выполнен! ID: ${data.payment_id || data.external_payment_id}\nСтатус: ${data.status}`,
+                        'success',
+                        '✅ Успех'
+                    );
+
+                    // Clear form
+                    document.getElementById('multibankFromAccount').value = '';
+                    document.getElementById('multibankToAccount').value = '';
+                    document.getElementById('multibankAmount').value = '';
+
+                    // Reload accounts after a short delay
+                    setTimeout(() => {
+                        loadAccounts();
+                        loadMultibankAccounts();
+                    }, 1000);
+                } else {
+                    throw new Error(data.error || data.detail || 'Ошибка создания платежа');
+                }
+
+            } catch (error) {
+                console.error('Multibank payment error:', error);
+                showToast(error.message, 'error', '❌ Ошибка платежа');
+            }
+        }
+
         // Multibank
         async function loadBankAccounts(bankCode, url, bankName) {
             const container = document.getElementById('multibankAccounts');
@@ -2691,32 +2753,33 @@ ${agr.end_date ? `📅 Дата закрытия: ${new Date(agr.end_date).toLoc
         function populateMultibankTransferDropdowns(accounts) {
             const fromSelect = document.getElementById('multibankFromAccount');
             const toSelect = document.getElementById('multibankToAccount');
-            
+
             if (!fromSelect || !toSelect) {
                 return;
             }
-            
+
             // Clear existing options except the first one
             fromSelect.innerHTML = '<option value="">Выберите счет</option>';
             toSelect.innerHTML = '<option value="">Выберите счет</option>';
-            
+
             // Populate both dropdowns with the same accounts
             accounts.forEach(acc => {
                 const account = acc.account;
                 const accountNumber = account.account && account.account[0] ? account.account[0].identification : null;
-                
+
                 if (!accountNumber) {
                     return;
                 }
-                
+
                 // Create display text: Bank Name - Account Number
                 const displayText = `${acc.bank_name} - ${accountNumber}`;
-                
+
                 // Create option element
+                // Value format: "bank_code:account_id" for API compatibility
                 const option = document.createElement('option');
-                option.value = accountNumber;
+                option.value = `${acc.bank_code}:${accountNumber}`;
                 option.textContent = displayText;
-                
+
                 // Add to both dropdowns
                 fromSelect.appendChild(option.cloneNode(true));
                 toSelect.appendChild(option);
