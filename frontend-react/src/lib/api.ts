@@ -71,6 +71,11 @@ export const authAPI = {
   logout: async (): Promise<void> => {
     await api.post('/auth/logout')
   },
+
+  registerTeam: async (data: any): Promise<any> => {
+    const response = await api.post('/developer/register', data)
+    return response.data
+  },
 }
 
 // Bank API
@@ -78,6 +83,50 @@ export const bankAPI = {
   getBankInfo: async (): Promise<{ bank: string; description: string }> => {
     const response = await api.get('/')
     return response.data
+  },
+}
+
+// Banker API (for banker-specific operations)
+export const bankerAPI = {
+  getClients: async (): Promise<Client[]> => {
+    const response = await api.get('/admin/clients')
+    return response.data
+  },
+
+  getClient: async (clientId: string): Promise<Client> => {
+    const response = await api.get(`/admin/clients/${clientId}`)
+    return response.data
+  },
+
+  getProducts: async (): Promise<Product[]> => {
+    const response = await api.get('/admin/products')
+    return response.data
+  },
+
+  getStats: async (): Promise<BankStats> => {
+    const response = await api.get('/admin/stats')
+    return response.data
+  },
+
+  getLogs: async (): Promise<APILog[]> => {
+    const response = await api.get('/admin/logs')
+    return response.data
+  },
+}
+
+// Admin API (for team management)
+export const adminAPI = {
+  getTeams: async (): Promise<any[]> => {
+    const response = await api.get('/admin/teams')
+    return response.data
+  },
+
+  suspendTeam: async (clientId: string): Promise<void> => {
+    await api.post(`/admin/teams/${clientId}/suspend`)
+  },
+
+  activateTeam: async (clientId: string): Promise<void> => {
+    await api.post(`/admin/teams/${clientId}/activate`)
   },
 }
 
@@ -97,6 +146,16 @@ export const accountsAPI = {
     const response = await api.get(`/accounts/${accountId}/transactions`)
     return response.data
   },
+
+  getTransactions: async (accountId: string): Promise<Transaction[]> => {
+    const response = await api.get(`/accounts/${accountId}/transactions`)
+    return response.data
+  },
+
+  getExternalAccounts: async (): Promise<any[]> => {
+    const response = await api.get('/accounts/external')
+    return response.data
+  },
 }
 
 // Consents API
@@ -112,6 +171,10 @@ export const consentsAPI = {
   },
 
   revokeConsent: async (consentId: string): Promise<void> => {
+    await api.delete(`/consents/${consentId}`)
+  },
+
+  deleteConsent: async (consentId: string): Promise<void> => {
     await api.delete(`/consents/${consentId}`)
   },
 }
@@ -134,24 +197,6 @@ export const paymentsAPI = {
   },
 }
 
-// Clients API (for bankers)
-export const clientsAPI = {
-  getClients: async (): Promise<Client[]> => {
-    const response = await api.get('/admin/clients')
-    return response.data
-  },
-
-  getClient: async (clientId: string): Promise<Client> => {
-    const response = await api.get(`/admin/clients/${clientId}`)
-    return response.data
-  },
-
-  createClient: async (data: any): Promise<Client> => {
-    const response = await api.post('/admin/clients', data)
-    return response.data
-  },
-}
-
 // Products API
 export const productsAPI = {
   getProducts: async (): Promise<Product[]> => {
@@ -166,19 +211,6 @@ export const productsAPI = {
 
   createProduct: async (data: any): Promise<Product> => {
     const response = await api.post('/admin/products', data)
-    return response.data
-  },
-}
-
-// Monitoring API
-export const monitoringAPI = {
-  getStats: async (): Promise<BankStats> => {
-    const response = await api.get('/admin/stats')
-    return response.data
-  },
-
-  getLogs: async (): Promise<APILog[]> => {
-    const response = await api.get('/admin/logs')
     return response.data
   },
 }
