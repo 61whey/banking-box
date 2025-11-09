@@ -2595,22 +2595,41 @@ ${agr.end_date ? `📅 Дата закрытия: ${new Date(agr.end_date).toLoc
                 tableContainer.classList.add('hidden');
                 empty.classList.add('hidden');
 
+                // Build headers - Authorization is optional since endpoint doesn't require auth
+                const headers = {};
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+
                 const response = await fetch(`${apiBase}/banks`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                    headers: headers
                 });
 
-                if (!response.ok) throw new Error('Ошибка загрузки банков');
-
                 const data = await response.json();
-                banksData = data.data.bank || [];
+                
+                if (!response.ok) {
+                    console.error('Banks API error:', response.status, data);
+                    throw new Error(`Ошибка загрузки банков: ${response.status} ${JSON.stringify(data)}`);
+                }
+
+                console.log('Banks API response:', data);
+                banksData = data.data?.bank || [];
+                console.log('Banks data:', banksData);
+                
+                if (banksData.length === 0) {
+                    console.warn('No banks found in response');
+                }
                 
                 displayBanks(banksData);
 
             } catch (error) {
                 console.error('Error loading banks:', error);
-                showToast(error.message, 'error', 'Ошибка');
-                document.getElementById('banksLoading').classList.add('hidden');
-                document.getElementById('banksEmpty').classList.remove('hidden');
+                console.error('Error details:', error.message, error.stack);
+                showToast(error.message || 'Ошибка загрузки банков', 'error', 'Ошибка');
+                const loading = document.getElementById('banksLoading');
+                const empty = document.getElementById('banksEmpty');
+                if (loading) loading.classList.add('hidden');
+                if (empty) empty.classList.remove('hidden');
             }
         }
 
@@ -2711,9 +2730,18 @@ ${agr.end_date ? `📅 Дата закрытия: ${new Date(agr.end_date).toLoc
             await loadMultibankAccounts();
             await loadProductAgreements();
             await loadAllTransactions();
+            // Always load banks since the section is visible on the page
+            await loadBanks();
         }
         
         initDashboard();
+        
+        // Handle hash navigation
+        window.addEventListener('hashchange', () => {
+            if (window.location.hash === '#banks') {
+                loadBanks();
+            }
+        });
 
         // Click outside sidebar to close (mobile)
         document.addEventListener('click', (e) => {
