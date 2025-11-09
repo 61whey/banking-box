@@ -1244,16 +1244,22 @@
             window.location.href = 'index.html';
         }
         
-        const bankNames = {
-            'vbank': 'Virtual Bank',
-            'abank': 'Awesome Bank',
-            'sbank': 'Smart Bank'
-        };
-        
         const apiBase = window.location.origin;
 
+        // Fetch bank name from API
+        async function loadBankName() {
+            try {
+                const response = await fetch(`${apiBase}/`);
+                const data = await response.json();
+                document.getElementById('bankLogo').textContent = data.bank || 'Bank';
+            } catch (error) {
+                console.error('Failed to load bank name:', error);
+                document.getElementById('bankLogo').textContent = 'Bank';
+            }
+        }
+
         // Update UI with user info
-        document.getElementById('bankLogo').textContent = bankNames[bankCode];
+        loadBankName();
         document.getElementById('userName').textContent = clientId;
         document.getElementById('userAvatar').textContent = clientId.charAt(4).toUpperCase();
 
