@@ -4,6 +4,7 @@ SQLAlchemy модели для банка
 from sqlalchemy import Column, Integer, String, Numeric, DateTime, ForeignKey, Text, ARRAY, Boolean, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.postgresql import JSONB
 from datetime import datetime
 
 Base = declarative_base()
@@ -57,19 +58,53 @@ class Account(Base):
     """Счет клиента"""
     __tablename__ = "accounts"
     
-    id = Column(Integer, primary_key=True)
-    client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
+    id             = Column(Integer, primary_key=True)
+    client_id      = Column(Integer, ForeignKey("clients.id"), nullable=False)
     account_number = Column(String(20), unique=True, nullable=False)
-    account_type = Column(String(50))  # checking, savings, deposit
-    balance = Column(Numeric(15, 2), default=0)
-    currency = Column(String(3), default="RUB")
-    status = Column(String(20), default="active")
-    opened_at = Column(DateTime, default=datetime.utcnow)
+    account_type   = Column(String(50))                                         # checking, savings, deposit
+    balance        = Column(Numeric(15, 2), default=0)
+    currency       = Column(String(3), default="RUB")
+    status         = Column(String(20), default="active")
+    opened_at      = Column(DateTime, default=datetime.utcnow)
+    #updated_at     = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment="Время обновления данных счета")
     
-    # Relationships
-    client = relationship("Client", back_populates="accounts")
+      # Relationships
+    client       = relationship("Client", back_populates="accounts")
     transactions = relationship("Transaction", back_populates="account")
 
+
+# class VirtualAccountBankAllocation(Base):
+#     """Распределение ДС клиента по банкам"""
+#     __tablename__ = "virtual_account_bank_allocations"
+    
+#     id         = Column(Integer, primary_key=True)
+#     client_id  = Column(Integer, ForeignKey("clients.id"), nullable=False, comment="ID клиента (team025-x)")
+#     # bank_id    = Column(Integer, ForeignKey("banks.id"), nullable=False)
+#     # percentage = Column(Numeric(5, 4), nullable=False, comment="Процент распределения ДС на этот банк")
+#     # {"bank_id": "percentage"}
+#     target_share = Column(JSONB, nullable=True, comment="Целевое распределение ДС по банкам")
+#     # {"bank_id": "percentage"}
+#     actual_share = Column(JSONB, nullable=True, comment="Фактическое распределение ДС по банкам")
+#     created_at   = Column(DateTime, default=datetime.utcnow)
+#     updated_at   = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+# class VirtualAccount(Base):
+#     """Виртуальный счет клиента"""
+#     __tablename__ = "virtual_accounts"
+    
+#     id              = Column(Integer, primary_key=True)
+#     bank_id         = Column(Integer, ForeignKey("banks.id"), nullable=False)
+#     client_id       = Column(Integer, ForeignKey("clients.id"), nullable=False)
+#     account_number  = Column(String(20), unique=True, nullable=False)
+#     account_type    = Column(String(50))                                                   # checking, savings, deposit
+#     evaluation_type = Column(String(50), nullable=True, comment="Тип оценки баланса")      # manual, automatic
+#     balance         = Column(Numeric(15, 2), default=0)
+#     currency        = Column(String(3), default="RUB")
+#     status          = Column(String(20), default="active")
+#     created_at      = Column(DateTime, default=datetime.utcnow)
+#     updated_at      = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
 
 class Transaction(Base):
     """Транзакция по счету"""

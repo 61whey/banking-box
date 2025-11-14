@@ -47,6 +47,9 @@ class BankConfig(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379"
     CACHE_EXPIRE_SECONDS: int = 300
     
+    # === UI ===
+    EXTERNAL_PAYMENT_HISTORY_PAGE_SIZE: int = 6
+    
     # Поля, используемые только в docker-compose, но не в приложении
     # Добавлены для избежания ошибок валидации
     TEAM_CLIENT_ID: Optional[str] = None

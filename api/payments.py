@@ -6,18 +6,23 @@ OpenBanking Russia Payments API compatible
 from fastapi import APIRouter, Depends, HTTPException, Header, Request
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_
+from sqlalchemy import select, and_, func
 from typing import Optional
 from datetime import datetime
 from decimal import Decimal
 import uuid
 
 from database import get_db
-from models import Payment, Account, PaymentConsent, Bank
+from models import Payment, PaymentConsent, Bank
 from services.auth_service import get_current_client
 from services.payment_service import PaymentService
 from services.external_payment_service import execute_external_payment
+from services.account_service import get_external_accounts_for_client
+from services.cache_utils import client_page_key_builder
+from config import config
 from log import logger
+from fastapi_cache.decorator import cache
+from fastapi import Response
 
 
 router = APIRouter(prefix="/payments", tags=["4 Переводы"])
@@ -229,8 +234,6 @@ async def create_payment(
                 await db.commit()
 
         # Формируем ответ OpenBanking Russia
-        now = datetime.utcnow()
-        
         payment_data = PaymentData(
             paymentId=payment.payment_id,
             status=payment.status,
@@ -466,5 +469,140 @@ async def create_external_payment(
 
     except Exception as e:
         logger.error(f"Error creating external payment: {e}", exc_info=True)
+        raise HTTPException(500, f"Internal server error: {str(e)[:100]}")
+
+
+@router.get("/external/history", summary="Получить историю платежей из внешних банков")
+@cache(expire=config.CACHE_EXPIRE_SECONDS, key_builder=client_page_key_builder)
+async def get_external_payment_history(
+    request: Request,
+    response: Response,
+    page: int = 1,
+    current_client: dict = Depends(get_current_client),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Получить историю платежей из внешних банков для текущего клиента
+    
+    Возвращает все платежи, которые были созданы из внешних банков,
+    где source_account соответствует счетам клиента во внешних банках.
+    
+    Query params:
+    - page: номер страницы (начинается с 1, по умолчанию 1)
+    """
+    if not current_client:
+        raise HTTPException(401, "Unauthorized")
+    
+    if page < 1:
+        page = 1
+    
+    client_id = current_client["client_id"]
+    page_size = config.EXTERNAL_PAYMENT_HISTORY_PAGE_SIZE
+    logger.info(f"Fetching external payment history for client {client_id}, page {page}")
+    
+    try:
+        # Получить токены из app.state
+        tokens = getattr(request.app.state, "tokens", {})
+        
+        # Получить внешние счета клиента
+        external_accounts = await get_external_accounts_for_client(
+            client_person_id=client_id,
+            db=db,
+            app_state_tokens=tokens
+        )
+        
+        # Извлечь номера счетов из внешних счетов
+        client_account_numbers = []
+        for acc in external_accounts:
+            if acc.get("account") and acc.get("error") is None:
+                account_data = acc["account"]
+                if isinstance(account_data, dict) and "account" in account_data:
+                    account_list = account_data["account"]
+                    if isinstance(account_list, list) and len(account_list) > 0:
+                        account_identification = account_list[0].get("identification")
+                        if account_identification:
+                            client_account_numbers.append(account_identification)
+        
+        if not client_account_numbers:
+            logger.info(f"No external accounts found for client {client_id}")
+            return {
+                "data": {
+                    "payments": []
+                },
+                "meta": {
+                    "total": 0,
+                    "page": page,
+                    "page_size": page_size,
+                    "total_pages": 0
+                }
+            }
+        
+        logger.debug(f"Found {len(client_account_numbers)} external account numbers for client {client_id}")
+        
+        # Базовый запрос для подсчета общего количества
+        base_query = select(Payment).where(
+            and_(
+                Payment.source_bank.isnot(None),
+                Payment.source_account.in_(client_account_numbers)
+            )
+        )
+        
+        # Получить общее количество платежей
+        count_result = await db.execute(
+            select(func.count(Payment.id)).where(
+                and_(
+                    Payment.source_bank.isnot(None),
+                    Payment.source_account.in_(client_account_numbers)
+                )
+            )
+        )
+        total_count = count_result.scalar() or 0
+        
+        # Вычислить offset и limit для пагинации
+        offset = (page - 1) * page_size
+        total_pages = (total_count + page_size - 1) // page_size if total_count > 0 else 0
+        
+        # Запросить платежи с пагинацией
+        result = await db.execute(
+            base_query
+            .order_by(Payment.creation_date_time.desc())
+            .offset(offset)
+            .limit(page_size)
+        )
+        payments = result.scalars().all()
+        
+        logger.info(f"Found {len(payments)} external payments for client {client_id} (page {page}/{total_pages})")
+        
+        # Формировать ответ
+        payments_data = []
+        for payment in payments:
+            payments_data.append({
+                "payment_id": payment.payment_id,
+                "amount": float(payment.amount),
+                "currency": payment.currency or "RUB",
+                "source_bank": payment.source_bank or "",
+                "source_account": payment.source_account or "",
+                "destination_bank": payment.destination_bank or "",
+                "destination_account": payment.destination_account or "",
+                "description": payment.description or "",
+                "status": payment.status or "",
+                "creation_date_time": payment.creation_date_time.isoformat() + "Z" if payment.creation_date_time else "",
+                "external_payment_id": payment.external_payment_id or ""
+            })
+        
+        return {
+            "data": {
+                "payments": payments_data
+            },
+            "meta": {
+                "total": total_count,
+                "page": page,
+                "page_size": page_size,
+                "total_pages": total_pages
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Error fetching external payment history for client {client_id}: {e}", exc_info=True)
         raise HTTPException(500, f"Internal server error: {str(e)[:100]}")
 

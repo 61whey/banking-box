@@ -24,14 +24,47 @@ def client_key_builder(
     Example: banking-box:get_external_accounts:CLIENT123
     """
     kwargs = kwargs or {}
-
+    
     # Extract client_id from kwargs (passed from get_current_client dependency)
     current_client = kwargs.get("current_client", {})
     client_id = current_client.get("client_id", "unknown")
-
+    
     # Build cache key
     cache_key = f"{namespace}:{func.__name__}:client:{client_id}"
+    
+    return cache_key
 
+
+def client_page_key_builder(
+    func,
+    namespace: str = "",
+    *,
+    request: Request = None,
+    response: Response = None,
+    args: tuple = (),
+    kwargs: dict = None,
+) -> str:
+    """
+    Custom key builder for caching that includes the client_id and page number.
+    
+    This ensures each user gets their own cached data for paginated endpoints,
+    with different cache entries for each page.
+
+    Key format: namespace:function_name:client:{client_id}:page:{page}
+    Example: banking-box:get_external_payment_history:client:CLIENT123:page:1
+    """
+    kwargs = kwargs or {}
+    
+    # Extract client_id from kwargs (passed from get_current_client dependency)
+    current_client = kwargs.get("current_client", {})
+    client_id = current_client.get("client_id", "unknown")
+    
+    # Extract page number from kwargs
+    page = kwargs.get("page", 1)
+    
+    # Build cache key
+    cache_key = f"{namespace}:{func.__name__}:client:{client_id}:page:{page}"
+    
     return cache_key
 
 

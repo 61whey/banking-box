@@ -79,16 +79,32 @@ async def get_accounts(
         select(Client).where(Client.person_id == target_client_id)
     )
     client = client_result.scalar_one_or_none()
+    
+    if not client:
+        logger.warning(f"Client not found for person_id: {target_client_id}")
+        return {
+            "data": {
+                "account": []
+            },
+            "links": {
+                "self": "/accounts"
+            },
+            "meta": {
+                "totalPages": 1
+            }
+        }
+    
     client_name = client.full_name if client else ""
+    logger.info(f"Found client: id={client.id}, person_id={client.person_id}, name={client_name}")
     
     # Получаем счета
     result = await db.execute(
         select(Account)
-        .join(Client)
-        .where(Client.person_id == target_client_id)
+        .where(Account.client_id == client.id)
         .where(Account.status == "active")
     )
     accounts = result.scalars().all()
+    logger.info(f"Found {len(accounts)} accounts for client_id={client.id} (person_id={target_client_id})")
     
     # Формируем ответ в формате OpenBanking Russia
     return {
