@@ -73,37 +73,37 @@ class Account(Base):
     transactions = relationship("Transaction", back_populates="account")
 
 
-class VirtualAccountBankAllocation(Base):
-    """Распределение ДС клиента по банкам"""
-    __tablename__ = "virtual_account_bank_allocations"
+# class VirtualAccountBankAllocation(Base):
+#     """Распределение ДС клиента по банкам"""
+#     __tablename__ = "virtual_account_bank_allocations"
     
-    id         = Column(Integer, primary_key=True)
-    client_id  = Column(Integer, ForeignKey("clients.id"), nullable=False, comment="ID клиента (team025-x)")
-    # bank_id    = Column(Integer, ForeignKey("banks.id"), nullable=False)
-    # percentage = Column(Numeric(5, 4), nullable=False, comment="Процент распределения ДС на этот банк")
-    # {"bank_id": "percentage"}
-    target_share = Column(JSONB, nullable=True, comment="Целевое распределение ДС по банкам")
-    # {"bank_id": "percentage"}
-    actual_share = Column(JSONB, nullable=True, comment="Фактическое распределение ДС по банкам")
-    created_at   = Column(DateTime, default=datetime.utcnow)
-    updated_at   = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+#     id         = Column(Integer, primary_key=True)
+#     client_id  = Column(Integer, ForeignKey("clients.id"), nullable=False, comment="ID клиента (team025-x)")
+#     # bank_id    = Column(Integer, ForeignKey("banks.id"), nullable=False)
+#     # percentage = Column(Numeric(5, 4), nullable=False, comment="Процент распределения ДС на этот банк")
+#     # {"bank_id": "percentage"}
+#     target_share = Column(JSONB, nullable=True, comment="Целевое распределение ДС по банкам")
+#     # {"bank_id": "percentage"}
+#     actual_share = Column(JSONB, nullable=True, comment="Фактическое распределение ДС по банкам")
+#     created_at   = Column(DateTime, default=datetime.utcnow)
+#     updated_at   = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
-class VirtualAccount(Base):
-    """Виртуальный счет клиента"""
-    __tablename__ = "virtual_accounts"
+# class VirtualAccount(Base):
+#     """Виртуальный счет клиента"""
+#     __tablename__ = "virtual_accounts"
     
-    id              = Column(Integer, primary_key=True)
-    bank_id         = Column(Integer, ForeignKey("banks.id"), nullable=False)
-    client_id       = Column(Integer, ForeignKey("clients.id"), nullable=False)
-    account_number  = Column(String(20), unique=True, nullable=False)
-    account_type    = Column(String(50))                                                   # checking, savings, deposit
-    evaluation_type = Column(String(50), nullable=True, comment="Тип оценки баланса")      # manual, automatic
-    balance         = Column(Numeric(15, 2), default=0)
-    currency        = Column(String(3), default="RUB")
-    status          = Column(String(20), default="active")
-    created_at      = Column(DateTime, default=datetime.utcnow)
-    updated_at      = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+#     id              = Column(Integer, primary_key=True)
+#     bank_id         = Column(Integer, ForeignKey("banks.id"), nullable=False)
+#     client_id       = Column(Integer, ForeignKey("clients.id"), nullable=False)
+#     account_number  = Column(String(20), unique=True, nullable=False)
+#     account_type    = Column(String(50))                                                   # checking, savings, deposit
+#     evaluation_type = Column(String(50), nullable=True, comment="Тип оценки баланса")      # manual, automatic
+#     balance         = Column(Numeric(15, 2), default=0)
+#     currency        = Column(String(3), default="RUB")
+#     status          = Column(String(20), default="active")
+#     created_at      = Column(DateTime, default=datetime.utcnow)
+#     updated_at      = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
 
 class Transaction(Base):
