@@ -16,7 +16,7 @@ export function BankerLayout({ children, title }: BankerLayoutProps) {
 
   const handleLogout = () => {
     clearAuth()
-    navigate('/app/banker/login')
+    navigate('/app/admin/login')
   }
 
   return (
@@ -49,42 +49,42 @@ export function BankerLayout({ children, title }: BankerLayoutProps) {
         <nav className="flex gap-4 mb-6">
           <Button
             variant="ghost"
-            onClick={() => navigate('/app/banker/dashboard')}
+            onClick={() => navigate('/app/admin/dashboard')}
           >
             <LayoutDashboard className="mr-2 h-4 w-4" />
             Панель
           </Button>
           <Button
             variant="ghost"
-            onClick={() => navigate('/app/banker/clients')}
+            onClick={() => navigate('/app/admin/clients')}
           >
             <Users className="mr-2 h-4 w-4" />
             Клиенты
           </Button>
           <Button
             variant="ghost"
-            onClick={() => navigate('/app/banker/products')}
+            onClick={() => navigate('/app/admin/products')}
           >
             <Package className="mr-2 h-4 w-4" />
             Продукты
           </Button>
           <Button
             variant="ghost"
-            onClick={() => navigate('/app/banker/monitoring')}
+            onClick={() => navigate('/app/admin/monitoring')}
           >
             <Activity className="mr-2 h-4 w-4" />
             Мониторинг
           </Button>
           <Button
             variant="ghost"
-            onClick={() => navigate('/app/banker/consents')}
+            onClick={() => navigate('/app/admin/consents')}
           >
             <Shield className="mr-2 h-4 w-4" />
             Согласия
           </Button>
           <Button
             variant="ghost"
-            onClick={() => navigate('/app/banker/teams')}
+            onClick={() => navigate('/app/admin/teams')}
           >
             <UserCheck className="mr-2 h-4 w-4" />
             Команды

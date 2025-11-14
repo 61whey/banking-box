@@ -97,15 +97,7 @@ export const authAPI = {
   },
 
   bankerLogin: async (data: BankerLoginRequest): Promise<BankerLoginResponse> => {
-    // Банкирский логин использует FormData вместо JSON
-    const formData = new URLSearchParams()
-    formData.append('username', data.username)
-    formData.append('password', data.password)
-    const response = await api.post<BankerLoginResponse>('/auth/banker-login', formData.toString(), {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-    })
+    const response = await api.post<BankerLoginResponse>('/auth/banker-login', data)
     return response.data
   },
 

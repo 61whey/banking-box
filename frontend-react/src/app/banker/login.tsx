@@ -28,7 +28,7 @@ export default function BankerLogin() {
         title: 'Успешный вход',
         description: 'Добро пожаловать в панель управления!',
       })
-      navigate('/app/banker/dashboard')
+      navigate('/app/admin/dashboard')
     } catch (error: any) {
       toast({
         title: 'Ошибка входа',

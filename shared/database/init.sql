@@ -145,21 +145,21 @@ CREATE TABLE IF NOT EXISTS key_rate_history (
 -- Клиенты команды team025 (для работы на хакатоне)
 -- Пароль для всех: "password" (хеш: bcrypt)
 INSERT INTO clients (person_id, password_hash, client_type, full_name, segment, birth_year, monthly_income) VALUES
-('team025-1', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyWJTzgJFDqi', 'individual', 'Участник команды №1', 'employee', 1995, 100000),
-('team025-2', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyWJTzgJFDqi', 'individual', 'Участник команды №2', 'employee', 1994, 110000),
-('team025-3', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyWJTzgJFDqi', 'individual', 'Участник команды №3', 'employee', 1993, 105000),
-('team025-4', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyWJTzgJFDqi', 'individual', 'Участник команды №4', 'entrepreneur', 1992, 150000),
-('team025-5', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyWJTzgJFDqi', 'individual', 'Участник команды №5', 'employee', 1996, 95000),
-('team025-6', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyWJTzgJFDqi', 'individual', 'Участник команды №6', 'employee', 1997, 90000),
-('team025-7', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyWJTzgJFDqi', 'individual', 'Участник команды №7', 'employee', 1991, 120000),
-('team025-8', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyWJTzgJFDqi', 'individual', 'Участник команды №8', 'employee', 1998, 85000),
-('team025-9', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyWJTzgJFDqi', 'individual', 'Участник команды №9', 'entrepreneur', 1990, 200000),
-('team025-10', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyWJTzgJFDqi', 'individual', 'Участник команды №10', 'employee', 1999, 80000),
+('team025-1', '$2b$12$dWnVVAjnwluYi97NaclEbO/ZfVG6QYLIzqwr.OUDFtZU8MuLH40oq', 'individual', 'Участник команды №1', 'employee', 1995, 100000),
+('team025-2', '$2b$12$dWnVVAjnwluYi97NaclEbO/ZfVG6QYLIzqwr.OUDFtZU8MuLH40oq', 'individual', 'Участник команды №2', 'employee', 1994, 110000),
+('team025-3', '$2b$12$dWnVVAjnwluYi97NaclEbO/ZfVG6QYLIzqwr.OUDFtZU8MuLH40oq', 'individual', 'Участник команды №3', 'employee', 1993, 105000),
+('team025-4', '$2b$12$dWnVVAjnwluYi97NaclEbO/ZfVG6QYLIzqwr.OUDFtZU8MuLH40oq', 'individual', 'Участник команды №4', 'entrepreneur', 1992, 150000),
+('team025-5', '$2b$12$dWnVVAjnwluYi97NaclEbO/ZfVG6QYLIzqwr.OUDFtZU8MuLH40oq', 'individual', 'Участник команды №5', 'employee', 1996, 95000),
+('team025-6', '$2b$12$dWnVVAjnwluYi97NaclEbO/ZfVG6QYLIzqwr.OUDFtZU8MuLH40oq', 'individual', 'Участник команды №6', 'employee', 1997, 90000),
+('team025-7', '$2b$12$dWnVVAjnwluYi97NaclEbO/ZfVG6QYLIzqwr.OUDFtZU8MuLH40oq', 'individual', 'Участник команды №7', 'employee', 1991, 120000),
+('team025-8', '$2b$12$dWnVVAjnwluYi97NaclEbO/ZfVG6QYLIzqwr.OUDFtZU8MuLH40oq', 'individual', 'Участник команды №8', 'employee', 1998, 85000),
+('team025-9', '$2b$12$dWnVVAjnwluYi97NaclEbO/ZfVG6QYLIzqwr.OUDFtZU8MuLH40oq', 'individual', 'Участник команды №9', 'entrepreneur', 1990, 200000),
+('team025-10', '$2b$12$dWnVVAjnwluYi97NaclEbO/ZfVG6QYLIzqwr.OUDFtZU8MuLH40oq', 'individual', 'Участник команды №10', 'employee', 1999, 80000),
 -- Demo клиенты (для тестирования)
 -- Пароль: "password"
-('demo-client-001', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyWJTzgJFDqi', 'individual', 'Демо клиент №1', 'employee', 1988, 120000),
-('demo-client-002', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyWJTzgJFDqi', 'individual', 'Демо клиент №2', 'employee', 1982, 150000),
-('demo-client-003', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyWJTzgJFDqi', 'individual', 'Демо клиент №3', 'entrepreneur', 1975, 200000);
+('demo-client-001', '$2b$12$dWnVVAjnwluYi97NaclEbO/ZfVG6QYLIzqwr.OUDFtZU8MuLH40oq', 'individual', 'Демо клиент №1', 'employee', 1988, 120000),
+('demo-client-002', '$2b$12$dWnVVAjnwluYi97NaclEbO/ZfVG6QYLIzqwr.OUDFtZU8MuLH40oq', 'individual', 'Демо клиент №2', 'employee', 1982, 150000),
+('demo-client-003', '$2b$12$dWnVVAjnwluYi97NaclEbO/ZfVG6QYLIzqwr.OUDFtZU8MuLH40oq', 'individual', 'Демо клиент №3', 'entrepreneur', 1975, 200000);
 
 -- Счета для команды team025
 INSERT INTO accounts (client_id, account_number, account_type, balance, currency, status) VALUES
@@ -225,5 +225,5 @@ ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
 -- Пароль: "clear_text_pass_wJzc24f9u2" (хеш: bcrypt)
 -- client_secret остается для OAuth, password_hash для логина
 INSERT INTO teams (client_id, client_secret, password_hash, team_name, is_active) VALUES 
-('team025', 'clear_text_pass_wJzc24f9u2', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyWJTzgJFDqi', 'Команда 025', true)
+('team025', 'clear_text_pass_wJzc24f9u2', '$2b$12$dWnVVAjnwluYi97NaclEbO/ZfVG6QYLIzqwr.OUDFtZU8MuLH40oq', 'Команда 025', true)
 ON CONFLICT (client_id) DO NOTHING;

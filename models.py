@@ -37,6 +37,20 @@ class Bank(Base):
     api_secret = Column(Text)
 
 
+class Admin(Base):
+    """Администратор банка"""
+    __tablename__ = "admins"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String(100), unique=True, nullable=False)
+    password_hash = Column(String(255), nullable=False)  # Хеш пароля (bcrypt)
+    full_name = Column(String(255))
+    email = Column(String(255))
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    last_login = Column(DateTime)
+
+
 class Client(Base):
     """Клиент банка"""
     __tablename__ = "clients"

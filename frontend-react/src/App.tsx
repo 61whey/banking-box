@@ -74,52 +74,52 @@ function App() {
           } 
         />
         
-        {/* Banker routes */}
-        <Route path="/app/banker/login" element={<BankerLogin />} />
+        {/* Admin routes */}
+        <Route path="/app/admin/login" element={<BankerLogin />} />
         <Route 
-          path="/app/banker/dashboard" 
+          path="/app/admin/dashboard" 
           element={
-            <ProtectedRoute redirectTo="/app/banker/login">
+            <ProtectedRoute redirectTo="/app/admin/login">
               <BankerDashboard />
             </ProtectedRoute>
           } 
         />
         <Route 
-          path="/app/banker/clients" 
+          path="/app/admin/clients" 
           element={
-            <ProtectedRoute redirectTo="/app/banker/login">
+            <ProtectedRoute redirectTo="/app/admin/login">
               <BankerClients />
             </ProtectedRoute>
           } 
         />
         <Route 
-          path="/app/banker/products" 
+          path="/app/admin/products" 
           element={
-            <ProtectedRoute redirectTo="/app/banker/login">
+            <ProtectedRoute redirectTo="/app/admin/login">
               <BankerProducts />
             </ProtectedRoute>
           } 
         />
         <Route 
-          path="/app/banker/monitoring" 
+          path="/app/admin/monitoring" 
           element={
-            <ProtectedRoute redirectTo="/app/banker/login">
+            <ProtectedRoute redirectTo="/app/admin/login">
               <BankerMonitoring />
             </ProtectedRoute>
           } 
         />
         <Route 
-          path="/app/banker/consents" 
+          path="/app/admin/consents" 
           element={
-            <ProtectedRoute redirectTo="/app/banker/login">
+            <ProtectedRoute redirectTo="/app/admin/login">
               <BankerConsents />
             </ProtectedRoute>
           } 
         />
         <Route 
-          path="/app/banker/teams" 
+          path="/app/admin/teams" 
           element={
-            <ProtectedRoute redirectTo="/app/banker/login">
+            <ProtectedRoute redirectTo="/app/admin/login">
               <BankerTeams />
             </ProtectedRoute>
           } 
