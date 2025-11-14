@@ -8,6 +8,7 @@ from typing import List, Dict, Optional
 from datetime import datetime
 import httpx
 import logging
+import time
 
 from models import Bank, Consent
 from config import config
@@ -165,13 +166,16 @@ async def get_accounts_from_external_bank(
                     
                     # Попытаться получить баланс
                     try:
+                        # Add cache-busting parameter to force fresh data
+                        cache_buster = int(time.time() * 1000)  # milliseconds timestamp
                         balance_response = await http_client.get(
-                            f"{bank.api_url}/accounts/{account_id}/balances",
+                            f"{bank.api_url}/accounts/{account_id}/balances?_t={cache_buster}",
                             headers={
                                 "Authorization": f"Bearer {token}",
                                 "x-consent-id": consent_id,
                                 "x-requesting-bank": config.BANK_CODE,
-                                "accept": "application/json"
+                                "accept": "application/json",
+                                "Cache-Control": "no-cache"
                             }
                         )
                         
