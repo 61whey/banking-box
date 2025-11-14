@@ -16,8 +16,9 @@ import type {
 } from '@/types/api'
 
 // Используем VITE_API_URL из переменных окружения (устанавливается во время сборки)
-// Если не установлен, используем localhost:54080 для Docker или localhost:8001 для dev
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:54080'
+// Если не установлен, используем localhost:8000 для локальной разработки (python run.py)
+// Для Docker используется localhost:54080 (настраивается через VITE_API_URL)
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 const api = axios.create({
   baseURL: BASE_URL,
