@@ -200,18 +200,42 @@ async def get_current_banker(
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ) -> Optional[dict]:
     """
-    Получить текущего банкира из токена
-    Возвращает None если не авторизован или не банкир
+    Получить текущего банкира/админа из токена
+    Возвращает None если не авторизован или не банкир/админ
     """
     if not credentials:
         return None
     
     try:
         payload = await verify_token(credentials.credentials)
-        if payload.get("type") == "banker":
+        # Принимаем как "banker" так и "admin" токены
+        if payload.get("type") in ["banker", "admin"]:
             return {
                 "username": payload.get("sub"),
-                "type": "banker"
+                "type": payload.get("type")
+            }
+    except:
+        return None
+    
+    return None
+
+
+async def get_current_admin(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+) -> Optional[dict]:
+    """
+    Получить текущего администратора из токена
+    Возвращает None если не авторизован или не админ
+    """
+    if not credentials:
+        return None
+    
+    try:
+        payload = await verify_token(credentials.credentials)
+        if payload.get("type") == "admin":
+            return {
+                "username": payload.get("sub"),
+                "type": "admin"
             }
     except:
         return None
@@ -226,7 +250,16 @@ def hash_password(password: str) -> str:
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Проверка пароля"""
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        # Используем прямой вызов bcrypt для совместимости
+        import bcrypt
+        return bcrypt.checkpw(
+            plain_password.encode('utf-8'),
+            hashed_password.encode('utf-8')
+        )
+    except Exception:
+        # Fallback на passlib если bcrypt недоступен
+        return pwd_context.verify(plain_password, hashed_password)
 
 
 async def get_access_token(
@@ -259,57 +292,61 @@ async def get_external_bank_tokens() -> dict:
     """
     Get access tokens for all external banks from the banks table.
     
-    Uses get_db() generator for consistency with codebase patterns.
+    Creates its own database session to avoid ROLLBACK warnings.
     
     Returns:
         dict: Dictionary with bank_code as keys and token info as values
               Format: {bank_code: {"token": str, "expires_in": int, "expiration_time": datetime}}
               On failure: {bank_code: {"token": None, "expires_in": None, "expiration_time": None}}
     """
+    from database import AsyncSessionLocal
+    
     tokens = {}
     
-    # Use get_db() generator for consistency with codebase (like in middleware.py)
-    async for db in get_db():
-        # Query all external banks
-        result = await db.execute(
-            select(Bank).where(Bank.external.is_(True))
-        )
-        external_banks = result.scalars().all()
-        
-        # Get token for each external bank
-        for bank in external_banks:
-            if not bank.code or not bank.api_url or not bank.api_user or not bank.api_secret:
-                # Skip banks with missing required fields
-                tokens[bank.code] = {
-                    "token": None,
-                    "expires_in": None,
-                    "expiration_time": None
-                }
-                continue
+    # Create own session to avoid ROLLBACK warnings
+    async with AsyncSessionLocal() as db:
+        try:
+            # Query all external banks
+            result = await db.execute(
+                select(Bank).where(Bank.external.is_(True))
+            )
+            external_banks = result.scalars().all()
             
-            try:
-                token_response = await get_access_token(
-                    team_id=bank.api_user,
-                    client_secret=bank.api_secret,
-                    bank_url=bank.api_url
-                )
+            # Get token for each external bank
+            for bank in external_banks:
+                if not bank.code or not bank.api_url or not bank.api_user or not bank.api_secret:
+                    # Skip banks with missing required fields
+                    tokens[bank.code] = {
+                        "token": None,
+                        "expires_in": None,
+                        "expiration_time": None
+                    }
+                    continue
                 
-                expires_in = token_response.get("expires_in", 86400)
-                expiration_time = datetime.utcnow() + timedelta(seconds=expires_in)
-                
-                tokens[bank.code] = {
-                    "token": token_response.get("access_token"),
-                    "expires_in": expires_in,
-                    "expiration_time": expiration_time
-                }
-            except Exception as e:
-                print(f"Failed to get token for bank {bank.code}: {e}")
-                tokens[bank.code] = {
-                    "token": None,
-                    "expires_in": None,
-                    "expiration_time": None
-                }
-        break  # Only need one iteration since get_db() yields one session
+                try:
+                    token_response = await get_access_token(
+                        team_id=bank.api_user,
+                        client_secret=bank.api_secret,
+                        bank_url=bank.api_url
+                    )
+                    
+                    expires_in = token_response.get("expires_in", 86400)
+                    expiration_time = datetime.utcnow() + timedelta(seconds=expires_in)
+                    
+                    tokens[bank.code] = {
+                        "token": token_response.get("access_token"),
+                        "expires_in": expires_in,
+                        "expiration_time": expiration_time
+                    }
+                except Exception as e:
+                    print(f"Failed to get token for bank {bank.code}: {e}")
+                    tokens[bank.code] = {
+                        "token": None,
+                        "expires_in": None,
+                        "expiration_time": None
+                    }
+        except Exception as e:
+            print(f"Error loading external banks: {e}")
     
     return tokens
 

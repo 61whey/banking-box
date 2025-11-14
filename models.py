@@ -17,7 +17,8 @@ class Team(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     client_id = Column(String(100), unique=True, nullable=False)  # team200
-    client_secret = Column(String(255), nullable=False)  # api_key
+    client_secret = Column(String(255), nullable=False)  # OAuth client_secret (JWT подпись)
+    password_hash = Column(String(255), nullable=False)  # Хеш пароля для входа (bcrypt)
     team_name = Column(String(255))  # название команды
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -37,12 +38,27 @@ class Bank(Base):
     api_secret = Column(Text)
 
 
+class Admin(Base):
+    """Администратор банка"""
+    __tablename__ = "admins"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String(100), unique=True, nullable=False)
+    password_hash = Column(String(255), nullable=False)  # Хеш пароля (bcrypt)
+    full_name = Column(String(255))
+    email = Column(String(255))
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    last_login = Column(DateTime)
+
+
 class Client(Base):
     """Клиент банка"""
     __tablename__ = "clients"
     
     id = Column(Integer, primary_key=True)
     person_id = Column(String(100), unique=True)  # ID из общей базы людей
+    password_hash = Column(String(255), nullable=False)  # Хеш пароля (bcrypt)
     client_type = Column(String(20))  # individual / legal
     full_name = Column(String(255), nullable=False)
     segment = Column(String(50))  # employee, student, pensioner, etc.

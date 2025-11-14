@@ -2,6 +2,7 @@
 Auth API - Авторизация клиентов
 """
 from typing import Optional
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Form, Query
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,7 +10,7 @@ from sqlalchemy import select, func
 
 from config import config
 from database import get_db
-from models import Client, Team
+from models import Client, Team, Admin
 from services.auth_service import create_access_token, hash_password, verify_password, get_current_client
 
 
@@ -65,47 +66,8 @@ async def login(
     if not client:
         raise HTTPException(401, "Invalid credentials")
     
-    # 61whey: TODO: We need to change all this authentication
-    # В MVP: простая проверка пароля (для упрощения тестирования)
-    # В production: проверять хешированный пароль
-
-    # Определяем правильный пароль для клиента
-    expected_password = None
-
-    if request.username.startswith("demo-"):  # Like demo-client-001
-        # Demo клиенты: пароль = "password"
-        expected_password = config.DEMO_CLIENT_PASSWORD
-    elif request.username.startswith("team"):  # Like team025-1
-        # Командные клиенты: проверяем пароль из таблицы teams
-        # Извлекаем номер команды из person_id (team010-1 → team010)
-        import re
-        match = re.match(r'(team\d+)-\d+', request.username)
-        if match:
-            team_id = match.group(1)
-
-            # Ищем команду в БД
-            team_result = await db.execute(
-                select(Team).where(Team.client_id == team_id)
-            )
-            team = team_result.scalar_one_or_none()
-
-            if team:
-                # Используем client_secret из таблицы teams как пароль
-                expected_password = team.client_secret
-            else:
-                # Команда не найдена в БД
-                raise HTTPException(401, "Invalid credentials")
-        else:
-            # Неправильный формат
-            raise HTTPException(401, "Invalid credentials")
-    else:
-        raise HTTPException(401, "Invalid credentials")
-        # Старые клиенты: пароль = username или "password"
-        # if request.password in [request.username, "password"]:
-        #     expected_password = request.password
-
-    # Проверка пароля
-    if not expected_password or request.password != expected_password:
+    # Проверка пароля через bcrypt
+    if not verify_password(request.password, client.password_hash):
         raise HTTPException(401, "Invalid credentials")
     
     # Создать JWT токен
@@ -234,39 +196,61 @@ async def create_bank_token(
     }
 
 
-@router.post("/banker-login", include_in_schema=False)
+class BankerLoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class BankerLoginResponse(BaseModel):
+    access_token: str
+    token_type: str
+    role: str
+    username: str
+
+
+@router.post("/banker-login", response_model=BankerLoginResponse, include_in_schema=False)
 async def banker_login(
-    username: str = Form(...),
-    password: str = Form(...)
+    request: BankerLoginRequest,
+    db: AsyncSession = Depends(get_db)
 ):
     """
-    Авторизация сотрудника банка
+    Авторизация администратора банка
     
-    Для доступа к Banker UI и управления продуктами банка.
+    Для доступа к Admin UI и управления банком.
     """
-    from config import config
-
-    # 61whey: TODO: We need to change this authentication
-    # Проверка учетных данных (для хакатона - упрощенная схема)
-    if username != config.ADMIN_USERNAME or password != config.ADMIN_PASSWORD:
+    # Найти администратора
+    result = await db.execute(
+        select(Admin).where(Admin.username == request.username, Admin.is_active == True)
+    )
+    admin = result.scalar_one_or_none()
+    
+    if not admin:
         raise HTTPException(401, "Invalid credentials")
     
-    # Создать токен банкира
-    banker_token = create_access_token(
+    # Проверка пароля через bcrypt
+    if not verify_password(request.password, admin.password_hash):
+        raise HTTPException(401, "Invalid credentials")
+    
+    # Обновить время последнего входа
+    admin.last_login = datetime.utcnow()
+    await db.commit()
+    
+    # Создать токен администратора
+    admin_token = create_access_token(
         data={
-            "sub": "banker",
-            "type": "banker",
+            "sub": admin.username,
+            "type": "admin",
             "bank": config.BANK_CODE,
-            "username": username
+            "username": admin.username
         }
     )
     
-    return {
-        "access_token": banker_token,
-        "token_type": "bearer",
-        "role": "banker",
-        "username": username
-    }
+    return BankerLoginResponse(
+        access_token=admin_token,
+        token_type="bearer",
+        role="admin",
+        username=admin.username
+    )
 
 
 class RandomClientResponse(BaseModel):
@@ -364,9 +348,13 @@ async def register_team(
 
     team_name_with_contacts = " | ".join(team_info_parts)
 
+    # Хешируем пароль "password" для команды и клиентов
+    default_password_hash = hash_password("password")
+
     new_team = Team(
         client_id=client_id,
         client_secret=client_secret,
+        password_hash=default_password_hash,
         team_name=team_name_with_contacts,  # Включаем всю контактную информацию
         is_active=True,
         created_at=datetime.utcnow()
@@ -375,9 +363,11 @@ async def register_team(
 
     # Create 10 test clients for this team
     test_clients = []
+    
     for i in range(1, 11):
         client = Client(
             person_id=f"{client_id}-{i}",
+            password_hash=default_password_hash,
             client_type="INDIVIDUAL",
             full_name=f"{request.team_name} Test Client {i}",
             segment="MASS",
