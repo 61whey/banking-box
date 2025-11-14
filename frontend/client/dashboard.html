@@ -1015,6 +1015,42 @@
             <div id="paymentResult" class="hidden" style="margin-top: var(--spacing-md); padding: var(--spacing-md); border-radius: var(--border-radius-sm);"></div>
         </section>
 
+        <!-- External Payment History Section -->
+        <section class="section" id="section-external-payment-history">
+            <div class="section-header">
+                <h2 class="section-title">История переводов</h2>
+            </div>
+            <div id="externalPaymentHistoryLoading" style="text-align: center; padding: var(--spacing-xl); color: var(--text-muted);">
+                Загрузка истории переводов...
+            </div>
+            <div id="externalPaymentHistoryTableContainer" class="hidden" style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid var(--border-color);">
+                            <th style="padding: var(--spacing-md); text-align: left; color: var(--text-secondary); font-weight: 600;">Дата/Время</th>
+                            <th style="padding: var(--spacing-md); text-align: left; color: var(--text-secondary); font-weight: 600;">Банк-отправитель</th>
+                            <th style="padding: var(--spacing-md); text-align: left; color: var(--text-secondary); font-weight: 600;">Счет-отправитель</th>
+                            <th style="padding: var(--spacing-md); text-align: left; color: var(--text-secondary); font-weight: 600;">Банк-получатель</th>
+                            <th style="padding: var(--spacing-md); text-align: left; color: var(--text-secondary); font-weight: 600;">Счет-получатель</th>
+                            <th style="padding: var(--spacing-md); text-align: right; color: var(--text-secondary); font-weight: 600;">Сумма</th>
+                            <th style="padding: var(--spacing-md); text-align: left; color: var(--text-secondary); font-weight: 600;">Статус</th>
+                            <th style="padding: var(--spacing-md); text-align: left; color: var(--text-secondary); font-weight: 600;">Описание</th>
+                        </tr>
+                    </thead>
+                    <tbody id="externalPaymentHistoryTableBody">
+                    </tbody>
+                </table>
+                <div id="externalPaymentHistoryPagination" style="display: flex; justify-content: space-between; align-items: center; margin-top: var(--spacing-lg); padding: var(--spacing-md); border-top: 1px solid var(--border-color);">
+                    <div id="externalPaymentHistoryPaginationInfo" style="color: var(--text-secondary); font-size: 0.9em;"></div>
+                    <div id="externalPaymentHistoryPaginationControls" style="display: flex; gap: var(--spacing-sm); align-items: center;"></div>
+                </div>
+            </div>
+            <div id="externalPaymentHistoryEmpty" class="empty-state hidden">
+                <div class="empty-icon">💸</div>
+                <div>История переводов из внешних банков пуста</div>
+            </div>
+        </section>
+
         <!-- Transactions History Section -->
         <section class="section" id="section-history">
             <div class="section-header">
@@ -1355,10 +1391,22 @@
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
-                if (!response.ok) throw new Error('Ошибка загрузки счетов');
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('API error:', response.status, errorText);
+                    throw new Error(`Ошибка загрузки счетов: ${response.status}`);
+                }
 
                 const data = await response.json();
-                accountsData = data.data.account;
+                
+                // Check if data structure is correct
+                if (!data || !data.data) {
+                    console.error('Invalid response structure:', data);
+                    throw new Error('Неверный формат ответа от сервера');
+                }
+                
+                // Ensure accounts is an array
+                accountsData = Array.isArray(data.data.account) ? data.data.account : [];
                 
                 await displayAccounts(accountsData);
                 updateSummary();
@@ -1366,6 +1414,15 @@
             } catch (error) {
                 console.error('Error loading accounts:', error);
                 showToast(error.message, 'error', 'Ошибка');
+                
+                // Show empty state on error
+                const loading = document.getElementById('accountsLoading');
+                const grid = document.getElementById('accountsGrid');
+                const empty = document.getElementById('accountsEmpty');
+                
+                if (loading) loading.classList.add('hidden');
+                if (grid) grid.classList.add('hidden');
+                if (empty) empty.classList.remove('hidden');
             }
         }
 
@@ -1374,7 +1431,18 @@
             const loading = document.getElementById('accountsLoading');
             const empty = document.getElementById('accountsEmpty');
             
+            if (!grid || !loading || !empty) {
+                console.error('Required DOM elements not found');
+                return;
+            }
+            
             loading.classList.add('hidden');
+            
+            // Ensure accounts is an array
+            if (!Array.isArray(accounts)) {
+                console.error('Accounts is not an array:', accounts);
+                accounts = [];
+            }
             
             if (accounts.length === 0) {
                 empty.classList.remove('hidden');
@@ -1387,18 +1455,45 @@
             grid.innerHTML = '';
 
             for (const account of accounts) {
-                // Get balance
-                const balanceResponse = await fetch(`${apiBase}/accounts/${account.accountId}/balances`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const balanceData = await balanceResponse.json();
-                const balance = balanceData.data.balance[0];
-
-                // Cache balance for summary
-                accountBalancesCache.set(account.accountId, parseFloat(balance.amount.amount));
+                // Validate account structure
+                if (!account || !account.accountId || !account.account || !Array.isArray(account.account) || account.account.length === 0) {
+                    console.warn('Invalid account structure:', account);
+                    continue;
+                }
+                
+                try {
+                    // Get balance
+                    const balanceResponse = await fetch(`${apiBase}/accounts/${account.accountId}/balances`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    
+                    if (!balanceResponse.ok) {
+                        console.warn(`Failed to fetch balance for account ${account.accountId}:`, balanceResponse.status);
+                        // Use 0 as default balance if fetch fails
+                        accountBalancesCache.set(account.accountId, 0);
+                    } else {
+                        const balanceData = await balanceResponse.json();
+                        
+                        if (balanceData && balanceData.data && balanceData.data.balance && Array.isArray(balanceData.data.balance) && balanceData.data.balance.length > 0) {
+                            const balance = balanceData.data.balance[0];
+                            const balanceAmount = parseFloat(balance.amount?.amount || 0);
+                            // Cache balance for summary
+                            accountBalancesCache.set(account.accountId, balanceAmount);
+                        } else {
+                            console.warn(`Invalid balance data structure for account ${account.accountId}:`, balanceData);
+                            accountBalancesCache.set(account.accountId, 0);
+                        }
+                    }
+                } catch (balanceError) {
+                    console.error(`Error fetching balance for account ${account.accountId}:`, balanceError);
+                    accountBalancesCache.set(account.accountId, 0);
+                }
 
                 // Get transactions
                 const transactions = await loadTransactions(account.accountId);
+
+                // Get balance from cache (set above)
+                const accountBalance = accountBalancesCache.get(account.accountId) || 0;
 
                 const card = document.createElement('div');
                 card.className = 'card';
@@ -1413,7 +1508,7 @@
                         </button>
                     </div>
                     <div class="card-balance">
-                        ${parseFloat(balance.amount.amount).toLocaleString('ru-RU')} ₽
+                        ${accountBalance.toLocaleString('ru-RU')} ₽
                     </div>
                     ${transactions.length > 0 ? `
                     <div class="transaction-list">
@@ -1525,6 +1620,203 @@
                     </div>
                 `;
             }).join('');
+        }
+
+        // External Payment History
+        let externalPaymentHistoryCurrentPage = 1;
+        let externalPaymentHistoryTotalPages = 0;
+        let externalPaymentHistoryTotal = 0;
+
+        async function loadExternalPaymentHistory(page = 1) {
+            const loading = document.getElementById('externalPaymentHistoryLoading');
+            const tableContainer = document.getElementById('externalPaymentHistoryTableContainer');
+            const tableBody = document.getElementById('externalPaymentHistoryTableBody');
+            const empty = document.getElementById('externalPaymentHistoryEmpty');
+            const pagination = document.getElementById('externalPaymentHistoryPagination');
+            const paginationInfo = document.getElementById('externalPaymentHistoryPaginationInfo');
+            const paginationControls = document.getElementById('externalPaymentHistoryPaginationControls');
+
+            // Show loading, hide table and empty
+            loading.classList.remove('hidden');
+            tableContainer.classList.add('hidden');
+            empty.classList.add('hidden');
+            pagination.style.display = 'none';
+
+            try {
+                const response = await fetch(`${apiBase}/payments/external/history?page=${page}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Ошибка загрузки истории переводов');
+                }
+
+                const data = await response.json();
+                const payments = data.data.payments || [];
+                const meta = data.meta || {};
+
+                // Update pagination state
+                externalPaymentHistoryCurrentPage = meta.page || page;
+                externalPaymentHistoryTotalPages = meta.total_pages || 0;
+                externalPaymentHistoryTotal = meta.total || 0;
+
+                // Hide loading
+                loading.classList.add('hidden');
+
+                if (payments.length === 0) {
+                    empty.classList.remove('hidden');
+                    tableContainer.classList.add('hidden');
+                    pagination.style.display = 'none';
+                    return;
+                }
+
+                // Show table, hide empty
+                empty.classList.add('hidden');
+                tableContainer.classList.remove('hidden');
+                pagination.style.display = 'flex';
+
+                // Populate table
+                tableBody.innerHTML = payments.map(payment => {
+                    const date = new Date(payment.creation_date_time);
+                    const formattedDate = date.toLocaleString('ru-RU', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    const amount = parseFloat(payment.amount).toLocaleString('ru-RU', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                    
+                    // Format status
+                    let statusText = payment.status || '';
+                    let statusClass = '';
+                    if (statusText.toLowerCase().includes('completed') || statusText.toLowerCase().includes('accepted')) {
+                        statusClass = 'color: var(--success-color);';
+                    } else if (statusText.toLowerCase().includes('rejected') || statusText.toLowerCase().includes('failed')) {
+                        statusClass = 'color: var(--error-color);';
+                    } else {
+                        statusClass = 'color: var(--warning-color);';
+                    }
+
+                    return `
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: var(--spacing-md); color: var(--text-primary);">${formattedDate}</td>
+                            <td style="padding: var(--spacing-md); color: var(--text-primary);">${payment.source_bank || '—'}</td>
+                            <td style="padding: var(--spacing-md); color: var(--text-primary); font-family: monospace;">${payment.source_account || '—'}</td>
+                            <td style="padding: var(--spacing-md); color: var(--text-primary);">${payment.destination_bank || '—'}</td>
+                            <td style="padding: var(--spacing-md); color: var(--text-primary); font-family: monospace;">${payment.destination_account || '—'}</td>
+                            <td style="padding: var(--spacing-md); color: var(--text-primary); text-align: right; font-weight: 600;">${amount} ${payment.currency || 'RUB'}</td>
+                            <td style="padding: var(--spacing-md); ${statusClass}">${statusText}</td>
+                            <td style="padding: var(--spacing-md); color: var(--text-primary);">${payment.description || '—'}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+                // Update pagination info
+                const startIdx = (externalPaymentHistoryCurrentPage - 1) * (meta.page_size || 6) + 1;
+                const endIdx = Math.min(startIdx + payments.length - 1, externalPaymentHistoryTotal);
+                paginationInfo.textContent = `Показано ${startIdx}-${endIdx} из ${externalPaymentHistoryTotal}`;
+
+                // Update pagination controls
+                paginationControls.innerHTML = '';
+
+                // Previous button
+                const prevBtn = document.createElement('button');
+                prevBtn.className = 'btn btn-sm btn-secondary';
+                prevBtn.textContent = '←';
+                prevBtn.disabled = externalPaymentHistoryCurrentPage === 1;
+                prevBtn.onclick = () => {
+                    if (externalPaymentHistoryCurrentPage > 1) {
+                        loadExternalPaymentHistory(externalPaymentHistoryCurrentPage - 1);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                };
+                paginationControls.appendChild(prevBtn);
+
+                // Page numbers
+                if (externalPaymentHistoryTotalPages > 0) {
+                    const maxVisiblePages = 5;
+                    let startPage = Math.max(1, externalPaymentHistoryCurrentPage - Math.floor(maxVisiblePages / 2));
+                    let endPage = Math.min(externalPaymentHistoryTotalPages, startPage + maxVisiblePages - 1);
+                    
+                    if (endPage - startPage < maxVisiblePages - 1) {
+                        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+                    }
+
+                    if (startPage > 1) {
+                        const firstBtn = document.createElement('button');
+                        firstBtn.className = 'btn btn-sm btn-secondary';
+                        firstBtn.textContent = '1';
+                        firstBtn.onclick = () => {
+                            loadExternalPaymentHistory(1);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        };
+                        paginationControls.appendChild(firstBtn);
+
+                        if (startPage > 2) {
+                            const ellipsis = document.createElement('span');
+                            ellipsis.textContent = '...';
+                            ellipsis.style.padding = '0 var(--spacing-sm)';
+                            ellipsis.style.color = 'var(--text-secondary)';
+                            paginationControls.appendChild(ellipsis);
+                        }
+                    }
+
+                    for (let i = startPage; i <= endPage; i++) {
+                        const pageBtn = document.createElement('button');
+                        pageBtn.className = `btn btn-sm ${i === externalPaymentHistoryCurrentPage ? 'btn-primary' : 'btn-secondary'}`;
+                        pageBtn.textContent = i.toString();
+                        pageBtn.onclick = () => {
+                            loadExternalPaymentHistory(i);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        };
+                        paginationControls.appendChild(pageBtn);
+                    }
+
+                    if (endPage < externalPaymentHistoryTotalPages) {
+                        if (endPage < externalPaymentHistoryTotalPages - 1) {
+                            const ellipsis = document.createElement('span');
+                            ellipsis.textContent = '...';
+                            ellipsis.style.padding = '0 var(--spacing-sm)';
+                            ellipsis.style.color = 'var(--text-secondary)';
+                            paginationControls.appendChild(ellipsis);
+                        }
+
+                        const lastBtn = document.createElement('button');
+                        lastBtn.className = 'btn btn-sm btn-secondary';
+                        lastBtn.textContent = externalPaymentHistoryTotalPages.toString();
+                        lastBtn.onclick = () => {
+                            loadExternalPaymentHistory(externalPaymentHistoryTotalPages);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        };
+                        paginationControls.appendChild(lastBtn);
+                    }
+                }
+
+                // Next button
+                const nextBtn = document.createElement('button');
+                nextBtn.className = 'btn btn-sm btn-secondary';
+                nextBtn.textContent = '→';
+                nextBtn.disabled = externalPaymentHistoryCurrentPage >= externalPaymentHistoryTotalPages;
+                nextBtn.onclick = () => {
+                    if (externalPaymentHistoryCurrentPage < externalPaymentHistoryTotalPages) {
+                        loadExternalPaymentHistory(externalPaymentHistoryCurrentPage + 1);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                };
+                paginationControls.appendChild(nextBtn);
+
+            } catch (error) {
+                console.error('Error loading external payment history:', error);
+                loading.classList.add('hidden');
+                empty.classList.remove('hidden');
+                tableContainer.classList.add('hidden');
+                pagination.style.display = 'none';
+                showToast(error.message, 'error', 'Ошибка');
+            }
         }
 
         let accountBalancesCache = new Map();
@@ -2920,6 +3212,7 @@ ${agr.end_date ? `📅 Дата закрытия: ${new Date(agr.end_date).toLoc
             await loadMultibankAccounts();
             await loadProductAgreements();
             await loadAllTransactions();
+            await loadExternalPaymentHistory();
             // Always load banks since the section is visible on the page
             await loadBanks();
         }

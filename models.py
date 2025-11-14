@@ -59,7 +59,6 @@ class Account(Base):
     __tablename__ = "accounts"
     
     id             = Column(Integer, primary_key=True)
-    bank_id        = Column(Integer, ForeignKey("banks.id"), nullable=False, comment="ID банка из banks")
     client_id      = Column(Integer, ForeignKey("clients.id"), nullable=False)
     account_number = Column(String(20), unique=True, nullable=False)
     account_type   = Column(String(50))                                         # checking, savings, deposit
@@ -67,7 +66,7 @@ class Account(Base):
     currency       = Column(String(3), default="RUB")
     status         = Column(String(20), default="active")
     opened_at      = Column(DateTime, default=datetime.utcnow)
-    updated_at     = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment="Время обновления данных счета")
+    #updated_at     = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment="Время обновления данных счета")
     
       # Relationships
     client       = relationship("Client", back_populates="accounts")
