@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { accountsAPI } from '@/lib/api'
 import { useToast } from '@/hooks/use-toast'
 import type { Account, Transaction } from '@/types/api'
-import { CreditCard, TrendingUp, Wallet, Building2 } from 'lucide-react'
+import { CreditCard, TrendingUp, Wallet, Building2, RefreshCw } from 'lucide-react'
 import { format } from 'date-fns'
 import { ru } from 'date-fns/locale'
 
@@ -14,6 +14,7 @@ export default function ClientDashboard() {
   const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingExternal, setLoadingExternal] = useState(true)
+  const [externalAccountsError, setExternalAccountsError] = useState<string | null>(null)
   const { toast } = useToast()
 
   useEffect(() => {
@@ -50,12 +51,17 @@ export default function ClientDashboard() {
   useEffect(() => {
     const fetchExternalAccounts = async () => {
       try {
+        setExternalAccountsError(null)
         const externalData = await accountsAPI.getExternalAccounts()
         const externalArray = Array.isArray(externalData) ? externalData : []
         setExternalAccounts(externalArray)
+        
+        // Логируем для отладки
+        console.log('External accounts loaded:', externalArray.length, 'accounts')
       } catch (error: any) {
-        // Не показываем ошибку, просто не загружаем внешние счета
-        console.warn('Failed to load external accounts:', error)
+        console.error('Failed to load external accounts:', error)
+        const errorMessage = error.response?.data?.detail || 'Не удалось загрузить счета из других банков'
+        setExternalAccountsError(errorMessage)
         setExternalAccounts([])
       } finally {
         setLoadingExternal(false)
@@ -66,6 +72,33 @@ export default function ClientDashboard() {
   }, [])
 
   const totalBalance = Array.isArray(accounts) ? accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0) : 0
+
+  const handleRefreshExternalAccounts = async () => {
+    setLoadingExternal(true)
+    setExternalAccountsError(null)
+    try {
+      const externalData = await accountsAPI.getExternalAccounts()
+      const externalArray = Array.isArray(externalData) ? externalData : []
+      setExternalAccounts(externalArray)
+      console.log('External accounts refreshed:', externalArray.length, 'accounts')
+      toast({
+        title: 'Обновлено',
+        description: `Загружено счетов: ${externalArray.length}`,
+      })
+    } catch (error: any) {
+      console.error('Failed to refresh external accounts:', error)
+      const errorMessage = error.response?.data?.detail || 'Не удалось загрузить счета из других банков'
+      setExternalAccountsError(errorMessage)
+      setExternalAccounts([])
+      toast({
+        title: 'Ошибка обновления',
+        description: errorMessage,
+        variant: 'destructive',
+      })
+    } finally {
+      setLoadingExternal(false)
+    }
+  }
 
   return (
     <ClientLayout title="Обзор">
@@ -179,57 +212,76 @@ export default function ClientDashboard() {
         </Card>
       </div>
 
-      {externalAccounts.length > 0 && (
-        <Card className="mt-6">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Building2 className="h-5 w-5 text-primary" />
-              <CardTitle>Счета из внешних банков</CardTitle>
-            </div>
-            <CardDescription>Счета из других банков, доступные через OpenBanking</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loadingExternal ? (
-              <p className="text-muted-foreground">Загрузка...</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left p-4 font-medium">Банк</th>
-                      <th className="text-left p-4 font-medium">Номер счета</th>
-                      <th className="text-left p-4 font-medium">Тип</th>
-                      <th className="text-right p-4 font-medium">Баланс</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {externalAccounts.map((acc: any, idx: number) => {
-                      const account = acc.account
-                      const accountNumber =
-                        account?.account && account.account[0]
-                          ? account.account[0].identification
-                          : 'N/A'
-                      const accountType = account?.accountSubType || account?.accountType || 'N/A'
-                      const balance = acc.balance
-                        ? parseFloat(acc.balance).toLocaleString('ru-RU') + ' ₽'
-                        : 'N/A'
-
-                      return (
-                        <tr key={idx} className="border-b">
-                          <td className="p-4 font-medium">{acc.bank_name || 'N/A'}</td>
-                          <td className="p-4 font-mono text-sm">{accountNumber}</td>
-                          <td className="p-4">{accountType}</td>
-                          <td className="p-4 text-right font-semibold">{balance}</td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
+      <Card className="mt-6">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <Building2 className="h-5 w-5 text-primary" />
+                <CardTitle>Счета Мультибанк</CardTitle>
               </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+              <CardDescription>Счета из других банков, доступные через OpenBanking</CardDescription>
+            </div>
+            <button
+              onClick={handleRefreshExternalAccounts}
+              disabled={loadingExternal}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10 rounded-md transition-colors disabled:opacity-50"
+              title="Обновить счета"
+            >
+              <RefreshCw className={`h-4 w-4 ${loadingExternal ? 'animate-spin' : ''}`} />
+              Обновить
+            </button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {loadingExternal ? (
+            <p className="text-muted-foreground">Загрузка...</p>
+          ) : externalAccountsError ? (
+            <div className="text-sm text-red-600">
+              <p>Ошибка: {externalAccountsError}</p>
+            </div>
+          ) : externalAccounts.length === 0 ? (
+            <p className="text-muted-foreground">
+              Нет подключенных счетов из других банков. Добавьте согласие в разделе "Согласия".
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left p-4 font-medium">Банк</th>
+                    <th className="text-left p-4 font-medium">Номер счета</th>
+                    <th className="text-left p-4 font-medium">Тип</th>
+                    <th className="text-right p-4 font-medium">Баланс</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {externalAccounts.map((acc: any, idx: number) => {
+                    const account = acc.account
+                    const accountNumber =
+                      account?.account && account.account[0]
+                        ? account.account[0].identification
+                        : 'N/A'
+                    const accountType = account?.accountSubType || account?.accountType || 'N/A'
+                    const balance = acc.balance
+                      ? parseFloat(acc.balance).toLocaleString('ru-RU') + ' ₽'
+                      : 'N/A'
+
+                    return (
+                      <tr key={idx} className="border-b">
+                        <td className="p-4 font-medium">{acc.bank_name || 'N/A'}</td>
+                        <td className="p-4 font-mono text-sm">{accountNumber}</td>
+                        <td className="p-4">{accountType}</td>
+                        <td className="p-4 text-right font-semibold">{balance}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </ClientLayout>
   )
 }
