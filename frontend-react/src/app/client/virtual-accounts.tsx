@@ -240,7 +240,7 @@ export default function VirtualAccounts() {
                 {accounts.map((account) => (
                   <TableRow key={account.id}>
                     <TableCell className="font-mono">{account.account_number}</TableCell>
-                    <TableCell>{getAccountTypeLabel(account.account_type)}</TableCell>
+                    <TableCell>{account.account_type}</TableCell>
                     <TableCell>{getCalculationTypeLabel(account.calculation_type)}</TableCell>
                     <TableCell className="font-mono">{formatBalance(account.balance)}</TableCell>
                     <TableCell>{account.currency}</TableCell>
@@ -299,8 +299,8 @@ export default function VirtualAccounts() {
                   <SelectValue placeholder="Выберите тип счета" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="checking">Расчетный</SelectItem>
-                  <SelectItem value="savings">Сберегательный</SelectItem>
+                  <SelectItem value="checking">checking</SelectItem>
+                  <SelectItem value="savings">savings</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -387,8 +387,8 @@ export default function VirtualAccounts() {
                   <SelectValue placeholder="Выберите тип счета" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="checking">Расчетный</SelectItem>
-                  <SelectItem value="savings">Сберегательный</SelectItem>
+                  <SelectItem value="checking">checking</SelectItem>
+                  <SelectItem value="savings">savings</SelectItem>
                 </SelectContent>
               </Select>
             </div>
