@@ -96,13 +96,13 @@ class Account(Base):
 class VirtualBalanceBankAllocation(Base):
     """
     Распределение ДС клиента по банкам
-    
+
     - target_share: Желаемый процент ДС клиента в bank_id
 
     Актуальный _share мы будем вычислять онлайн по полученным данным external bank accounts.
     """
     __tablename__ = "virtual_balance_bank_allocations"
-    
+
     id           = Column(Integer, primary_key=True)
     client_id    = Column(Integer, ForeignKey("clients.id"), nullable=False, comment="ID клиента (team025-x)")
     bank_id      = Column(Integer, ForeignKey("banks.id"), nullable=False, comment="ID банка")
@@ -110,6 +110,13 @@ class VirtualBalanceBankAllocation(Base):
     account_type = Column(String(50), comment="Тип счета")
     created_at   = Column(DateTime, default=datetime.utcnow)
     updated_at   = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint(
+            'client_id', 'bank_id', 'account_type',
+            name='uq_virtual_balance_client_bank_account'
+        ),
+    )
 
 
 class VirtualAccount(Base):
