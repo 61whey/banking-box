@@ -2,6 +2,7 @@
 Alembic environment configuration for async SQLAlchemy
 """
 import asyncio
+import re
 from logging.config import fileConfig
 
 from sqlalchemy import pool
@@ -38,6 +39,45 @@ target_metadata = Base.metadata
 # ... etc.
 
 
+def get_next_revision_number():
+    """Generate next sequential revision number (001, 002, 003, etc.)"""
+    versions_dir = Path(__file__).parent / "versions"
+
+    if not versions_dir.exists():
+        return "001"
+
+    # Find all migration files with numeric prefixes
+    max_num = 0
+    pattern = re.compile(r'^(\d{3})_.*\.py$')
+
+    for filename in versions_dir.iterdir():
+        if filename.is_file():
+            match = pattern.match(filename.name)
+            if match:
+                num = int(match.group(1))
+                max_num = max(max_num, num)
+
+    # Return next number with zero-padding
+    return f"{max_num + 1:03d}"
+
+
+def process_revision_directives(context, revision, directives):
+    """Hook to customize revision ID generation"""
+    if not directives:
+        return
+
+    script = directives[0]
+
+    # Always use sequential numbering
+    if hasattr(script, 'rev_id'):
+        script.rev_id = get_next_revision_number()
+
+    # For autogenerate, skip empty migrations
+    if config.cmd_opts and hasattr(config.cmd_opts, 'autogenerate') and config.cmd_opts.autogenerate:
+        if hasattr(script, 'upgrade_ops') and script.upgrade_ops.is_empty():
+            directives[:] = []
+
+
 def get_url():
     """Get database URL from app config"""
     database_url = app_config.DATABASE_URL
@@ -65,6 +105,7 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        process_revision_directives=process_revision_directives,
     )
 
     with context.begin_transaction():
@@ -73,7 +114,11 @@ def run_migrations_offline() -> None:
 
 def do_run_migrations(connection):
     """Run migrations with connection"""
-    context.configure(connection=connection, target_metadata=target_metadata)
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata,
+        process_revision_directives=process_revision_directives,
+    )
 
     with context.begin_transaction():
         context.run_migrations()
