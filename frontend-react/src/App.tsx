@@ -7,6 +7,7 @@ import { bankAPI } from './lib/api'
 import ClientLogin from './app/client/login'
 import ClientDashboard from './app/client/dashboard'
 import ClientAccounts from './app/client/accounts'
+import ClientVirtualAccounts from './app/client/virtual-accounts'
 import ClientConsents from './app/client/consents'
 import ClientTransfers from './app/client/transfers'
 import BankerLogin from './app/banker/login'
@@ -49,21 +50,29 @@ function App() {
             </ProtectedRoute>
           } 
         />
-        <Route 
-          path="/app/client/accounts" 
+        <Route
+          path="/app/client/accounts"
           element={
             <ProtectedRoute>
               <ClientAccounts />
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/app/client/consents" 
+        <Route
+          path="/app/client/virtual-accounts"
+          element={
+            <ProtectedRoute>
+              <ClientVirtualAccounts />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/client/consents"
           element={
             <ProtectedRoute>
               <ClientConsents />
             </ProtectedRoute>
-          } 
+          }
         />
         <Route 
           path="/app/client/transfers" 

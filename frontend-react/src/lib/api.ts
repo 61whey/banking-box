@@ -13,6 +13,10 @@ import type {
   Product,
   BankStats,
   APILog,
+  VirtualAccount,
+  VirtualAccountCreate,
+  VirtualAccountUpdate,
+  VirtualAccountListResponse,
 } from '@/types/api'
 
 // Используем VITE_API_URL из переменных окружения (устанавливается во время сборки)
@@ -486,6 +490,32 @@ export const adminAPI = {
 
   deleteTeam: async (clientId: string): Promise<void> => {
     await api.delete(`/admin/teams/${clientId}`)
+  },
+}
+
+export const virtualAccountsAPI = {
+  getVirtualAccounts: async (): Promise<VirtualAccount[]> => {
+    const response = await api.get<VirtualAccountListResponse>('/virtual-accounts')
+    return response.data?.data || []
+  },
+
+  getVirtualAccount: async (accountId: number): Promise<VirtualAccount> => {
+    const response = await api.get<VirtualAccount>(`/virtual-accounts/${accountId}`)
+    return response.data
+  },
+
+  createVirtualAccount: async (data: VirtualAccountCreate): Promise<VirtualAccount> => {
+    const response = await api.post<VirtualAccount>('/virtual-accounts', data)
+    return response.data
+  },
+
+  updateVirtualAccount: async (accountId: number, data: VirtualAccountUpdate): Promise<VirtualAccount> => {
+    const response = await api.put<VirtualAccount>(`/virtual-accounts/${accountId}`, data)
+    return response.data
+  },
+
+  deleteVirtualAccount: async (accountId: number): Promise<void> => {
+    await api.delete(`/virtual-accounts/${accountId}`)
   },
 }
 

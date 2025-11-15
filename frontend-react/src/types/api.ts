@@ -116,3 +116,50 @@ export interface APILog {
   team_client_id?: string
 }
 
+export enum AccountType {
+  Checking = "checking",
+  Savings = "savings"
+}
+
+export enum CalculationType {
+  Automatic = "automatic",
+  Fixed = "fixed"
+}
+
+export enum Currency {
+  RUB = "RUB"
+}
+
+export interface VirtualAccount {
+  id: number
+  client_id: number
+  account_number: string
+  account_type: string
+  calculation_type: string
+  balance: string
+  currency: string
+  status: string
+  created_at: string
+  updated_at: string | null
+}
+
+export interface VirtualAccountCreate {
+  account_type: string
+  calculation_type: string
+  balance?: string
+  currency: string
+}
+
+export interface VirtualAccountUpdate {
+  account_type?: string
+  calculation_type?: string
+  balance?: string
+  currency?: string
+  status?: string
+}
+
+export interface VirtualAccountListResponse {
+  data: VirtualAccount[]
+  count: number
+}
+
