@@ -18,11 +18,12 @@ from services.auth_service import get_current_client
 from services.payment_service import PaymentService
 from services.external_payment_service import execute_external_payment
 from services.account_service import get_external_accounts_for_client
-from services.cache_utils import client_page_key_builder
+from services.cache_utils import client_page_key_builder, invalidate_client_cache
 from config import config
 from log import logger
 from fastapi_cache.decorator import cache
 from fastapi import Response
+from redis import asyncio as aioredis
 
 
 router = APIRouter(prefix="/payments", tags=["4 Переводы"])
@@ -522,7 +523,7 @@ async def get_external_payment_history(
                         account_identification = account_list[0].get("identification")
                         if account_identification:
                             client_account_numbers.append(account_identification)
-        
+
         if not client_account_numbers:
             logger.info(f"No external accounts found for client {client_id}")
             return {
@@ -605,4 +606,57 @@ async def get_external_payment_history(
     except Exception as e:
         logger.error(f"Error fetching external payment history for client {client_id}: {e}", exc_info=True)
         raise HTTPException(500, f"Internal server error: {str(e)[:100]}")
+
+
+@router.post("/external/history/refresh", summary="Обновить кэш истории платежей из внешних банков", include_in_schema=False)
+async def refresh_external_payment_history(
+    current_client: dict = Depends(get_current_client),
+):
+    """
+    Инвалидировать кэш истории платежей из внешних банков для текущего клиента
+
+    После вызова этого endpoint следующий запрос к /payments/external/history
+    получит свежие данные из внешних банков.
+    """
+    if not current_client:
+        logger.warning("Unauthorized request to refresh_external_payment_history")
+        raise HTTPException(401, "Unauthorized")
+
+    client_id = current_client["client_id"]
+    logger.info(f"Invalidating cache for external payment history, client_id={client_id}")
+
+    redis_client = None
+    try:
+        # Create Redis connection
+        redis_client = await aioredis.from_url(
+            config.REDIS_URL,
+            encoding="utf-8",
+            decode_responses=True
+        )
+
+        # Invalidate cache for this client (all pages)
+        deleted_keys = await invalidate_client_cache(redis_client, client_id)
+
+        logger.info(f"Cache invalidated for client_id={client_id}, deleted {deleted_keys} keys")
+
+        return {
+            "data": {
+                "message": "Cache invalidated successfully",
+                "client_id": client_id,
+                "deleted_keys": deleted_keys
+            },
+            "meta": {
+                "message": "Кэш успешно обновлен"
+            }
+        }
+    except Exception as e:
+        logger.error(f"Error invalidating cache for client_id={client_id}: {e}", exc_info=True)
+        raise HTTPException(500, f"Error invalidating cache: {str(e)}")
+    finally:
+        # Close Redis connection if it was created
+        if redis_client:
+            try:
+                await redis_client.close()
+            except Exception as e:
+                logger.error(f"Error closing Redis connection: {e}")
 

@@ -14,6 +14,7 @@ Banking Box - API backend implementing **OpenBanking Russia v2.1**. FastAPI + Po
 
 ### Don't
 
+- DO NOT use system python.
 - DO NOT hardcode any values in the code. Use environment variables in config.py.
 - DO NOT use icons or emojis in code.
 - DO NOT use uppercase words if it's not necessary.
