@@ -349,6 +349,17 @@ export const paymentsAPI = {
       meta: response.data?.meta || {},
     }
   },
+
+  refreshExternalPaymentHistory: async (page: number = 1): Promise<{ payments: ExternalPaymentHistoryItem[], meta: any }> => {
+    // Refresh by calling the same endpoint
+    // Note: Data is cached on backend for up to 5 minutes (CACHE_EXPIRE_SECONDS)
+    // This button will show the latest cached data or fresh data if cache expired
+    const response = await api.get<any>(`/payments/external/history?page=${page}`)
+    return {
+      payments: response.data?.data?.payments || [],
+      meta: response.data?.meta || {},
+    }
+  },
 }
 
 export const bankerAPI = {
