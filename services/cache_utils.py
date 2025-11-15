@@ -80,7 +80,8 @@ async def invalidate_client_cache(redis_client: aioredis.Redis, client_id: str, 
     Usage:
         await invalidate_client_cache(redis_client, "CLIENT123")
     """
-    pattern = f"{namespace}:*:client:{client_id}"
+    # Pattern accounts for potential double colon after namespace
+    pattern = f"{namespace}*:client:{client_id}*"
 
     # Find all keys matching the pattern
     keys = []

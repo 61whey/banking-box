@@ -8,7 +8,7 @@ import { accountsAPI, paymentsAPI } from '@/lib/api'
 import { useToast } from '@/hooks/use-toast'
 import type { Account } from '@/types/api'
 import type { ExternalPaymentHistoryItem } from '@/lib/api'
-import { Send, ArrowLeftRight, History, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Send, ArrowLeftRight, History, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react'
 import { format } from 'date-fns'
 import { ru } from 'date-fns/locale'
 
@@ -40,6 +40,7 @@ export default function ClientTransfers() {
   // Transfer history state
   const [transferHistory, setTransferHistory] = useState<ExternalPaymentHistoryItem[]>([])
   const [historyLoading, setHistoryLoading] = useState(true)
+  const [historyRefreshing, setHistoryRefreshing] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(0)
   const [totalItems, setTotalItems] = useState(0)
@@ -103,6 +104,31 @@ export default function ClientTransfers() {
       setTransferHistory([])
     } finally {
       setHistoryLoading(false)
+    }
+  }
+
+  const handleRefreshHistory = async () => {
+    setHistoryRefreshing(true)
+    try {
+      const { payments, meta } = await paymentsAPI.refreshExternalPaymentHistory(currentPage)
+      setTransferHistory(payments)
+      setCurrentPage(meta.page || currentPage)
+      setTotalPages(meta.total_pages || 0)
+      setTotalItems(meta.total || 0)
+      
+      toast({
+        title: 'Обновлено',
+        description: 'История переводов успешно обновлена',
+      })
+    } catch (error: any) {
+      console.error('Failed to refresh transfer history:', error)
+      toast({
+        title: 'Ошибка обновления',
+        description: error.response?.data?.detail || 'Не удалось обновить историю переводов',
+        variant: 'destructive',
+      })
+    } finally {
+      setHistoryRefreshing(false)
     }
   }
 
@@ -318,9 +344,20 @@ export default function ClientTransfers() {
         {/* Transfer History Section */}
         <Card>
           <CardHeader>
-            <div className="flex items-center gap-2">
-              <History className="h-5 w-5 text-primary" />
-              <CardTitle>История переводов</CardTitle>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <History className="h-5 w-5 text-primary" />
+                <CardTitle>История переводов</CardTitle>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefreshHistory}
+                disabled={historyRefreshing || historyLoading}
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${historyRefreshing ? 'animate-spin' : ''}`} />
+                Обновить
+              </Button>
             </div>
             <CardDescription>История переводов из внешних банков</CardDescription>
           </CardHeader>

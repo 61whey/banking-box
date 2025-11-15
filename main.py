@@ -39,10 +39,9 @@ async def lifespan(app: FastAPI):
 
     # Initialize Redis cache
     try:
+        # Don't use decode_responses=True for fastapi-cache - it expects bytes
         redis_client = await aioredis.from_url(
-            config.REDIS_URL,
-            encoding="utf-8",
-            decode_responses=True
+            config.REDIS_URL
         )
         FastAPICache.init(
             RedisBackend(redis_client),

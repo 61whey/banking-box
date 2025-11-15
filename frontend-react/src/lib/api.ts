@@ -349,6 +349,25 @@ export const paymentsAPI = {
       meta: response.data?.meta || {},
     }
   },
+
+  refreshExternalPaymentHistory: async (page: number = 1): Promise<{ payments: ExternalPaymentHistoryItem[], meta: any }> => {
+    // First invalidate the cache
+    await api.post('/payments/external/history/refresh')
+
+    // Then fetch fresh data with cache-busting parameters
+    const timestamp = Date.now()
+    const response = await api.get<any>(`/payments/external/history?page=${page}&_t=${timestamp}`, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
+      }
+    })
+
+    return {
+      payments: response.data?.data?.payments || [],
+      meta: response.data?.meta || {},
+    }
+  },
 }
 
 export const bankerAPI = {
