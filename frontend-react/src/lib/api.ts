@@ -203,6 +203,34 @@ export const consentsAPI = {
   },
 }
 
+export interface ExternalPaymentRequest {
+  from_account: string  // Format: "bank_code:account_number"
+  to_account: string    // Format: "bank_code:account_number"
+  amount: number
+  description: string
+}
+
+export interface ExternalPaymentResponse {
+  payment_id: string
+  status: string
+  message?: string
+  error?: string
+}
+
+export interface ExternalPaymentHistoryItem {
+  payment_id: string
+  amount: number
+  currency: string
+  source_bank: string
+  source_account: string
+  destination_bank: string
+  destination_account: string
+  description: string
+  status: string
+  creation_date_time: string
+  external_payment_id?: string
+}
+
 export const paymentsAPI = {
   createPayment: async (data: PaymentRequest): Promise<PaymentResponse> => {
     // Преобразуем упрощенный формат в формат OpenBanking Russia v2.1
@@ -272,6 +300,24 @@ export const paymentsAPI = {
   getPaymentStatus: async (paymentId: string): Promise<PaymentResponse> => {
     const response = await api.get<PaymentResponse>(`/payments/${paymentId}`)
     return response.data
+  },
+
+  createExternalPayment: async (data: ExternalPaymentRequest): Promise<ExternalPaymentResponse> => {
+    const response = await api.post<any>('/payments/external', data)
+    return {
+      payment_id: response.data?.payment_id || '',
+      status: response.data?.status || 'pending',
+      message: response.data?.message,
+      error: response.data?.error,
+    }
+  },
+
+  getExternalPaymentHistory: async (page: number = 1): Promise<{ payments: ExternalPaymentHistoryItem[], meta: any }> => {
+    const response = await api.get<any>(`/payments/external/history?page=${page}`)
+    return {
+      payments: response.data?.data?.payments || [],
+      meta: response.data?.meta || {},
+    }
   },
 }
 
