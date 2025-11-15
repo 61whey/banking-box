@@ -4,6 +4,7 @@ SQLAlchemy модели для банка
 from sqlalchemy import Column, Integer, String, Numeric, DateTime, ForeignKey, Text, ARRAY, Boolean, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.postgresql import JSONB
 from datetime import datetime
 
 Base = declarative_base()
@@ -16,10 +17,39 @@ class Team(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     client_id = Column(String(100), unique=True, nullable=False)  # team200
-    client_secret = Column(String(255), nullable=False)  # api_key
+    client_secret = Column(String(255), nullable=False)  # OAuth client_secret (JWT подпись)
+    password_hash = Column(String(255), nullable=False)  # Хеш пароля для входа (bcrypt)
     team_name = Column(String(255))  # название команды
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class Bank(Base):
+    """Банк (внешний или наш)"""
+    __tablename__ = "banks"
+
+    id = Column(Integer, primary_key=True)
+    external = Column(Boolean)
+    code = Column(Text)
+    name = Column(Text)
+    description = Column(Text)
+    api_url = Column(Text)
+    api_user = Column(Text)
+    api_secret = Column(Text)
+
+
+class Admin(Base):
+    """Администратор банка"""
+    __tablename__ = "admins"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String(100), unique=True, nullable=False)
+    password_hash = Column(String(255), nullable=False)  # Хеш пароля (bcrypt)
+    full_name = Column(String(255))
+    email = Column(String(255))
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    last_login = Column(DateTime)
 
 
 class Client(Base):
@@ -28,6 +58,7 @@ class Client(Base):
     
     id = Column(Integer, primary_key=True)
     person_id = Column(String(100), unique=True)  # ID из общей базы людей
+    password_hash = Column(String(255), nullable=False)  # Хеш пароля (bcrypt)
     client_type = Column(String(20))  # individual / legal
     full_name = Column(String(255), nullable=False)
     segment = Column(String(50))  # employee, student, pensioner, etc.
@@ -43,19 +74,53 @@ class Account(Base):
     """Счет клиента"""
     __tablename__ = "accounts"
     
-    id = Column(Integer, primary_key=True)
-    client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
+    id             = Column(Integer, primary_key=True)
+    client_id      = Column(Integer, ForeignKey("clients.id"), nullable=False)
     account_number = Column(String(20), unique=True, nullable=False)
-    account_type = Column(String(50))  # checking, savings, deposit
-    balance = Column(Numeric(15, 2), default=0)
-    currency = Column(String(3), default="RUB")
-    status = Column(String(20), default="active")
-    opened_at = Column(DateTime, default=datetime.utcnow)
+    account_type   = Column(String(50))                                         # checking, savings, deposit
+    balance        = Column(Numeric(15, 2), default=0)
+    currency       = Column(String(3), default="RUB")
+    status         = Column(String(20), default="active")
+    opened_at      = Column(DateTime, default=datetime.utcnow)
+    #updated_at     = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment="Время обновления данных счета")
     
-    # Relationships
-    client = relationship("Client", back_populates="accounts")
+      # Relationships
+    client       = relationship("Client", back_populates="accounts")
     transactions = relationship("Transaction", back_populates="account")
 
+
+# class VirtualAccountBankAllocation(Base):
+#     """Распределение ДС клиента по банкам"""
+#     __tablename__ = "virtual_account_bank_allocations"
+    
+#     id         = Column(Integer, primary_key=True)
+#     client_id  = Column(Integer, ForeignKey("clients.id"), nullable=False, comment="ID клиента (team025-x)")
+#     # bank_id    = Column(Integer, ForeignKey("banks.id"), nullable=False)
+#     # percentage = Column(Numeric(5, 4), nullable=False, comment="Процент распределения ДС на этот банк")
+#     # {"bank_id": "percentage"}
+#     target_share = Column(JSONB, nullable=True, comment="Целевое распределение ДС по банкам")
+#     # {"bank_id": "percentage"}
+#     actual_share = Column(JSONB, nullable=True, comment="Фактическое распределение ДС по банкам")
+#     created_at   = Column(DateTime, default=datetime.utcnow)
+#     updated_at   = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+# class VirtualAccount(Base):
+#     """Виртуальный счет клиента"""
+#     __tablename__ = "virtual_accounts"
+    
+#     id              = Column(Integer, primary_key=True)
+#     bank_id         = Column(Integer, ForeignKey("banks.id"), nullable=False)
+#     client_id       = Column(Integer, ForeignKey("clients.id"), nullable=False)
+#     account_number  = Column(String(20), unique=True, nullable=False)
+#     account_type    = Column(String(50))                                                   # checking, savings, deposit
+#     evaluation_type = Column(String(50), nullable=True, comment="Тип оценки баланса")      # manual, automatic
+#     balance         = Column(Numeric(15, 2), default=0)
+#     currency        = Column(String(3), default="RUB")
+#     status          = Column(String(20), default="active")
+#     created_at      = Column(DateTime, default=datetime.utcnow)
+#     updated_at      = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
 
 class Transaction(Base):
     """Транзакция по счету"""
@@ -122,7 +187,9 @@ class Consent(Base):
     id = Column(Integer, primary_key=True)
     consent_id = Column(String(100), unique=True, nullable=False)
     request_id = Column(Integer, ForeignKey("consent_requests.id"))
-    client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
+    client_id = Column(Integer, ForeignKey("clients.id"), nullable=True)
+    client_id_external = Column(Text, nullable=True)
+    bank_id = Column(Integer, ForeignKey("banks.id"), nullable=True)
     granted_to = Column(String(100), nullable=False)  # bank_code
     permissions = Column(ARRAY(String), nullable=False)
     status = Column(String(20), default="active")  # active / revoked / expired
@@ -135,6 +202,7 @@ class Consent(Base):
     
     # Relationships
     client = relationship("Client")
+    bank = relationship("Bank")
 
 
 class Notification(Base):
@@ -279,7 +347,7 @@ class Payment(Base):
     id = Column(Integer, primary_key=True)
     payment_id = Column(String(100), unique=True, nullable=False)
     payment_consent_id = Column(String(100))  # Ссылка на согласие (если использовалось)
-    account_id = Column(Integer, ForeignKey("accounts.id"), nullable=False)  # Счет-отправитель
+    account_id = Column(Integer, ForeignKey("accounts.id"), nullable=True)  # Счет-отправитель
     amount = Column(Numeric(15, 2), nullable=False)
     currency = Column(String(3), default="RUB")
     destination_account = Column(String(255))  # Номер счета получателя
@@ -289,6 +357,20 @@ class Payment(Base):
     # AcceptedSettlementInProcess, AcceptedSettlementCompleted, Rejected
     creation_date_time = Column(DateTime, default=datetime.utcnow)
     status_update_date_time = Column(DateTime, default=datetime.utcnow)
+    
+    # Interbank payment fields
+    payment_direction = Column(Text, nullable=True)
+    source_bank_id = Column(Integer, nullable=True)
+    source_bank = Column(Text, nullable=True)
+    source_account = Column(Text, nullable=True)
+    destination_bank_id = Column(Integer, nullable=True)
+    external_payment_id = Column(Text, nullable=True)
+    interbank_transfer_id = Column(Text, nullable=True)
+    instruction_identification = Column(Text, nullable=True)
+    end_to_end_identification = Column(Text, nullable=True)
+    debtor_name = Column(Text, nullable=True)
+    creditor_name = Column(Text, nullable=True)
+    remittance_information = Column(Text, nullable=True)
     
     # Relationships
     account = relationship("Account")

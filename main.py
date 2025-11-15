@@ -12,12 +12,18 @@ from pathlib import Path
 from config import config
 from database import engine
 from middleware import APILoggingMiddleware
+from services.auth_service import get_external_bank_tokens
 from api import (
     accounts, auth, consents, payments, admin, products, well_known,
     banker, product_agreements, product_agreement_consents,
     product_applications, customer_leads, product_offers, product_offer_consents,
-    vrp_consents, vrp_payments, interbank, payment_consents, multibank_proxy
+    vrp_consents, vrp_payments, interbank, payment_consents, multibank_proxy, banks
 )
+
+# FastAPI Cache imports
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.redis import RedisBackend
+from redis import asyncio as aioredis
 
 
 @asynccontextmanager
@@ -26,9 +32,29 @@ async def lifespan(app: FastAPI):
     # Startup
     print(f"🏦 Starting {config.BANK_NAME} ({config.BANK_CODE})")
     print(f"📍 Database: {config.DATABASE_URL.split('@')[1] if '@' in config.DATABASE_URL else 'local'}")
-    
+
+    # Initialize app.state.tokens for external banks
+    app.state.tokens = await get_external_bank_tokens()
+    print(f"🔑 Initialized tokens for {len(app.state.tokens)} external bank(s)")
+
+    # Initialize Redis cache
+    try:
+        redis_client = await aioredis.from_url(
+            config.REDIS_URL,
+            encoding="utf-8",
+            decode_responses=True
+        )
+        FastAPICache.init(
+            RedisBackend(redis_client),
+            prefix="banking-box"
+        )
+        print(f"💾 Initialized Redis cache at {config.REDIS_URL}")
+    except Exception as e:
+        print(f"⚠️  Warning: Could not connect to Redis: {e}")
+        print("   Cache will be disabled")
+
     yield
-    
+
     # Shutdown
     print(f"🛑 Stopping {config.BANK_NAME}")
     await engine.dispose()
@@ -64,7 +90,8 @@ allowed_origins = [
     "http://localhost:8002",  # ABank (dev)
     "http://localhost:8003",  # SBank (dev)
     "http://localhost",       # Прокси (dev)
-    "http://localhost:3000",  # Directory (dev)
+    "http://localhost:3000",  # React Frontend (docker) / Directory (dev)
+    "http://localhost:5173",  # React Frontend (dev server)
     "https://vbank.open.bankingapi.ru",  # VBank (prod)
     "https://abank.open.bankingapi.ru",  # ABank (prod)
     "https://sbank.open.bankingapi.ru",  # SBank (prod)
@@ -128,6 +155,7 @@ app.include_router(consents.router)
 app.include_router(payment_consents.router)
 app.include_router(payments.router)
 app.include_router(products.router)
+app.include_router(banks.router)
 app.include_router(product_agreements.router)
 app.include_router(product_agreement_consents.router)
 app.include_router(product_applications.router)

@@ -166,6 +166,22 @@
         .btn-reject:hover { background: #c0392b; opacity: 0.9; }
         .btn-revoke { background: #95a5a6; color: white; }
         .btn-revoke:hover { background: #7f8c8d; opacity: 0.9; }
+        .btn-request-all { 
+            background: var(--primary-color); 
+            color: white; 
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .btn-request-all:hover { background: #5568d3; opacity: 0.9; }
+        .btn-request-all:disabled { 
+            background: var(--text-secondary); 
+            cursor: not-allowed; 
+            opacity: 0.6;
+        }
         .loading { text-align: center; padding: 40px; color: var(--text-secondary); }
         .empty {
             text-align: center;
@@ -211,13 +227,19 @@
 
     <main class="main-content">
         <div class="section">
-            <h2>🔔 Запросы на подписание</h2>
-            <div id="pendingRequests" class="loading">Загрузка...</div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin: 0;">🟢 Активные согласия</h2>
+                <button id="requestAllBanksBtn" class="btn-request-all" onclick="requestConsentsFromAllBanks()" style="display: flex; align-items: center; gap: 8px;">
+                    <span id="requestAllBanksSpinner" style="display: none;">⏳</span>
+                    <span>Запросить согласия из всех банков</span>
+                </button>
+            </div>
+            <div id="activeConsents" class="loading">Загрузка...</div>
         </div>
 
         <div class="section">
-            <h2>🟢 Активные согласия</h2>
-            <div id="activeConsents" class="loading">Загрузка...</div>
+            <h2>🔔 Запросы на подписание</h2>
+            <div id="pendingRequests" class="loading">Загрузка...</div>
         </div>
     </div>
 
@@ -230,14 +252,21 @@
             window.location.href = 'index.html';
         }
 
-        const bankNames = {
-            'vbank': 'Virtual Bank',
-            'abank': 'Awesome Bank',
-            'sbank': 'Smart Bank'
-        };
-        
-        document.getElementById('bankName').textContent = bankNames[bankCode];
         const apiBase = window.location.origin;
+
+        // Fetch bank name from API
+        async function loadBankName() {
+            try {
+                const response = await fetch(`${apiBase}/`);
+                const data = await response.json();
+                document.getElementById('bankName').textContent = data.bank || 'Bank';
+            } catch (error) {
+                console.error('Failed to load bank name:', error);
+                document.getElementById('bankName').textContent = 'Bank';
+            }
+        }
+
+        loadBankName();
 
         function logout() {
             localStorage.clear();
@@ -328,7 +357,7 @@
                 ...active.map(c => `
                     <div class="consent-card active">
                         <div class="consent-header">
-                            <div class="bank-info">${c.granted_to}</div>
+                            <div class="bank-info">${c.bank_name || c.granted_to || 'N/A'}</div>
                             <span class="status-badge status-active">Активно</span>
                         </div>
                         <div class="permissions">
@@ -336,6 +365,11 @@
                         </div>
                         <div class="metadata">
                             <strong>ID:</strong> <code style="background: rgba(102, 126, 234, 0.1); padding: 2px 6px; border-radius: 3px; font-size: 11px;">${c.consent_id}</code><br>
+                            <strong>Bank Code:</strong> <code style="background: rgba(102, 126, 234, 0.1); padding: 2px 6px; border-radius: 3px; font-size: 11px;">${c.bank_code || 'N/A'}</code><br>
+                            <strong>Bank Name:</strong> <code style="background: rgba(102, 126, 234, 0.1); padding: 2px 6px; border-radius: 3px; font-size: 11px;">${c.bank_name || 'N/A'}</code><br>
+                            <strong>Client ID:</strong> <code style="background: rgba(102, 126, 234, 0.1); padding: 2px 6px; border-radius: 3px; font-size: 11px;">${c.client_id || 'N/A'}</code><br>
+                            <strong>Client ID External:</strong> <code style="background: rgba(102, 126, 234, 0.1); padding: 2px 6px; border-radius: 3px; font-size: 11px;">${c.client_id_external || 'N/A'}</code><br>
+                            <strong>Granted to:</strong> <code style="background: rgba(102, 126, 234, 0.1); padding: 2px 6px; border-radius: 3px; font-size: 11px;">${c.granted_to || 'N/A'}</code><br>
                             Подписано: ${c.signed_at ? new Date(c.signed_at).toLocaleString('ru-RU', {timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone}) : 'N/A'}<br>
                             Истекает: ${c.expires_at ? new Date(c.expires_at).toLocaleString('ru-RU', {timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone}) : 'N/A'}
                             ${c.last_accessed ? `<br>Последний доступ: ${new Date(c.last_accessed).toLocaleString('ru-RU', {timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone})}` : ''}
@@ -350,7 +384,7 @@
                 ...revoked.map(c => `
                     <div class="consent-card revoked">
                         <div class="consent-header">
-                            <div class="bank-info">${c.granted_to}</div>
+                            <div class="bank-info">${c.bank_name || c.granted_to || 'N/A'}</div>
                             <span class="status-badge status-revoked">Отозвано</span>
                         </div>
                         <div class="permissions">
@@ -358,6 +392,11 @@
                         </div>
                         <div class="metadata">
                             <strong>ID:</strong> <code style="background: rgba(149, 165, 166, 0.1); padding: 2px 6px; border-radius: 3px; font-size: 11px;">${c.consent_id}</code><br>
+                            <strong>Bank Code:</strong> <code style="background: rgba(149, 165, 166, 0.1); padding: 2px 6px; border-radius: 3px; font-size: 11px;">${c.bank_code || 'N/A'}</code><br>
+                            <strong>Bank Name:</strong> <code style="background: rgba(149, 165, 166, 0.1); padding: 2px 6px; border-radius: 3px; font-size: 11px;">${c.bank_name || 'N/A'}</code><br>
+                            <strong>Client ID:</strong> <code style="background: rgba(149, 165, 166, 0.1); padding: 2px 6px; border-radius: 3px; font-size: 11px;">${c.client_id || 'N/A'}</code><br>
+                            <strong>Client ID External:</strong> <code style="background: rgba(149, 165, 166, 0.1); padding: 2px 6px; border-radius: 3px; font-size: 11px;">${c.client_id_external || 'N/A'}</code><br>
+                            <strong>Granted to:</strong> <code style="background: rgba(149, 165, 166, 0.1); padding: 2px 6px; border-radius: 3px; font-size: 11px;">${c.granted_to || 'N/A'}</code><br>
                             Отозвано: ${c.revoked_at ? new Date(c.revoked_at).toLocaleString('ru-RU', {timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone}) : 'N/A'}
                         </div>
                     </div>
@@ -424,30 +463,81 @@
             }
         }
 
+        async function requestConsentsFromAllBanks() {
+            const btn = document.getElementById('requestAllBanksBtn');
+            const spinner = document.getElementById('requestAllBanksSpinner');
+            
+            // Disable button and show spinner
+            btn.disabled = true;
+            spinner.style.display = 'inline';
+            
+            try {
+                const response = await fetch(`${apiBase}/account-consents/request-from-all-banks`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ detail: 'Ошибка запроса' }));
+                    throw new Error(errorData.detail || `HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                // Show success message with summary
+                const successCount = data.summary?.success || 0;
+                const errorCount = data.summary?.error || 0;
+                const skippedCount = data.summary?.skipped || 0;
+                
+                let message = `Обработано ${data.summary?.total || 0} банков:\n`;
+                if (successCount > 0) message += `✅ ${successCount} успешно\n`;
+                if (errorCount > 0) message += `❌ ${errorCount} ошибок\n`;
+                if (skippedCount > 0) message += `⏭️ ${skippedCount} пропущено`;
+                
+                alert(message);
+                
+                // Reload consents list
+                await loadActiveConsents();
+
+            } catch (error) {
+                alert('Ошибка: ' + error.message);
+            } finally {
+                // Re-enable button and hide spinner
+                btn.disabled = false;
+                spinner.style.display = 'none';
+            }
+        }
+
+        // Theme management (встроенная, вместо theme-switcher.js)
+        function toggleTheme() {
+            const body = document.body;
+            const button = document.querySelector('.theme-toggle');
+            
+            if (body.classList.contains('dark')) {
+                body.classList.remove('dark');
+                button.textContent = '🌙';
+                localStorage.setItem('theme', 'light');
+            } else {
+                body.classList.add('dark');
+                button.textContent = '☀️';
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark');
+            const button = document.querySelector('.theme-toggle');
+            if (button) button.textContent = '☀️';
+        }
+
         // Загрузка при открытии страницы
         Promise.all([loadPendingRequests(), loadActiveConsents()]);
     </script>
-    <script src="theme-switcher.js"></script>
-    
-    <!-- Bank Switcher Component (встроен) -->
-    <div style="position: fixed; bottom: 20px; right: 20px; background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; width: 200px;">
-        <div style="font-size: 12px; color: #666; margin-bottom: 10px; font-weight: 600;">Перейти в другой банк:</div>
-        <div id="bankSwitcher"></div>
-        <script>
-            (function() {
-                const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-                const getBankUrl = (code, port) => isDev ? `http://localhost:${port}` : `https://${code}.open.bankingapi.ru`;
-                const banks = [
-                    { code: 'vbank', name: 'Virtual Bank', port: '8001', color: '#667eea' },
-                    { code: 'abank', name: 'Awesome Bank', port: '8002', color: '#e74c3c' },
-                    { code: 'sbank', name: 'Smart Bank', port: '8003', color: '#27ae60' }
-                ];
-                document.getElementById('bankSwitcher').innerHTML = banks.map(b => 
-                    `<a href="${getBankUrl(b.code, b.port)}/client/" style="display: block; padding: 8px; margin-bottom: 8px; text-decoration: none; color: ${b.color}; border: 1px solid ${b.color}; border-radius: 5px; font-size: 13px; text-align: center;">🏦 ${b.name}</a>`
-                ).join('');
-            })();
-        </script>
-    </div>
 </body>
 </html>
 

@@ -15,18 +15,20 @@ OpenBanking Russia v2.1 compatible
 
 ---
 """
-from fastapi import APIRouter, Depends, HTTPException, Header
+from fastapi import APIRouter, Depends, HTTPException, Header, Request
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_
+from sqlalchemy import select, and_, or_
 from typing import Optional, List
 from datetime import datetime, timedelta
 import uuid
+import httpx
 
 from database import get_db
-from models import Consent, ConsentRequest, Notification, Client
+from models import Consent, ConsentRequest, Notification, Client, Bank
 from services.auth_service import get_current_client, get_current_bank, get_optional_client
 from services.consent_service import ConsentService
+from config import config
 
 
 router = APIRouter(prefix="/account-consents", tags=["1 Согласия на доступ к счетам"])
@@ -359,17 +361,27 @@ async def get_my_consents(
     if not client:
         raise HTTPException(404, "Client not found")
     
-    # Получить все согласия
+    # Получить все согласия (поддержка как client_id, так и client_id_external)
+    # Join с Bank для получения bank_code и bank_name
     result = await db.execute(
-        select(Consent).where(Consent.client_id == client.id)
+        select(Consent, Bank).outerjoin(Bank, Consent.bank_id == Bank.id).where(
+            or_(
+                Consent.client_id == client.id,
+                Consent.client_id_external == current_client["client_id"]
+            )
+        )
         .order_by(Consent.creation_date_time.desc())
     )
-    consents = result.scalars().all()
+    consents_data = result.all()
     
     return {
         "consents": [
             {
                 "consent_id": c.consent_id,
+                "client_id": c.client_id if c.client_id else None,
+                "client_id_external": c.client_id_external if c.client_id_external else None,
+                "bank_code": bank.code if bank else None,
+                "bank_name": bank.name if bank else None,
                 "granted_to": c.granted_to,
                 "permissions": c.permissions,
                 "status": c.status,
@@ -377,7 +389,7 @@ async def get_my_consents(
                 "expires_at": c.expiration_date_time.isoformat() if c.expiration_date_time else None,
                 "last_accessed": c.last_accessed_at.isoformat() if c.last_accessed_at else None
             }
-            for c in consents
+            for c, bank in consents_data
         ]
     }
 
@@ -507,6 +519,246 @@ async def delete_account_access_consents_consent_id(
     await db.commit()
     
     return None  # 204 No Content
+
+
+@router.post("/request-from-all-banks", tags=["Internal: Consents"], include_in_schema=False)
+async def request_consents_from_all_banks(
+    request: Request,
+    current_client: dict = Depends(get_current_client),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Запросить согласия из всех внешних банков
+    
+    Для каждого внешнего банка:
+    1. Получает токен из app.state.tokens
+    2. Вызывает /account-consents/request на внешнем банке
+    3. Сохраняет согласие в базу данных
+    """
+    if not current_client:
+        raise HTTPException(401, "Unauthorized")
+    
+    # Получить все внешние банки
+    banks_result = await db.execute(
+        select(Bank).where(Bank.external.is_(True))
+    )
+    external_banks = banks_result.scalars().all()
+    
+    if not external_banks:
+        return {
+            "message": "Нет внешних банков",
+            "results": []
+        }
+    
+    # Получить токены из app.state
+    tokens = getattr(request.app.state, "tokens", {})
+    
+    results = []
+    permissions = [
+        "ReadAccountsDetail", 
+        "ReadBalances", 
+        "ReadTransactionsDetail", 
+        "ManageAccounts", 
+        "ReadCards", 
+        "ManageCards"
+    ]
+    
+    for bank in external_banks:
+        if not bank.code or not bank.api_url or not bank.api_user:
+            results.append({
+                "bank_code": bank.code or "unknown",
+                "bank_name": bank.name or "Unknown",
+                "status": "skipped",
+                "error": "Missing required fields (code, api_url, or api_user)"
+            })
+            continue
+        
+        # Получить токен для банка
+        bank_token_info = tokens.get(bank.code, {})
+        access_token = bank_token_info.get("token")
+        
+        if not access_token:
+            results.append({
+                "bank_code": bank.code,
+                "bank_name": bank.name or bank.code,
+                "status": "error",
+                "error": "Token not available"
+            })
+            continue
+        
+        try:
+            # Запросить согласие у внешнего банка
+            async with httpx.AsyncClient(base_url=bank.api_url, timeout=30.0) as http_client:
+                response = await http_client.post(
+                    "/account-consents/request",
+                    headers={
+                        "Authorization": f"Bearer {access_token}",
+                        "Content-Type": "application/json"
+                    },
+                    json={
+                        "client_id": current_client["client_id"],
+                        "permissions": permissions,
+                        "requesting_bank": bank.api_user,
+                        "requesting_bank_name": config.BANK_CODE
+                    }
+                )
+                
+                if response.status_code not in [200, 201]:
+                    results.append({
+                        "bank_code": bank.code,
+                        "bank_name": bank.name or bank.code,
+                        "status": "error",
+                        "error": f"HTTP {response.status_code}: {response.text[:200]}"
+                    })
+                    continue
+                
+                consent_response = response.json()
+                consent_id = consent_response.get("consent_id")
+                auto_approved = consent_response.get("auto_approved", False)
+                
+                if not consent_id:
+                    results.append({
+                        "bank_code": bank.code,
+                        "bank_name": bank.name or bank.code,
+                        "status": "error",
+                        "error": "No consent_id in response"
+                    })
+                    continue
+                
+                # Проверить, не существует ли уже такое согласие
+                existing_consent = await db.execute(
+                    select(Consent).where(
+                        and_(
+                            Consent.consent_id == consent_id,
+                            Consent.client_id_external == current_client["client_id"],
+                            Consent.granted_to == bank.api_user
+                        )
+                    )
+                )
+                existing = existing_consent.scalar_one_or_none()
+                
+                if existing:
+                    results.append({
+                        "bank_code": bank.code,
+                        "bank_name": bank.name or bank.code,
+                        "status": "skipped",
+                        "consent_id": consent_id,
+                        "message": "Consent already exists"
+                    })
+                    continue
+                
+                # Получить детали согласия для получения expiration_date_time
+                expiration_date = None
+                try:
+                    detail_response = await http_client.get(
+                        f"/account-consents/{consent_id}",
+                        headers={
+                            "Authorization": f"Bearer {access_token}",
+                            "Content-Type": "application/json"
+                        }
+                    )
+                    
+                    if detail_response.status_code == 200:
+                        detail_data = detail_response.json()
+                        # Проверить различные возможные пути к expirationDateTime
+                        expiration_str = None
+                        if "data" in detail_data:
+                            data = detail_data["data"]
+                            expiration_str = data.get("expirationDateTime") or data.get("expiration_date_time") or data.get("expires_at")
+                        else:
+                            expiration_str = detail_data.get("expirationDateTime") or detail_data.get("expiration_date_time") or detail_data.get("expires_at")
+                        
+                        if expiration_str:
+                            try:
+                                # Убрать 'Z' в конце если есть
+                                expiration_str_clean = expiration_str.replace("Z", "")
+                                expiration_date = datetime.fromisoformat(expiration_str_clean)
+                            except (ValueError, AttributeError):
+                                pass
+                except Exception:
+                    # Если не удалось получить детали, продолжим с дефолтным значением
+                    pass
+                
+                # Если не удалось получить expiration из деталей, попробуем из исходного ответа
+                if not expiration_date:
+                    expiration_fields = ["expires_at", "expiration_date_time", "expirationDateTime", "expiresAt", "expiration_date"]
+                    for field in expiration_fields:
+                        if consent_response.get(field):
+                            try:
+                                expiration_str = consent_response[field]
+                                expiration_str_clean = expiration_str.replace("Z", "")
+                                expiration_date = datetime.fromisoformat(expiration_str_clean)
+                                break
+                            except (ValueError, AttributeError):
+                                continue
+                
+                # Если все еще нет expiration_date, использовать значение по умолчанию
+                if not expiration_date:
+                    expiration_date = datetime.utcnow() + timedelta(days=365)
+                
+                consent = Consent(
+                    consent_id=consent_id,
+                    request_id=None,  # Нет локального request_id для внешних согласий
+                    client_id=None,
+                    client_id_external=current_client["client_id"],
+                    bank_id=bank.id,
+                    granted_to=bank.api_user,
+                    permissions=permissions,
+                    status="active" if auto_approved else "pending",
+                    expiration_date_time=expiration_date,
+                    creation_date_time=datetime.utcnow(),
+                    status_update_date_time=datetime.utcnow(),
+                    signed_at=datetime.utcnow() if auto_approved else None
+                )
+                
+                db.add(consent)
+                await db.commit()
+                await db.refresh(consent)
+                
+                results.append({
+                    "bank_code": bank.code,
+                    "bank_name": bank.name or bank.code,
+                    "status": "success",
+                    "consent_id": consent_id,
+                    "auto_approved": auto_approved
+                })
+                
+        except httpx.TimeoutException:
+            results.append({
+                "bank_code": bank.code,
+                "bank_name": bank.name or bank.code,
+                "status": "error",
+                "error": "Request timeout"
+            })
+        except httpx.RequestError as e:
+            results.append({
+                "bank_code": bank.code,
+                "bank_name": bank.name or bank.code,
+                "status": "error",
+                "error": f"Connection error: {str(e)}"
+            })
+        except Exception as e:
+            results.append({
+                "bank_code": bank.code,
+                "bank_name": bank.name or bank.code,
+                "status": "error",
+                "error": f"Unexpected error: {str(e)}"
+            })
+    
+    success_count = sum(1 for r in results if r["status"] == "success")
+    error_count = sum(1 for r in results if r["status"] == "error")
+    skipped_count = sum(1 for r in results if r["status"] == "skipped")
+    
+    return {
+        "message": f"Обработано {len(results)} банков: {success_count} успешно, {error_count} ошибок, {skipped_count} пропущено",
+        "results": results,
+        "summary": {
+            "total": len(results),
+            "success": success_count,
+            "error": error_count,
+            "skipped": skipped_count
+        }
+    }
 
 
 
