@@ -179,6 +179,36 @@ export const accountsAPI = {
     // Фильтруем только успешные ответы
     return accounts.filter((acc: any) => acc.account !== null && acc.error === null)
   },
+
+  refreshExternalAccounts: async (): Promise<void> => {
+    // Invalidate cache first
+    await api.post('/accounts/external/refresh', {}, {
+      headers: {
+        'Cache-Control': 'no-cache'
+      }
+    })
+  },
+
+  getExternalAccountsWithRefresh: async (): Promise<any[]> => {
+    // First invalidate cache
+    await api.post('/accounts/external/refresh', {}, {
+      headers: {
+        'Cache-Control': 'no-cache'
+      }
+    })
+    
+    // Then fetch fresh data with cache-busting parameters
+    const timestamp = Date.now()
+    const response = await api.get<any>(`/accounts/external?force_refresh=true&_t=${timestamp}`, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
+      }
+    })
+    
+    const accounts = response.data?.data?.accounts || []
+    return accounts.filter((acc: any) => acc.account !== null && acc.error === null)
+  },
 }
 
 export const consentsAPI = {
@@ -201,6 +231,34 @@ export const consentsAPI = {
   deleteConsent: async (consentId: string): Promise<void> => {
     await api.delete(`/account-consents/my-consents/${consentId}`)
   },
+}
+
+export interface ExternalPaymentRequest {
+  from_account: string  // Format: "bank_code:account_number"
+  to_account: string    // Format: "bank_code:account_number"
+  amount: number
+  description: string
+}
+
+export interface ExternalPaymentResponse {
+  payment_id: string
+  status: string
+  message?: string
+  error?: string
+}
+
+export interface ExternalPaymentHistoryItem {
+  payment_id: string
+  amount: number
+  currency: string
+  source_bank: string
+  source_account: string
+  destination_bank: string
+  destination_account: string
+  description: string
+  status: string
+  creation_date_time: string
+  external_payment_id?: string
 }
 
 export const paymentsAPI = {
@@ -272,6 +330,24 @@ export const paymentsAPI = {
   getPaymentStatus: async (paymentId: string): Promise<PaymentResponse> => {
     const response = await api.get<PaymentResponse>(`/payments/${paymentId}`)
     return response.data
+  },
+
+  createExternalPayment: async (data: ExternalPaymentRequest): Promise<ExternalPaymentResponse> => {
+    const response = await api.post<any>('/payments/external', data)
+    return {
+      payment_id: response.data?.payment_id || '',
+      status: response.data?.status || 'pending',
+      message: response.data?.message,
+      error: response.data?.error,
+    }
+  },
+
+  getExternalPaymentHistory: async (page: number = 1): Promise<{ payments: ExternalPaymentHistoryItem[], meta: any }> => {
+    const response = await api.get<any>(`/payments/external/history?page=${page}`)
+    return {
+      payments: response.data?.data?.payments || [],
+      meta: response.data?.meta || {},
+    }
   },
 }
 
