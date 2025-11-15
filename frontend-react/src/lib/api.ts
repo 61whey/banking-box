@@ -179,6 +179,36 @@ export const accountsAPI = {
     // Фильтруем только успешные ответы
     return accounts.filter((acc: any) => acc.account !== null && acc.error === null)
   },
+
+  refreshExternalAccounts: async (): Promise<void> => {
+    // Invalidate cache first
+    await api.post('/accounts/external/refresh', {}, {
+      headers: {
+        'Cache-Control': 'no-cache'
+      }
+    })
+  },
+
+  getExternalAccountsWithRefresh: async (): Promise<any[]> => {
+    // First invalidate cache
+    await api.post('/accounts/external/refresh', {}, {
+      headers: {
+        'Cache-Control': 'no-cache'
+      }
+    })
+    
+    // Then fetch fresh data with cache-busting parameters
+    const timestamp = Date.now()
+    const response = await api.get<any>(`/accounts/external?force_refresh=true&_t=${timestamp}`, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
+      }
+    })
+    
+    const accounts = response.data?.data?.accounts || []
+    return accounts.filter((acc: any) => acc.account !== null && acc.error === null)
+  },
 }
 
 export const consentsAPI = {

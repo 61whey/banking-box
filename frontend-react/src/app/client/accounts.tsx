@@ -58,8 +58,8 @@ export default function ClientAccounts() {
     setLoadingExternal(true)
     setExternalAccountsError(null)
     try {
-      const externalData = await accountsAPI.getExternalAccounts()
-      const externalArray = Array.isArray(externalData) ? externalData : []
+      // Invalidate cache and fetch fresh data
+      const externalArray = await accountsAPI.getExternalAccountsWithRefresh()
       setExternalAccounts(externalArray)
       console.log('External accounts refreshed:', externalArray.length, 'accounts')
       toast({
