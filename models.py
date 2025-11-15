@@ -71,7 +71,12 @@ class Client(Base):
 
 
 class Account(Base):
-    """Счет клиента"""
+    """
+    Счет клиента
+
+    Пока не будем сохранять external bank accounts, здесь только внутренние.
+    Пока будем кэшировать external bank accounts в Redis затем изменим эту таблицу.
+    """
     __tablename__ = "accounts"
     
     id             = Column(Integer, primary_key=True)
@@ -82,44 +87,53 @@ class Account(Base):
     currency       = Column(String(3), default="RUB")
     status         = Column(String(20), default="active")
     opened_at      = Column(DateTime, default=datetime.utcnow)
-    #updated_at     = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment="Время обновления данных счета")
     
       # Relationships
     client       = relationship("Client", back_populates="accounts")
     transactions = relationship("Transaction", back_populates="account")
 
 
-# class VirtualAccountBankAllocation(Base):
-#     """Распределение ДС клиента по банкам"""
-#     __tablename__ = "virtual_account_bank_allocations"
+class VirtualBalanceBankAllocation(Base):
+    """
+    Распределение ДС клиента по банкам
     
-#     id         = Column(Integer, primary_key=True)
-#     client_id  = Column(Integer, ForeignKey("clients.id"), nullable=False, comment="ID клиента (team025-x)")
-#     # bank_id    = Column(Integer, ForeignKey("banks.id"), nullable=False)
-#     # percentage = Column(Numeric(5, 4), nullable=False, comment="Процент распределения ДС на этот банк")
-#     # {"bank_id": "percentage"}
-#     target_share = Column(JSONB, nullable=True, comment="Целевое распределение ДС по банкам")
-#     # {"bank_id": "percentage"}
-#     actual_share = Column(JSONB, nullable=True, comment="Фактическое распределение ДС по банкам")
-#     created_at   = Column(DateTime, default=datetime.utcnow)
-#     updated_at   = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    - target_share: Желаемый процент ДС клиента в bank_id
+
+    Актуальный _share мы будем вычислять онлайн по полученным данным external bank accounts.
+    """
+    __tablename__ = "virtual_balance_bank_allocations"
+    
+    id           = Column(Integer, primary_key=True)
+    client_id    = Column(Integer, ForeignKey("clients.id"), nullable=False, comment="ID клиента (team025-x)")
+    bank_id      = Column(Integer, ForeignKey("banks.id"), nullable=False, comment="ID банка")
+    target_share = Column(Numeric(5, 2), nullable=False, comment="Доля в % от общей суммы ДС клиента")
+    account_type = Column(String(50), comment="Тип счета")
+    created_at   = Column(DateTime, default=datetime.utcnow)
+    updated_at   = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
-# class VirtualAccount(Base):
-#     """Виртуальный счет клиента"""
-#     __tablename__ = "virtual_accounts"
+class VirtualAccount(Base):
+    """
+    Виртуальный счет клиента
+
+    - account_type: checking, savings, deposit
+      - checking: Сперва реализуем только checking
+    - calculation_type: automatic, fixed
+      - automatic: вычисляется автоматически по данным external bank accounts
+      - fixed: устанавливается вручную
+    """
+    __tablename__ = "virtual_accounts"
     
-#     id              = Column(Integer, primary_key=True)
-#     bank_id         = Column(Integer, ForeignKey("banks.id"), nullable=False)
-#     client_id       = Column(Integer, ForeignKey("clients.id"), nullable=False)
-#     account_number  = Column(String(20), unique=True, nullable=False)
-#     account_type    = Column(String(50))                                                   # checking, savings, deposit
-#     evaluation_type = Column(String(50), nullable=True, comment="Тип оценки баланса")      # manual, automatic
-#     balance         = Column(Numeric(15, 2), default=0)
-#     currency        = Column(String(3), default="RUB")
-#     status          = Column(String(20), default="active")
-#     created_at      = Column(DateTime, default=datetime.utcnow)
-#     updated_at      = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    id               = Column(Integer, primary_key=True)
+    client_id        = Column(Integer, ForeignKey("clients.id"), nullable=False, comment="ID клиента (team025-x)")
+    account_number   = Column(String(20), unique=True, nullable=False, comment="Номер счета")
+    account_type     = Column(String(50), comment="Тип счета")
+    calculation_type = Column(String(50), nullable=True, comment="Тип вычисления баланса")
+    balance          = Column(Numeric(15, 2), default=0, comment="Баланс")
+    currency         = Column(String(3), default="RUB", comment="Валюта")
+    status           = Column(String(20), default="active", comment="Статус")
+    created_at       = Column(DateTime, default=datetime.utcnow, comment="Время создания")
+    updated_at       = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment="Время обновления")
     
 
 class Transaction(Base):
