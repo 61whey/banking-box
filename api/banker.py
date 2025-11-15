@@ -345,7 +345,7 @@ async def get_client_details(
                     "balance": float(acc.balance),
                     "currency": acc.currency,
                     "status": acc.status,
-                    "opened_at": acc.opened_at.isoformat()
+                    "opened_at": acc.opened_at.isoformat() if acc.opened_at else None
                 }
                 for acc in accounts
             ]

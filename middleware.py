@@ -8,10 +8,10 @@ import time
 from datetime import datetime
 
 try:
-    from .database import get_db
+    from .database import AsyncSessionLocal
     from .models import APICallLog
 except ImportError:
-    from database import get_db
+    from database import AsyncSessionLocal
     from models import APICallLog
 
 
@@ -144,7 +144,7 @@ class APILoggingMiddleware(BaseHTTPMiddleware):
                             from models import Consent, PaymentConsent, ProductAgreementConsent, VRPConsent, Client
                         
                         # Попробовать найти согласие в БД
-                        async for db in get_db():
+                        async with AsyncSessionLocal() as db:
                             # Проверить все типы согласий
                             consent = None
                             client_id = None
@@ -199,8 +199,6 @@ class APILoggingMiddleware(BaseHTTPMiddleware):
                                     else:
                                         caller_id = person_id
                                         caller_type = "interbank"
-                            
-                            break
                     except Exception as e:
                         # Debug: логировать ошибки извлечения consent
                         print(f"⚠️  Consent ID extraction error: {e}")
@@ -242,7 +240,7 @@ class APILoggingMiddleware(BaseHTTPMiddleware):
             
             # Сохранить в БД асинхронно (не блокируя ответ)
             try:
-                async for db in get_db():
+                async with AsyncSessionLocal() as db:
                     log_entry = APICallLog(
                         caller_id=caller_id,
                         caller_type=caller_type,
@@ -259,7 +257,6 @@ class APILoggingMiddleware(BaseHTTPMiddleware):
                     
                     db.add(log_entry)
                     await db.commit()
-                    break
             except Exception as e:
                 # Не ломаем запрос если логирование не удалось
                 print(f"⚠️  Failed to log API call: {e}")

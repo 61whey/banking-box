@@ -117,7 +117,7 @@ async def get_accounts(
                     "accountType": "Personal" if acc.account_type == "checking" else "Business",
                     "accountSubType": acc.account_type.title(),
                     "nickname": f"{acc.account_type.title()} счет",
-                    "openingDate": acc.opened_at.date().isoformat(),
+                    "openingDate": (acc.opened_at.date().isoformat() if acc.opened_at else datetime.utcnow().date().isoformat()),
                     "account": [
                         {
                             "schemeName": "RU.CBR.PAN",
@@ -294,7 +294,7 @@ async def get_account(
                     "accountSubType": account.account_type.title(),
                     "description": f"{account.account_type} account",
                     "nickname": f"{account.account_type.title()} счет",
-                    "openingDate": account.opened_at.date().isoformat()
+                    "openingDate": (account.opened_at.date().isoformat() if account.opened_at else datetime.utcnow().date().isoformat())
                 }
             ]
         }
