@@ -1,7 +1,7 @@
 """
 Virtual Accounts API - Управление виртуальными счетами
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
@@ -19,6 +19,7 @@ from services.virtual_account_service import (
     update_virtual_account,
     delete_virtual_account
 )
+from services.account_service import get_external_accounts_for_client
 from log import logger
 
 
@@ -94,6 +95,7 @@ class DeleteResponse(BaseModel):
 
 @router.get("", response_model=VirtualAccountListResponse, summary="Получить виртуальные счета")
 async def get_virtual_accounts(
+    request: Request,
     current_client: dict = Depends(get_current_client),
     db: AsyncSession = Depends(get_db)
 ):
@@ -122,6 +124,41 @@ async def get_virtual_accounts(
         accounts = await get_virtual_accounts_for_client(client.id, db)
 
         logger.info(f"Found {len(accounts)} virtual accounts for client_id={client.id}")
+
+        # Fetch external accounts and calculate total balance for automatic accounts
+        tokens = getattr(request.app.state, "tokens", {})
+        external_accounts = await get_external_accounts_for_client(
+            client_person_id=person_id,
+            db=db,
+            app_state_tokens=tokens
+        )
+
+        # Calculate total sum of all external account balances
+        total_balance = Decimal("0")
+        for acc_data in external_accounts:
+            balance_str = acc_data.get("balance", "0")
+            try:
+                total_balance += Decimal(str(balance_str))
+            except (ValueError, TypeError, Exception):
+                logger.warning(f"Could not parse balance: {balance_str}")
+
+        logger.info(f"Total external accounts balance: {total_balance}")
+
+        # Calculate sum of balances from non-automatic virtual accounts
+        other_accounts_balance = Decimal("0")
+        for acc in accounts:
+            if acc.calculation_type != "automatic":
+                other_accounts_balance += acc.balance or Decimal("0")
+
+        logger.info(f"Sum of other virtual accounts balances: {other_accounts_balance}")
+
+        # Update balance for automatic calculation_type accounts
+        # Balance = total external - sum of other virtual accounts
+        automatic_balance = total_balance - other_accounts_balance
+        for acc in accounts:
+            if acc.calculation_type == "automatic":
+                acc.balance = automatic_balance
+                logger.debug(f"Updated automatic account {acc.account_number} balance to {automatic_balance}")
 
         return VirtualAccountListResponse(
             data=[VirtualAccountResponse.model_validate(acc) for acc in accounts],
