@@ -220,12 +220,28 @@ export interface PaymentItem {
   destination_bank_id: number
 }
 
+export interface ExecutedPaymentResult {
+  source_account_id: string
+  destination_account_id: string
+  amount: number
+  source_bank: string
+  source_bank_id: number
+  destination_bank: string
+  destination_bank_id: number
+  status: 'success' | 'failed'
+  error_message: string | null
+  payment_id: string | null
+}
+
 export interface ApplyAllocationsData {
   external_accounts_count: number
   total_balance: number
   target_bank_amounts: TargetBankAmount[]
   target_account_balances: TargetAccountBalance[]
   payments_list: PaymentItem[]
+  executed_payments?: ExecutedPaymentResult[]
+  successful_count?: number
+  failed_count?: number
 }
 
 export interface ApplyAllocationsResponse {

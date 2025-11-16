@@ -316,6 +316,12 @@ async def get_external_bank_tokens() -> dict:
             for bank in external_banks:
                 if not bank.code or not bank.api_url or not bank.api_user or not bank.api_secret:
                     # Skip banks with missing required fields
+                    missing_fields = []
+                    if not bank.code: missing_fields.append("code")
+                    if not bank.api_url: missing_fields.append("api_url")
+                    if not bank.api_user: missing_fields.append("api_user")
+                    if not bank.api_secret: missing_fields.append("api_secret")
+                    print(f"⚠ Skipping bank {bank.code or 'unknown'}: missing fields {', '.join(missing_fields)}")
                     tokens[bank.code] = {
                         "token": None,
                         "expires_in": None,
@@ -338,8 +344,9 @@ async def get_external_bank_tokens() -> dict:
                         "expires_in": expires_in,
                         "expiration_time": expiration_time
                     }
+                    print(f"✓ Successfully obtained token for bank {bank.code} (api_user={bank.api_user}, expires_in={expires_in}s)")
                 except Exception as e:
-                    print(f"Failed to get token for bank {bank.code}: {e}")
+                    print(f"✗ Failed to get token for bank {bank.code} (api_user={bank.api_user}): {e}")
                     tokens[bank.code] = {
                         "token": None,
                         "expires_in": None,

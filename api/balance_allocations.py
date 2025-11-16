@@ -13,11 +13,13 @@ from models import VirtualBalanceBankAllocation, Client, Bank
 from services.auth_service import get_current_client
 from services.account_service import get_external_accounts_for_client
 from services.cache_utils import client_key_builder, invalidate_client_cache
+from services.external_payment_service import execute_external_payment
 from sqlalchemy import select
 from log import logger
 from fastapi_cache.decorator import cache
 from config import config
 from redis import asyncio as aioredis
+import httpx
 
 
 router = APIRouter(prefix="/balance-allocations", tags=["Распределение по банкам"])
@@ -112,6 +114,20 @@ class PaymentItem(BaseModel):
     source_bank_id: int
     destination_bank: str
     destination_bank_id: int
+
+
+class ExecutedPaymentResult(BaseModel):
+    """Результат выполнения одного платежа"""
+    source_account_id: str
+    destination_account_id: str
+    amount: Decimal
+    source_bank: str
+    source_bank_id: int
+    destination_bank: str
+    destination_bank_id: int
+    status: str  # "success" | "failed"
+    error_message: Optional[str] = None
+    payment_id: Optional[str] = None
 
 
 class ApplyAllocationsResponse(BaseModel):
@@ -299,6 +315,155 @@ async def validate_target_share_sum(
         )
 
     return True, "", max_allowed_share
+
+
+async def execute_payments_list(
+    payments_list: List[Dict],
+    client_person_id: str,
+    db: AsyncSession,
+    app_state_tokens: Dict
+) -> List[Dict]:
+    """
+    Выполнить список платежей для перераспределения средств
+
+    Args:
+        payments_list: Список платежей для выполнения
+        client_person_id: ID клиента (person_id)
+        db: Database session
+        app_state_tokens: Токены из app.state
+
+    Returns:
+        List[Dict]: Список результатов выполнения платежей
+    """
+    executed_payments = []
+
+    if not payments_list:
+        logger.info("[execute_payments_list] No payments to execute")
+        return executed_payments
+
+    logger.info(f"[execute_payments_list] Starting execution of {len(payments_list)} payments")
+
+    # Create HTTP client for all requests
+    async with httpx.AsyncClient(timeout=15.0) as http_client:
+        for idx, payment in enumerate(payments_list):
+            source_account_id = payment["source_account_id"]
+            destination_account_id = payment["destination_account_id"]
+            amount = Decimal(str(payment["amount"]))
+            source_bank_name = payment["source_bank"]
+            source_bank_id = payment["source_bank_id"]
+            destination_bank_name = payment["destination_bank"]
+            destination_bank_id = payment["destination_bank_id"]
+
+            logger.info(
+                f"[execute_payments_list] Payment {idx + 1}/{len(payments_list)}: "
+                f"{source_bank_name} ({source_account_id}) -> {destination_bank_name} ({destination_account_id}), "
+                f"amount={amount}"
+            )
+
+            # Initialize result
+            result = {
+                "source_account_id": source_account_id,
+                "destination_account_id": destination_account_id,
+                "amount": float(amount),
+                "source_bank": source_bank_name,
+                "source_bank_id": source_bank_id,
+                "destination_bank": destination_bank_name,
+                "destination_bank_id": destination_bank_id,
+                "status": "failed",
+                "error_message": None,
+                "payment_id": None
+            }
+
+            try:
+                # Get SOURCE bank from database (where money comes from)
+                # For inter-bank payments, we call the SOURCE bank's API, not destination
+                source_bank_result = await db.execute(
+                    select(Bank).where(Bank.id == source_bank_id)
+                )
+                source_bank = source_bank_result.scalar_one_or_none()
+
+                if not source_bank:
+                    error_msg = f"Source bank {source_bank_id} not found"
+                    logger.error(f"[execute_payments_list] {error_msg}")
+                    result["error_message"] = error_msg
+                    executed_payments.append(result)
+                    continue
+
+                # Get destination bank from database (for creditor account info)
+                dest_bank_result = await db.execute(
+                    select(Bank).where(Bank.id == destination_bank_id)
+                )
+                destination_bank = dest_bank_result.scalar_one_or_none()
+
+                if not destination_bank:
+                    error_msg = f"Destination bank {destination_bank_id} not found"
+                    logger.error(f"[execute_payments_list] {error_msg}")
+                    result["error_message"] = error_msg
+                    executed_payments.append(result)
+                    continue
+
+                # Get token for SOURCE bank
+                token_info = app_state_tokens.get(source_bank.code, {})
+                token = token_info.get("token")
+                if not token:
+                    error_msg = f"No auth token for source bank {source_bank.code}"
+                    logger.error(f"[execute_payments_list] {error_msg}")
+                    result["error_message"] = error_msg
+                    executed_payments.append(result)
+                    continue
+                
+                logger.debug(
+                    f"[execute_payments_list] Using token for source bank {source_bank.code}, "
+                    f"expires_in={token_info.get('expires_in')}, "
+                    f"expiration_time={token_info.get('expiration_time')}"
+                )
+
+                # Execute payment using external_payment_service on SOURCE bank
+                # The source bank's API will handle the transfer to the destination bank
+                payment_result = await execute_external_payment(
+                    bank=source_bank,
+                    client_person_id=client_person_id,
+                    token=token,
+                    amount=amount,
+                    debtor_account=source_account_id,
+                    creditor_account=destination_account_id,
+                    description=f"Balance reallocation #{idx + 1}",
+                    db=db,
+                    http_client=http_client,
+                    creditor_bank_code=destination_bank.code
+                )
+
+                if payment_result["success"]:
+                    result["status"] = "success"
+                    result["payment_id"] = payment_result.get("external_payment_id")
+                    logger.info(
+                        f"[execute_payments_list] Payment {idx + 1} SUCCESS: "
+                        f"payment_id={result['payment_id']}"
+                    )
+                else:
+                    result["status"] = "failed"
+                    result["error_message"] = payment_result.get("error", "Unknown error")
+                    logger.error(
+                        f"[execute_payments_list] Payment {idx + 1} FAILED: "
+                        f"{result['error_message']}"
+                    )
+
+            except Exception as e:
+                error_msg = f"Exception during payment execution: {str(e)[:200]}"
+                logger.error(f"[execute_payments_list] {error_msg}", exc_info=True)
+                result["error_message"] = error_msg
+
+            executed_payments.append(result)
+
+    # Log summary
+    successful_count = sum(1 for p in executed_payments if p["status"] == "success")
+    failed_count = len(executed_payments) - successful_count
+    logger.info(
+        f"[execute_payments_list] Execution complete: "
+        f"{successful_count} successful, {failed_count} failed out of {len(executed_payments)} total"
+    )
+
+    return executed_payments
 
 
 # === Endpoints ===
@@ -1005,7 +1170,9 @@ async def apply_balance_allocations(
         for acc in valid_accounts:
             bank_code = acc.get("bank_code")
             account = acc.get("account", {})
-            account_id = account.get("accountId", "")
+            # Use account identification (account number) for payments, not accountId (internal DB ID)
+            account_list = account.get("account", [])
+            account_id = account_list[0].get("identification", "") if account_list else account.get("accountId", "")
             balance_str = acc.get("balance", "0")
 
             try:
@@ -1108,15 +1275,47 @@ async def apply_balance_allocations(
 
         logger.info(f"[apply] Payments list (after filtering): {payments_list}")
 
+        # Step 11: Execute payments
+        executed_payments = await execute_payments_list(
+            payments_list=payments_list,
+            client_person_id=person_id,
+            db=db,
+            app_state_tokens=tokens
+        )
+
+        # Calculate success/failure counts
+        successful_count = sum(1 for p in executed_payments if p["status"] == "success")
+        failed_count = len(executed_payments) - successful_count
+
+        logger.info(
+            f"[apply] Payment execution results: "
+            f"{successful_count} successful, {failed_count} failed out of {len(executed_payments)} total"
+        )
+
+        # Determine overall success message
+        if len(executed_payments) == 0:
+            message = "Распределение рассчитано успешно. Платежи не требуются."
+        elif failed_count == 0:
+            message = f"Распределение выполнено успешно. Все {successful_count} платежей выполнены."
+        elif successful_count == 0:
+            message = f"Распределение рассчитано, но все {failed_count} платежей завершились с ошибкой."
+        else:
+            message = f"Распределение частично выполнено. Успешно: {successful_count}, ошибок: {failed_count}."
+
+        logger.info(f"[apply] Result message: {message}")
+
         return ApplyAllocationsResponse(
             success=True,
-            message="Распределение рассчитано успешно",
+            message=message,
             data={
                 "external_accounts_count": len(valid_accounts),
                 "total_balance": float(total_balance),
                 "target_bank_amounts": target_bank_amounts,
                 "target_account_balances": target_account_balances,
-                "payments_list": payments_list
+                "payments_list": payments_list,
+                "executed_payments": executed_payments,
+                "successful_count": successful_count,
+                "failed_count": failed_count
             }
         )
 
