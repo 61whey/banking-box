@@ -6,13 +6,10 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
-import { Badge } from '@/components/ui/badge'
-import { Alert, AlertTitle, AlertDescription as AlertDesc } from '@/components/ui/alert'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { accountsAPI, balanceAllocationsAPI } from '@/lib/api'
 import { useToast } from '@/hooks/use-toast'
-import type { Account, BalanceAllocation, ExecutedPaymentResult } from '@/types/api'
-import { CreditCard, Building2, RefreshCw, PieChart, Pencil, Trash2, Plus, CheckCircle, XCircle, ArrowRightLeft } from 'lucide-react'
+import type { Account, BalanceAllocation } from '@/types/api'
+import { CreditCard, Building2, RefreshCw, PieChart, Pencil, Trash2, Plus } from 'lucide-react'
 
 export default function ClientAccounts() {
   const [accounts, setAccounts] = useState<Account[]>([])
@@ -32,16 +29,6 @@ export default function ClientAccounts() {
   const [allocationToDelete, setAllocationToDelete] = useState<BalanceAllocation | null>(null)
   const [submittingAllocation, setSubmittingAllocation] = useState(false)
   const [targetShare, setTargetShare] = useState<string>('')
-
-  // Executed payments results state
-  const [executedPaymentsDialogOpen, setExecutedPaymentsDialogOpen] = useState(false)
-  const [executedPayments, setExecutedPayments] = useState<ExecutedPaymentResult[]>([])
-  const [executionSummary, setExecutionSummary] = useState<{
-    successfulCount: number
-    failedCount: number
-    totalBalance: number
-    message: string
-  } | null>(null)
 
   const { toast } = useToast()
 
