@@ -17,7 +17,8 @@ from api import (
     accounts, auth, consents, payments, admin, products, well_known,
     banker, product_agreements, product_agreement_consents,
     product_applications, customer_leads, product_offers, product_offer_consents,
-    vrp_consents, vrp_payments, interbank, payment_consents, multibank_proxy, banks
+    vrp_consents, vrp_payments, interbank, payment_consents, multibank_proxy, banks,
+    virtual_accounts, balance_allocations
 )
 
 # FastAPI Cache imports
@@ -69,6 +70,7 @@ openapi_tags = [
     {"name": "5 Каталог продуктов", "description": "Депозиты, кредиты, карты — каталог банковских продуктов"},
     {"name": "6 Согласия на управление договорами", "description": "Согласия на открытие/закрытие продуктов от имени клиента"},
     {"name": "7 Договоры с продуктами", "description": "Открытие и закрытие депозитов, кредитов и карт"},
+    {"name": "Виртуальные счета", "description": "Управление виртуальными счетами клиента"},
     {"name": "Technical: Well-Known", "description": "JWKS — публичные ключи для проверки JWT"},
 ]
 
@@ -163,6 +165,8 @@ app.include_router(product_offers.router)
 app.include_router(product_offer_consents.router)
 app.include_router(vrp_consents.router)
 app.include_router(vrp_payments.router)
+app.include_router(virtual_accounts.router)
+app.include_router(balance_allocations.router)
 app.include_router(banker.router)
 app.include_router(admin.router)
 app.include_router(interbank.router)

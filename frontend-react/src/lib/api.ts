@@ -13,6 +13,15 @@ import type {
   Product,
   BankStats,
   APILog,
+  VirtualAccount,
+  VirtualAccountCreate,
+  VirtualAccountUpdate,
+  VirtualAccountListResponse,
+  BalanceAllocation,
+  BalanceAllocationCreate,
+  BalanceAllocationUpdate,
+  BalanceAllocationListResponse,
+  ApplyAllocationsResponse,
 } from '@/types/api'
 
 // Используем VITE_API_URL из переменных окружения (устанавливается во время сборки)
@@ -486,6 +495,92 @@ export const adminAPI = {
 
   deleteTeam: async (clientId: string): Promise<void> => {
     await api.delete(`/admin/teams/${clientId}`)
+  },
+}
+
+export const virtualAccountsAPI = {
+  getVirtualAccounts: async (): Promise<VirtualAccount[]> => {
+    const response = await api.get<VirtualAccountListResponse>('/virtual-accounts')
+    return response.data?.data || []
+  },
+
+  getVirtualAccount: async (accountId: number): Promise<VirtualAccount> => {
+    const response = await api.get<VirtualAccount>(`/virtual-accounts/${accountId}`)
+    return response.data
+  },
+
+  createVirtualAccount: async (data: VirtualAccountCreate): Promise<VirtualAccount> => {
+    const response = await api.post<VirtualAccount>('/virtual-accounts', data)
+    return response.data
+  },
+
+  updateVirtualAccount: async (accountId: number, data: VirtualAccountUpdate): Promise<VirtualAccount> => {
+    const response = await api.put<VirtualAccount>(`/virtual-accounts/${accountId}`, data)
+    return response.data
+  },
+
+  deleteVirtualAccount: async (accountId: number): Promise<void> => {
+    await api.delete(`/virtual-accounts/${accountId}`)
+  },
+}
+
+export const balanceAllocationsAPI = {
+  getBalanceAllocations: async (): Promise<BalanceAllocation[]> => {
+    const response = await api.get<BalanceAllocationListResponse>('/balance-allocations')
+    return response.data?.data || []
+  },
+
+  getBalanceAllocation: async (allocationId: number): Promise<BalanceAllocation> => {
+    const response = await api.get<BalanceAllocation>(`/balance-allocations/${allocationId}`)
+    return response.data
+  },
+
+  createBalanceAllocation: async (data: BalanceAllocationCreate): Promise<BalanceAllocation> => {
+    const response = await api.post<BalanceAllocation>('/balance-allocations', data)
+    return response.data
+  },
+
+  updateBalanceAllocation: async (allocationId: number, data: BalanceAllocationUpdate): Promise<BalanceAllocation> => {
+    const response = await api.put<BalanceAllocation>(`/balance-allocations/${allocationId}`, data)
+    return response.data
+  },
+
+  deleteBalanceAllocation: async (allocationId: number): Promise<void> => {
+    await api.delete(`/balance-allocations/${allocationId}`)
+  },
+
+  refreshBalanceAllocations: async (): Promise<void> => {
+    // Invalidate cache first
+    await api.post('/balance-allocations/refresh', {}, {
+      headers: {
+        'Cache-Control': 'no-cache'
+      }
+    })
+  },
+
+  getBalanceAllocationsWithRefresh: async (): Promise<BalanceAllocation[]> => {
+    // First invalidate cache
+    await api.post('/balance-allocations/refresh', {}, {
+      headers: {
+        'Cache-Control': 'no-cache'
+      }
+    })
+
+    // Then fetch fresh data with cache-busting parameters
+    const timestamp = Date.now()
+    const response = await api.get<BalanceAllocationListResponse>(`/balance-allocations?_t=${timestamp}`, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
+      }
+    })
+
+    return response.data?.data || []
+  },
+
+  applyBalanceAllocations: async (): Promise<ApplyAllocationsResponse> => {
+    const response = await api.post<ApplyAllocationsResponse>('/balance-allocations/apply')
+    return response.data
   },
 }
 

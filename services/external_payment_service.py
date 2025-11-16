@@ -21,7 +21,8 @@ async def execute_external_payment(
     creditor_account: str,
     description: str,
     db: AsyncSession,
-    http_client: Optional[httpx.AsyncClient] = None
+    http_client: Optional[httpx.AsyncClient] = None,
+    creditor_bank_code: Optional[str] = None
 ) -> Dict:
     """
     Выполнить платеж во внешний банк (с автоматическим созданием согласия)
@@ -31,7 +32,7 @@ async def execute_external_payment(
     2. Выполнить платеж используя согласие (POST /payments)
 
     Args:
-        bank: Bank object (внешний банк)
+        bank: Bank object (SOURCE bank - где находится счет списания)
         client_person_id: ID клиента (person_id)
         token: Auth token для банка
         amount: Сумма платежа
@@ -40,6 +41,7 @@ async def execute_external_payment(
         description: Описание платежа
         db: Database session
         http_client: Optional HTTP client (создается новый если None)
+        creditor_bank_code: Код банка получателя (для межбанковских переводов)
 
     Returns:
         Dict: {
@@ -50,8 +52,9 @@ async def execute_external_payment(
         }
     """
     logger.info(
-        f"Executing external payment: source_bank={config.BANK_CODE} -> destination_bank={bank.code} ({bank.name}), "
+        f"Executing external payment: source_bank={bank.code} ({bank.name}), "
         f"amount={amount}, from_account={debtor_account} to_account={creditor_account}"
+        f"{f', creditor_bank={creditor_bank_code}' if creditor_bank_code else ''}"
     )
 
     try:
@@ -147,7 +150,7 @@ async def execute_external_payment(
                         "creditorAccount": {
                             "schemeName": "RU.CBR.PAN",
                             "identification": creditor_account,
-                            "bank_code": bank.code
+                            "bank_code": creditor_bank_code if creditor_bank_code else bank.code
                         },
                         "comment": description[:140] if description else "Payment"
                     }

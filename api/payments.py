@@ -421,7 +421,8 @@ async def create_external_payment(
             debtor_account=from_account_id,
             creditor_account=to_account_id,
             description=request_data.description or "Payment",
-            db=db
+            db=db,
+            creditor_bank_code=dest_bank.code
         )
 
         if not result["success"]:

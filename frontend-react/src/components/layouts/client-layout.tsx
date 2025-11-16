@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/stores/auth-store'
 import { useAppStore } from '@/stores/app-store'
-import { LogOut, Moon, Sun, Home, CreditCard, FileText, Send } from 'lucide-react'
+import { LogOut, Moon, Sun, Home, CreditCard, FileText, Send, Wallet } from 'lucide-react'
 
 interface ClientLayoutProps {
   children: React.ReactNode
@@ -59,6 +59,13 @@ export function ClientLayout({ children, title }: ClientLayoutProps) {
           >
             <CreditCard className="mr-2 h-4 w-4" />
             Счета
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/app/client/virtual-accounts')}
+          >
+            <Wallet className="mr-2 h-4 w-4" />
+            Виртуальные счета
           </Button>
           <Button
             variant="ghost"
