@@ -193,3 +193,44 @@ export interface BalanceAllocationListResponse {
   count: number
 }
 
+export interface TargetBankAmount {
+  bank_id: number
+  bank_code: string
+  bank_name: string
+  target_share: number
+  target_amount: number
+  accounts_count: number
+}
+
+export interface TargetAccountBalance {
+  bank_code: string
+  bank_name: string
+  account_id: string
+  current_balance: number
+  target_balance: number
+}
+
+export interface PaymentItem {
+  source_account_id: string
+  destination_account_id: string
+  amount: number
+  source_bank: string
+  source_bank_id: number
+  destination_bank: string
+  destination_bank_id: number
+}
+
+export interface ApplyAllocationsData {
+  external_accounts_count: number
+  total_balance: number
+  target_bank_amounts: TargetBankAmount[]
+  target_account_balances: TargetAccountBalance[]
+  payments_list: PaymentItem[]
+}
+
+export interface ApplyAllocationsResponse {
+  success: boolean
+  message: string
+  data: ApplyAllocationsData | null
+}
+

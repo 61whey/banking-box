@@ -21,6 +21,7 @@ import type {
   BalanceAllocationCreate,
   BalanceAllocationUpdate,
   BalanceAllocationListResponse,
+  ApplyAllocationsResponse,
 } from '@/types/api'
 
 // Используем VITE_API_URL из переменных окружения (устанавливается во время сборки)
@@ -575,6 +576,11 @@ export const balanceAllocationsAPI = {
     })
 
     return response.data?.data || []
+  },
+
+  applyBalanceAllocations: async (): Promise<ApplyAllocationsResponse> => {
+    const response = await api.post<ApplyAllocationsResponse>('/balance-allocations/apply')
+    return response.data
   },
 }
 

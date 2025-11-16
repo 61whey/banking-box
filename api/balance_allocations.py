@@ -84,6 +84,43 @@ class DeleteResponse(BaseModel):
     success: bool
 
 
+class TargetBankAmount(BaseModel):
+    """Целевая сумма для банка"""
+    bank_id: int
+    bank_code: str
+    bank_name: str
+    target_share: Decimal
+    target_amount: Optional[Decimal] = None
+    accounts_count: int
+
+
+class TargetAccountBalance(BaseModel):
+    """Целевой баланс для счета"""
+    bank_code: str
+    bank_name: str
+    account_id: str
+    current_balance: Decimal
+    target_balance: Decimal
+
+
+class PaymentItem(BaseModel):
+    """Элемент списка платежей"""
+    source_account_id: str
+    destination_account_id: str
+    amount: Decimal
+    source_bank: str
+    source_bank_id: int
+    destination_bank: str
+    destination_bank_id: int
+
+
+class ApplyAllocationsResponse(BaseModel):
+    """Ответ при применении распределений"""
+    success: bool
+    message: str
+    data: Optional[Dict] = None
+
+
 # === Helper Functions ===
 
 async def calculate_bank_balances(
@@ -772,6 +809,321 @@ async def update_balance_allocation(
     except Exception as e:
         logger.error(f"Error updating balance allocation {allocation_id}: {e}", exc_info=True)
         await db.rollback()
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.post("/apply", response_model=ApplyAllocationsResponse, summary="Применить распределение по банкам")
+async def apply_balance_allocations(
+    request: Request,
+    current_client: dict = Depends(get_current_client),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    ## 🎯 Применить распределение средств по банкам
+
+    Рассчитывает целевые балансы для счетов и формирует список платежей
+    для достижения целевого распределения.
+
+    **Требуется авторизация:** JWT токен в заголовке Authorization
+
+    **Логика:**
+    1. Получить актуальные данные внешних счетов
+    2. Валидировать сумму target_share (не более 100%)
+    3. Если все target_share заданы, проверить что сумма = 100%
+    4. Рассчитать целевые суммы для каждого банка
+    5. Рассчитать целевые балансы для каждого счета
+    6. Сформировать список платежей для выравнивания
+    """
+    person_id = current_client["client_id"]
+
+    # Get client database ID from person_id
+    result = await db.execute(
+        select(Client).where(Client.person_id == person_id)
+    )
+    client = result.scalar_one_or_none()
+
+    if not client:
+        logger.warning(f"Client not found for person_id: {person_id}")
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    logger.info(f"Applying balance allocations for client_id={client.id} (person_id={person_id})")
+
+    try:
+        # Step 1: Refresh external accounts data
+        tokens = getattr(request.app.state, "tokens", {})
+        external_accounts = await get_external_accounts_for_client(
+            client_person_id=person_id,
+            db=db,
+            app_state_tokens=tokens
+        )
+        logger.info(f"[apply] Fetched {len(external_accounts)} external accounts")
+
+        # Filter out accounts with errors
+        valid_accounts = [
+            acc for acc in external_accounts
+            if acc.get("account") is not None and not acc.get("error")
+        ]
+        logger.info(f"[apply] Valid accounts (without errors): {len(valid_accounts)}")
+
+        if not valid_accounts:
+            return ApplyAllocationsResponse(
+                success=True,
+                message="Нет доступных внешних счетов для распределения",
+                data=None
+            )
+
+        # Get unique bank_codes from valid accounts
+        bank_codes = list(set(acc.get("bank_code") for acc in valid_accounts))
+        logger.info(f"[apply] Unique bank codes: {bank_codes}")
+
+        # Step 2: Check if there's only single unique bank_id
+        if len(bank_codes) == 1:
+            logger.info(f"[apply] Only one bank found ({bank_codes[0]}), nothing to do")
+            return ApplyAllocationsResponse(
+                success=True,
+                message=f"Только один банк ({bank_codes[0]}). Распределение не требуется.",
+                data=None
+            )
+
+        # Get banks from database
+        banks_result = await db.execute(
+            select(Bank).where(Bank.code.in_(bank_codes))
+        )
+        banks_dict = {bank.code: bank for bank in banks_result.scalars().all()}
+
+        # Get existing allocations for client
+        allocations_result = await db.execute(
+            select(VirtualBalanceBankAllocation, Bank)
+            .join(Bank, VirtualBalanceBankAllocation.bank_id == Bank.id)
+            .where(VirtualBalanceBankAllocation.client_id == client.id)
+        )
+        allocations_by_bank_code = {}
+        for allocation, bank in allocations_result.all():
+            if bank.code in bank_codes:  # Only consider banks with accounts
+                allocations_by_bank_code[bank.code] = allocation
+
+        # Step 3: Collect target_shares for validation
+        target_shares = {}
+        empty_target_share_banks = []
+
+        for bank_code in bank_codes:
+            allocation = allocations_by_bank_code.get(bank_code)
+            if allocation and allocation.target_share is not None:
+                target_shares[bank_code] = Decimal(str(allocation.target_share))
+            else:
+                empty_target_share_banks.append(bank_code)
+
+        logger.info(f"[apply] Target shares: {target_shares}")
+        logger.info(f"[apply] Banks without target_share: {empty_target_share_banks}")
+
+        # Step 4: Validate target_share sum
+        total_target_share = sum(target_shares.values())
+        logger.info(f"[apply] Total target_share sum: {total_target_share}")
+
+        if total_target_share > Decimal("100"):
+            error_msg = f"Сумма целевых долей ({total_target_share}%) превышает 100%"
+            logger.error(f"[apply] {error_msg}")
+            raise HTTPException(status_code=400, detail=error_msg)
+
+        # Step 5: If all target_share values are non-empty, validate sum = 100
+        if len(empty_target_share_banks) == 0:
+            if total_target_share != Decimal("100"):
+                error_msg = f"Все целевые доли заданы, но их сумма ({total_target_share}%) не равна 100%"
+                logger.error(f"[apply] {error_msg}")
+                raise HTTPException(status_code=400, detail=error_msg)
+
+        # Step 6: Check that at most one target_share is empty
+        if len(empty_target_share_banks) > 1:
+            error_msg = f"Более одного банка без целевой доли: {', '.join(empty_target_share_banks)}. Задайте целевые доли для всех банков, кроме одного."
+            logger.error(f"[apply] {error_msg}")
+            raise HTTPException(status_code=400, detail=error_msg)
+
+        # Step 7: Calculate total balance sum
+        total_balance = Decimal("0")
+        for acc in valid_accounts:
+            balance_str = acc.get("balance", "0")
+            try:
+                balance = Decimal(str(balance_str)) if balance_str else Decimal("0")
+            except (ValueError, TypeError):
+                balance = Decimal("0")
+            total_balance += balance
+        logger.info(f"[apply] Total balance sum: {total_balance}")
+
+        # Step 8: Build target_bank_amounts list
+        target_bank_amounts = []
+
+        # Count accounts per bank
+        accounts_per_bank = {}
+        for acc in valid_accounts:
+            bank_code = acc.get("bank_code")
+            if bank_code not in accounts_per_bank:
+                accounts_per_bank[bank_code] = 0
+            accounts_per_bank[bank_code] += 1
+
+        # Fill in empty target_share with remainder
+        if len(empty_target_share_banks) == 1:
+            remaining_share = Decimal("100") - total_target_share
+            target_shares[empty_target_share_banks[0]] = remaining_share
+            logger.info(f"[apply] Auto-filled target_share for {empty_target_share_banks[0]}: {remaining_share}%")
+
+        # Calculate target amounts
+        calculated_sum = Decimal("0")
+        bank_codes_sorted = sorted(bank_codes)  # Sort for consistency
+
+        for i, bank_code in enumerate(bank_codes_sorted):
+            bank = banks_dict.get(bank_code)
+            if not bank:
+                continue
+
+            share = target_shares.get(bank_code, Decimal("0"))
+            accounts_count = accounts_per_bank.get(bank_code, 0)
+
+            if i < len(bank_codes_sorted) - 1:
+                # Not the last bank - calculate normally
+                target_amount = (total_balance * share / Decimal("100")).quantize(Decimal("0.01"))
+                calculated_sum += target_amount
+            else:
+                # Last bank - use difference to avoid rounding errors
+                target_amount = total_balance - calculated_sum
+
+            target_bank_amounts.append({
+                "bank_id": bank.id,
+                "bank_code": bank_code,
+                "bank_name": bank.name or bank_code,
+                "target_share": float(share),
+                "target_amount": float(target_amount),
+                "accounts_count": accounts_count
+            })
+
+        logger.info(f"[apply] Target bank amounts: {target_bank_amounts}")
+
+        # Step 9: Build target_account_balances list
+        target_account_balances = []
+        bank_target_amounts = {item["bank_code"]: Decimal(str(item["target_amount"])) for item in target_bank_amounts}
+        bank_accounts_counts = {item["bank_code"]: item["accounts_count"] for item in target_bank_amounts}
+
+        for acc in valid_accounts:
+            bank_code = acc.get("bank_code")
+            account = acc.get("account", {})
+            account_id = account.get("accountId", "")
+            balance_str = acc.get("balance", "0")
+
+            try:
+                current_balance = Decimal(str(balance_str)) if balance_str else Decimal("0")
+            except (ValueError, TypeError):
+                current_balance = Decimal("0")
+
+            # Calculate target_balance = target_amount / accounts_count
+            target_amount = bank_target_amounts.get(bank_code, Decimal("0"))
+            accounts_count = bank_accounts_counts.get(bank_code, 1)
+            target_balance = (target_amount / accounts_count).quantize(Decimal("0.01"))
+
+            target_account_balances.append({
+                "bank_code": bank_code,
+                "bank_name": acc.get("bank_name", bank_code),
+                "account_id": account_id,
+                "current_balance": float(current_balance),
+                "target_balance": float(target_balance)
+            })
+
+        logger.info(f"[apply] Target account balances: {target_account_balances}")
+
+        # Step 10: Prepare payments_list
+        payments_list = []
+
+        # Create mapping from account_id to bank information
+        account_to_bank = {}
+        for acc_balance in target_account_balances:
+            account_id = acc_balance["account_id"]
+            bank_code = acc_balance["bank_code"]
+            bank = banks_dict.get(bank_code)
+            if bank:
+                account_to_bank[account_id] = {
+                    "bank_name": bank.name or bank_code,
+                    "bank_id": bank.id
+                }
+
+        # Separate accounts into surplus (need to send) and deficit (need to receive)
+        surplus_accounts = []
+        deficit_accounts = []
+
+        for acc_balance in target_account_balances:
+            current = Decimal(str(acc_balance["current_balance"]))
+            target = Decimal(str(acc_balance["target_balance"]))
+            diff = current - target
+
+            if diff > Decimal("0.01"):  # Has surplus
+                surplus_accounts.append({
+                    "account_id": acc_balance["account_id"],
+                    "amount": diff
+                })
+            elif diff < Decimal("-0.01"):  # Has deficit
+                deficit_accounts.append({
+                    "account_id": acc_balance["account_id"],
+                    "amount": -diff  # Convert to positive
+                })
+
+        # Match surplus with deficit accounts
+        surplus_idx = 0
+        deficit_idx = 0
+
+        while surplus_idx < len(surplus_accounts) and deficit_idx < len(deficit_accounts):
+            surplus = surplus_accounts[surplus_idx]
+            deficit = deficit_accounts[deficit_idx]
+
+            transfer_amount = min(surplus["amount"], deficit["amount"])
+
+            if transfer_amount > Decimal("0.01"):
+                source_bank_info = account_to_bank.get(surplus["account_id"], {"bank_name": "Unknown", "bank_id": 0})
+                dest_bank_info = account_to_bank.get(deficit["account_id"], {"bank_name": "Unknown", "bank_id": 0})
+
+                payments_list.append({
+                    "source_account_id": surplus["account_id"],
+                    "destination_account_id": deficit["account_id"],
+                    "amount": float(transfer_amount.quantize(Decimal("0.01"))),
+                    "source_bank": source_bank_info["bank_name"],
+                    "source_bank_id": source_bank_info["bank_id"],
+                    "destination_bank": dest_bank_info["bank_name"],
+                    "destination_bank_id": dest_bank_info["bank_id"]
+                })
+
+            surplus["amount"] -= transfer_amount
+            deficit["amount"] -= transfer_amount
+
+            if surplus["amount"] <= Decimal("0.01"):
+                surplus_idx += 1
+            if deficit["amount"] <= Decimal("0.01"):
+                deficit_idx += 1
+
+        logger.info(f"[apply] Payments list (before filtering): {payments_list}")
+
+        # Remove payments where source and destination are the same bank and account
+        payments_list = [
+            payment for payment in payments_list
+            if not (
+                payment["source_bank_id"] == payment["destination_bank_id"] and
+                payment["source_account_id"] == payment["destination_account_id"]
+            )
+        ]
+
+        logger.info(f"[apply] Payments list (after filtering): {payments_list}")
+
+        return ApplyAllocationsResponse(
+            success=True,
+            message="Распределение рассчитано успешно",
+            data={
+                "external_accounts_count": len(valid_accounts),
+                "total_balance": float(total_balance),
+                "target_bank_amounts": target_bank_amounts,
+                "target_account_balances": target_account_balances,
+                "payments_list": payments_list
+            }
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error applying balance allocations for client {client.id}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
 

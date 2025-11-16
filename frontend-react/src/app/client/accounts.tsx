@@ -22,6 +22,7 @@ export default function ClientAccounts() {
   const [balanceAllocations, setBalanceAllocations] = useState<BalanceAllocation[]>([])
   const [loadingAllocations, setLoadingAllocations] = useState(true)
   const [refreshingAllocations, setRefreshingAllocations] = useState(false)
+  const [applyingAllocations, setApplyingAllocations] = useState(false)
   const [allocationDialogOpen, setAllocationDialogOpen] = useState(false)
   const [editingAllocation, setEditingAllocation] = useState<BalanceAllocation | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -119,6 +120,49 @@ export default function ClientAccounts() {
       })
     } finally {
       setRefreshingAllocations(false)
+    }
+  }
+
+  const handleApplyBalanceAllocations = async () => {
+    setApplyingAllocations(true)
+    try {
+      const result = await balanceAllocationsAPI.applyBalanceAllocations()
+      console.log('Apply balance allocations result:', result)
+
+      if (result.success) {
+        if (result.data) {
+          const { payments_list, total_balance, target_bank_amounts } = result.data
+          const bankSummary = target_bank_amounts
+            .map(b => `${b.bank_name}: ${b.target_share.toFixed(2)}%`)
+            .join(', ')
+
+          toast({
+            title: 'Распределение рассчитано',
+            description: `${result.message}. Общий баланс: ${total_balance.toLocaleString('ru-RU')} ₽. Платежей: ${payments_list.length}. Банки: ${bankSummary}`,
+          })
+        } else {
+          toast({
+            title: 'Информация',
+            description: result.message,
+          })
+        }
+      } else {
+        toast({
+          title: 'Ошибка',
+          description: result.message,
+          variant: 'destructive',
+        })
+      }
+    } catch (error: any) {
+      console.error('Failed to apply balance allocations:', error)
+      const errorMessage = error.response?.data?.detail || 'Не удалось применить распределение'
+      toast({
+        title: 'Ошибка применения',
+        description: errorMessage,
+        variant: 'destructive',
+      })
+    } finally {
+      setApplyingAllocations(false)
     }
   }
 
@@ -343,15 +387,25 @@ export default function ClientAccounts() {
               </div>
               <CardDescription>Целевое и фактическое распределение средств по внешним банкам</CardDescription>
             </div>
-            <button
-              onClick={handleRefreshBalanceAllocations}
-              disabled={loadingAllocations || refreshingAllocations}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10 rounded-md transition-colors disabled:opacity-50"
-              title="Обновить"
-            >
-              <RefreshCw className={`h-4 w-4 ${refreshingAllocations ? 'animate-spin' : ''}`} />
-              Обновить
-            </button>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={handleApplyBalanceAllocations}
+                disabled={loadingAllocations || refreshingAllocations || applyingAllocations}
+                variant="default"
+                size="sm"
+              >
+                {applyingAllocations ? 'Применение...' : 'Применить'}
+              </Button>
+              <button
+                onClick={handleRefreshBalanceAllocations}
+                disabled={loadingAllocations || refreshingAllocations || applyingAllocations}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10 rounded-md transition-colors disabled:opacity-50"
+                title="Обновить"
+              >
+                <RefreshCw className={`h-4 w-4 ${refreshingAllocations ? 'animate-spin' : ''}`} />
+                Обновить
+              </button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
