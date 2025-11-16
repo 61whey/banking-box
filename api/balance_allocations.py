@@ -130,6 +130,140 @@ async def calculate_bank_balances(
     return bank_balances
 
 
+async def validate_target_share_sum(
+    db: AsyncSession,
+    client_id: int,
+    new_target_share: Decimal,
+    external_accounts: List[Dict],
+    exclude_allocation_id: Optional[int] = None,
+    exclude_bank_id: Optional[int] = None
+) -> tuple[bool, str, Decimal]:
+    """
+    Проверить, что сумма целевых долей не превышает 100%
+
+    Args:
+        db: Database session
+        client_id: ID клиента
+        new_target_share: Новая целевая доля для проверки
+        external_accounts: Список внешних счетов клиента
+        exclude_allocation_id: ID распределения для исключения (при обновлении)
+        exclude_bank_id: ID банка для исключения (при создании)
+
+    Returns:
+        Tuple (is_valid, error_message, max_allowed_share)
+    """
+    # Получить коды банков, которые РЕАЛЬНО есть во внешних счетах (без ошибок)
+    bank_codes_with_accounts = set()
+    for acc_data in external_accounts:
+        bank_code = acc_data.get("bank_code")
+        account = acc_data.get("account")
+        error = acc_data.get("error")
+
+        # Учитывать только банки с реальными счетами (без ошибок)
+        if bank_code and account is not None and not error:
+            bank_codes_with_accounts.add(bank_code)
+
+    logger.info(f"[validate_target_share_sum] external_accounts count: {len(external_accounts)}")
+    logger.info(f"[validate_target_share_sum] external_accounts data: {external_accounts}")
+    logger.info(f"[validate_target_share_sum] bank_codes_with_accounts: {bank_codes_with_accounts}")
+
+    if not bank_codes_with_accounts:
+        # Если нет внешних счетов, разрешаем установку target_share
+        return True, "", Decimal("100")
+
+    # Получить банки из базы
+    banks_result = await db.execute(
+        select(Bank).where(Bank.code.in_(bank_codes_with_accounts))
+    )
+    banks_dict = {bank.id: bank.code for bank in banks_result.scalars().all()}
+    bank_ids_with_accounts = set(banks_dict.keys())
+
+    logger.info(f"[validate_target_share_sum] bank_ids_with_accounts: {bank_ids_with_accounts}")
+
+    # Получить все существующие распределения для клиента
+    allocations_result = await db.execute(
+        select(VirtualBalanceBankAllocation).where(
+            VirtualBalanceBankAllocation.client_id == client_id
+        )
+    )
+    allocations = allocations_result.scalars().all()
+
+    # Подсчитать сколько банков будет иметь target_share после операции
+    banks_with_target_after_operation = set()
+    existing_sum = Decimal("0")
+
+    for allocation in allocations:
+        # Пропустить если это распределение мы обновляем
+        if exclude_allocation_id and allocation.id == exclude_allocation_id:
+            continue
+
+        # Пропустить если это банк для которого создаем новое распределение
+        if exclude_bank_id and allocation.bank_id == exclude_bank_id:
+            continue
+
+        # Учитывать только если банк есть во внешних счетах
+        if allocation.bank_id in bank_ids_with_accounts:
+            if allocation.target_share is not None:
+                existing_sum += Decimal(str(allocation.target_share))
+                banks_with_target_after_operation.add(allocation.bank_id)
+
+    # Добавить текущий банк к списку банков с target_share
+    if exclude_allocation_id:
+        # При обновлении - найти bank_id обновляемого распределения
+        for allocation in allocations:
+            if allocation.id == exclude_allocation_id and allocation.bank_id in bank_ids_with_accounts:
+                banks_with_target_after_operation.add(allocation.bank_id)
+                break
+    elif exclude_bank_id:
+        # При создании - добавить новый банк
+        if exclude_bank_id in bank_ids_with_accounts:
+            banks_with_target_after_operation.add(exclude_bank_id)
+
+    # Вычислить максимально допустимую долю
+    max_allowed_share = Decimal("100") - existing_sum
+
+    # Проверить, не превышает ли новая доля максимум
+    total_sum = existing_sum + Decimal(str(new_target_share))
+
+    if total_sum > Decimal("100"):
+        error_msg = (
+            f"Сумма всех целевых долей не должна превышать 100%. "
+            f"Текущая сумма других банков: {existing_sum}%, "
+            f"максимально допустимая доля для этого банка: {max_allowed_share}%"
+        )
+        return False, error_msg, max_allowed_share
+
+    # Проверить: если ВСЕ банки будут иметь target_share, то сумма должна быть ровно 100%
+    total_banks_count = len(bank_ids_with_accounts)
+    banks_with_target_count = len(banks_with_target_after_operation)
+
+    logger.info(
+        f"[validate_target_share_sum] total_banks_count: {total_banks_count}, "
+        f"banks_with_target_count: {banks_with_target_count}, "
+        f"banks_with_target_after_operation: {banks_with_target_after_operation}, "
+        f"total_sum: {total_sum}"
+    )
+
+    if banks_with_target_count == total_banks_count:
+        # Все банки имеют target_share - сумма должна быть ровно 100%
+        logger.info("[validate_target_share_sum] All banks have target_share, checking if sum == 100")
+        if total_sum != Decimal("100"):
+            error_msg = (
+                f"Все банки должны иметь целевую долю в сумме равную 100%. "
+                f"Текущая сумма: {total_sum}%. "
+                f"Требуется распределить оставшиеся {Decimal('100') - total_sum}% между банками."
+            )
+            logger.warning(f"[validate_target_share_sum] Validation failed: {error_msg}")
+            return False, error_msg, max_allowed_share
+    else:
+        logger.info(
+            f"[validate_target_share_sum] Not all banks have target_share "
+            f"({banks_with_target_count}/{total_banks_count}), allowing sum < 100%"
+        )
+
+    return True, "", max_allowed_share
+
+
 # === Endpoints ===
 
 @router.get("", response_model=BalanceAllocationListResponse, summary="Получить распределения по банкам")
@@ -428,6 +562,27 @@ async def create_balance_allocation(
                 detail="Balance allocation for this bank and account type already exists"
             )
 
+        # Получить внешние счета для валидации
+        tokens = getattr(request.app.state, "tokens", {})
+        external_accounts = await get_external_accounts_for_client(
+            client_person_id=person_id,
+            db=db,
+            app_state_tokens=tokens
+        )
+
+        # Проверить, что сумма target_share не превышает 100%
+        is_valid, error_msg, max_allowed = await validate_target_share_sum(
+            db=db,
+            client_id=client.id,
+            new_target_share=request_body.target_share,
+            external_accounts=external_accounts,
+            exclude_bank_id=request_body.bank_id
+        )
+
+        if not is_valid:
+            logger.warning(f"Target share validation failed for client {client.id}: {error_msg}")
+            raise HTTPException(status_code=400, detail=error_msg)
+
         # Создать распределение
         allocation = VirtualBalanceBankAllocation(
             client_id=client.id,
@@ -458,14 +613,7 @@ async def create_balance_allocation(
             if redis_client:
                 await redis_client.close()
 
-        # Получить актуальные данные для ответа
-        tokens = getattr(request.app.state, "tokens", {})
-        external_accounts = await get_external_accounts_for_client(
-            client_person_id=person_id,
-            db=db,
-            app_state_tokens=tokens
-        )
-
+        # Использовать уже полученные external_accounts для ответа
         bank_balances = await calculate_bank_balances(external_accounts, account_type=request_body.account_type)
         total_amount = sum(bank_balances.values())
         actual_amount = bank_balances.get(bank.code, Decimal("0"))
@@ -548,8 +696,29 @@ async def update_balance_allocation(
 
         allocation, bank = allocation_data
 
-        # Обновить поля
+        # Получить внешние счета для валидации
+        tokens = getattr(request.app.state, "tokens", {})
+        external_accounts = await get_external_accounts_for_client(
+            client_person_id=person_id,
+            db=db,
+            app_state_tokens=tokens
+        )
+
+        # Проверить target_share если он обновляется
         if request_body.target_share is not None:
+            # Проверить, что сумма target_share не превышает 100%
+            is_valid, error_msg, max_allowed = await validate_target_share_sum(
+                db=db,
+                client_id=client.id,
+                new_target_share=request_body.target_share,
+                external_accounts=external_accounts,
+                exclude_allocation_id=allocation_id
+            )
+
+            if not is_valid:
+                logger.warning(f"Target share validation failed for allocation {allocation_id}: {error_msg}")
+                raise HTTPException(status_code=400, detail=error_msg)
+
             allocation.target_share = request_body.target_share
 
         if request_body.account_type is not None:
@@ -578,14 +747,7 @@ async def update_balance_allocation(
             if redis_client:
                 await redis_client.close()
 
-        # Получить актуальные данные для ответа
-        tokens = getattr(request.app.state, "tokens", {})
-        external_accounts = await get_external_accounts_for_client(
-            client_person_id=person_id,
-            db=db,
-            app_state_tokens=tokens
-        )
-
+        # Использовать уже полученные external_accounts для ответа
         bank_balances = await calculate_bank_balances(external_accounts, account_type=allocation.account_type or "checking")
         total_amount = sum(bank_balances.values())
         actual_amount = bank_balances.get(bank.code, Decimal("0"))
