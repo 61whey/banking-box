@@ -149,6 +149,22 @@ export default function ClientAccounts() {
     setAllocationDialogOpen(true)
   }
 
+  // Calculate maximum allowed target share for current allocation
+  const getMaxAllowedShare = () => {
+    if (!editingAllocation) return 100
+
+    const otherAllocationsTargetSum = balanceAllocations
+      .filter(a => a.bank_id !== editingAllocation.bank_id)
+      .reduce((sum, a) => {
+        const share = a.target_share !== null && a.target_share !== undefined
+          ? (typeof a.target_share === 'number' ? a.target_share : parseFloat(a.target_share))
+          : 0
+        return sum + share
+      }, 0)
+
+    return 100 - otherAllocationsTargetSum
+  }
+
   const handleCloseAllocationDialog = () => {
     setAllocationDialogOpen(false)
     setEditingAllocation(null)
@@ -159,10 +175,12 @@ export default function ClientAccounts() {
     if (!editingAllocation) return
 
     const targetShareNum = parseFloat(targetShare)
-    if (isNaN(targetShareNum) || targetShareNum < 0 || targetShareNum > 100) {
+    const maxAllowedShare = getMaxAllowedShare()
+
+    if (isNaN(targetShareNum) || targetShareNum < 0 || targetShareNum > maxAllowedShare) {
       toast({
         title: 'Ошибка валидации',
-        description: 'Целевая доля должна быть от 0 до 100',
+        description: `Целевая доля должна быть от 0 до ${maxAllowedShare.toFixed(2)}. Сумма всех целевых долей не должна превышать 100%.`,
         variant: 'destructive',
       })
       return
@@ -466,12 +484,15 @@ export default function ClientAccounts() {
                 id="target_share"
                 type="number"
                 min="0"
-                max="100"
+                max={getMaxAllowedShare()}
                 step="0.01"
                 value={targetShare}
                 onChange={(e) => setTargetShare(e.target.value)}
-                placeholder="Введите процент (0-100)"
+                placeholder={`Введите процент (0-${getMaxAllowedShare().toFixed(2)})`}
               />
+              <p className="text-sm text-muted-foreground">
+                Максимальная доля: {getMaxAllowedShare().toFixed(2)}% (осталось от 100%)
+              </p>
             </div>
             {editingAllocation && (
               <div className="grid gap-2">
@@ -489,6 +510,12 @@ export default function ClientAccounts() {
                     <span className="text-muted-foreground">Текущая сумма:</span>
                     <span className="font-semibold">
                       {parseFloat(editingAllocation.actual_amount).toLocaleString('ru-RU')} ₽
+                    </span>
+                  </div>
+                  <div className="flex justify-between pt-2 border-t">
+                    <span className="text-muted-foreground">Сумма целевых долей других банков:</span>
+                    <span className="font-semibold">
+                      {(100 - getMaxAllowedShare()).toFixed(2)}%
                     </span>
                   </div>
                 </div>
