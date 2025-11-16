@@ -56,5 +56,12 @@ htmlcov/
 # Docker
 docker-compose.override.yml
 
+# Temporary files and data
+tmp
+.playwright-mcp
+.data
+data
+
 # MCP servers
 .mcp.json
+mcp.json
