@@ -1,7 +1,7 @@
 """
 Balance Allocations API - Управление распределением средств по банкам
 """
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional, Dict
@@ -12,8 +12,12 @@ from database import get_db
 from models import VirtualBalanceBankAllocation, Client, Bank
 from services.auth_service import get_current_client
 from services.account_service import get_external_accounts_for_client
+from services.cache_utils import client_key_builder, invalidate_client_cache
 from sqlalchemy import select
 from log import logger
+from fastapi_cache.decorator import cache
+from config import config
+from redis import asyncio as aioredis
 
 
 router = APIRouter(prefix="/balance-allocations", tags=["Распределение по банкам"])
@@ -129,8 +133,10 @@ async def calculate_bank_balances(
 # === Endpoints ===
 
 @router.get("", response_model=BalanceAllocationListResponse, summary="Получить распределения по банкам")
+@cache(expire=config.CACHE_EXPIRE_SECONDS, key_builder=client_key_builder)
 async def get_balance_allocations(
     request: Request,
+    response: Response,
     current_client: dict = Depends(get_current_client),
     db: AsyncSession = Depends(get_db)
 ):
@@ -146,6 +152,11 @@ async def get_balance_allocations(
     - Список всех банков с счетами клиента
     - Для каждого банка: целевая доля (если установлена), фактическая доля и сумма
     - Даже если распределение не задано, банк отображается с target_share = null
+
+    **Кэширование:**
+    - Кэшируется на 5 минут (300 секунд) для каждого клиента
+    - Заголовок X-FastAPI-Cache: HIT/MISS показывает, получен ли ответ из кэша
+    - Кэш автоматически инвалидируется при создании, изменении или удалении распределений
     """
     person_id = current_client["client_id"]
 
@@ -431,6 +442,22 @@ async def create_balance_allocation(
 
         logger.info(f"Balance allocation created successfully: id={allocation.id}")
 
+        # Invalidate cache for this client
+        redis_client = None
+        try:
+            redis_client = await aioredis.from_url(
+                config.REDIS_URL,
+                encoding="utf-8",
+                decode_responses=True
+            )
+            deleted_keys = await invalidate_client_cache(redis_client, person_id)
+            logger.info(f"Cache invalidated for client_id={person_id}, deleted {deleted_keys} keys")
+        except Exception as cache_error:
+            logger.warning(f"Failed to invalidate cache: {cache_error}")
+        finally:
+            if redis_client:
+                await redis_client.close()
+
         # Получить актуальные данные для ответа
         tokens = getattr(request.app.state, "tokens", {})
         external_accounts = await get_external_accounts_for_client(
@@ -535,6 +562,22 @@ async def update_balance_allocation(
 
         logger.info(f"Balance allocation {allocation.id} updated successfully")
 
+        # Invalidate cache for this client
+        redis_client = None
+        try:
+            redis_client = await aioredis.from_url(
+                config.REDIS_URL,
+                encoding="utf-8",
+                decode_responses=True
+            )
+            deleted_keys = await invalidate_client_cache(redis_client, person_id)
+            logger.info(f"Cache invalidated for client_id={person_id}, deleted {deleted_keys} keys")
+        except Exception as cache_error:
+            logger.warning(f"Failed to invalidate cache: {cache_error}")
+        finally:
+            if redis_client:
+                await redis_client.close()
+
         # Получить актуальные данные для ответа
         tokens = getattr(request.app.state, "tokens", {})
         external_accounts = await get_external_accounts_for_client(
@@ -621,6 +664,22 @@ async def delete_balance_allocation(
         await db.commit()
 
         logger.info(f"Balance allocation id={allocation_id} deleted successfully for client_id={client.id}")
+
+        # Invalidate cache for this client
+        redis_client = None
+        try:
+            redis_client = await aioredis.from_url(
+                config.REDIS_URL,
+                encoding="utf-8",
+                decode_responses=True
+            )
+            deleted_keys = await invalidate_client_cache(redis_client, person_id)
+            logger.info(f"Cache invalidated for client_id={person_id}, deleted {deleted_keys} keys")
+        except Exception as cache_error:
+            logger.warning(f"Failed to invalidate cache: {cache_error}")
+        finally:
+            if redis_client:
+                await redis_client.close()
 
         return DeleteResponse(
             message=f"Balance allocation {allocation_id} deleted successfully",
