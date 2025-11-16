@@ -5,9 +5,11 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional, Dict
 from decimal import Decimal
+from datetime import datetime
 import httpx
+import uuid
 
-from models import Bank
+from models import Bank, Payment
 from config import config
 from log import logger
 
@@ -22,7 +24,9 @@ async def execute_external_payment(
     description: str,
     db: AsyncSession,
     http_client: Optional[httpx.AsyncClient] = None,
-    creditor_bank_code: Optional[str] = None
+    creditor_bank_code: Optional[str] = None,
+    source_bank_id: Optional[int] = None,
+    destination_bank_id: Optional[int] = None
 ) -> Dict:
     """
     Выполнить платеж во внешний банк (с автоматическим созданием согласия)
@@ -42,10 +46,13 @@ async def execute_external_payment(
         db: Database session
         http_client: Optional HTTP client (создается новый если None)
         creditor_bank_code: Код банка получателя (для межбанковских переводов)
+        source_bank_id: ID банка-источника в БД (для сохранения Payment)
+        destination_bank_id: ID банка-получателя в БД (для сохранения Payment)
 
     Returns:
         Dict: {
             "success": bool,
+            "payment_id": Optional[str],  # local payment ID
             "external_payment_id": Optional[str],
             "status": Optional[str],
             "error": Optional[str]
@@ -100,6 +107,7 @@ async def execute_external_payment(
                 )
                 return {
                     "success": False,
+                    "payment_id": None,
                     "external_payment_id": None,
                     "status": None,
                     "error": f"Consent request failed: HTTP {consent_response.status_code}"
@@ -121,6 +129,7 @@ async def execute_external_payment(
                 logger.error(f"Could not extract consent_id from response: {consent_response_data}")
                 return {
                     "success": False,
+                    "payment_id": None,
                     "external_payment_id": None,
                     "status": None,
                     "error": "Failed to extract consent_id from response"
@@ -179,6 +188,7 @@ async def execute_external_payment(
                 )
                 return {
                     "success": False,
+                    "payment_id": None,
                     "external_payment_id": None,
                     "status": None,
                     "error": f"Payment execution failed: HTTP {payment_response.status_code}"
@@ -207,6 +217,7 @@ async def execute_external_payment(
                 logger.error(f"Could not extract payment_id from response: {payment_response_data}")
                 return {
                     "success": False,
+                    "payment_id": None,
                     "external_payment_id": None,
                     "status": payment_status,
                     "error": "Failed to extract payment_id from response"
@@ -218,8 +229,39 @@ async def execute_external_payment(
                 f"amount={amount}"
             )
 
+            # Сохранить платеж в базу данных
+            payment_id = f"pay-ext-{uuid.uuid4().hex[:16]}"
+
+            new_payment = Payment(
+                payment_id=payment_id,
+                account_id=None,  # Нет локального счета для внешних платежей
+                amount=amount,
+                currency="RUB",
+                destination_account=creditor_account,
+                destination_bank=creditor_bank_code or bank.code,
+                description=description or "External payment",
+                status=payment_status or "pending",
+                payment_direction="outgoing",
+                source_account=debtor_account,
+                source_bank=bank.code,
+                source_bank_id=source_bank_id,
+                destination_bank_id=destination_bank_id,
+                external_payment_id=external_payment_id,
+                creation_date_time=datetime.utcnow(),
+                status_update_date_time=datetime.utcnow()
+            )
+
+            db.add(new_payment)
+            await db.commit()
+
+            logger.info(
+                f"Payment {payment_id} saved to database: "
+                f"external_id={external_payment_id}, status={payment_status}"
+            )
+
             return {
                 "success": True,
+                "payment_id": payment_id,
                 "external_payment_id": external_payment_id,
                 "status": payment_status or "pending",
                 "error": None
@@ -229,6 +271,7 @@ async def execute_external_payment(
             logger.error(f"Timeout when executing payment to {bank.code}")
             return {
                 "success": False,
+                "payment_id": None,
                 "external_payment_id": None,
                 "status": None,
                 "error": "Request timeout"
@@ -237,6 +280,7 @@ async def execute_external_payment(
             logger.error(f"Request error when executing payment to {bank.code}: {e}")
             return {
                 "success": False,
+                "payment_id": None,
                 "external_payment_id": None,
                 "status": None,
                 "error": f"Connection error: {str(e)[:100]}"
@@ -245,6 +289,7 @@ async def execute_external_payment(
             logger.error(f"Unexpected error when executing payment to {bank.code}: {e}", exc_info=True)
             return {
                 "success": False,
+                "payment_id": None,
                 "external_payment_id": None,
                 "status": None,
                 "error": f"Error: {str(e)[:100]}"
@@ -256,6 +301,7 @@ async def execute_external_payment(
         logger.error(f"Critical error in execute_external_payment for {bank.code}: {e}", exc_info=True)
         return {
             "success": False,
+            "payment_id": None,
             "external_payment_id": None,
             "status": None,
             "error": f"Critical error: {str(e)[:100]}"

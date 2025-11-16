@@ -422,7 +422,9 @@ async def create_external_payment(
             creditor_account=to_account_id,
             description=request_data.description or "Payment",
             db=db,
-            creditor_bank_code=dest_bank.code
+            creditor_bank_code=dest_bank.code,
+            source_bank_id=source_bank.id,
+            destination_bank_id=dest_bank.id
         )
 
         if not result["success"]:
@@ -432,39 +434,14 @@ async def create_external_payment(
                 error=result["error"]
             )
 
-        # Создать локальную запись о платеже
-        payment_id = f"pay-ext-{uuid.uuid4().hex[:16]}"
-
-        new_payment = Payment(
-            payment_id=payment_id,
-            account_id=None,  # Нет локального счета для внешних платежей
-            amount=request_data.amount,
-            currency="RUB",
-            destination_account=to_account_id,
-            destination_bank=to_bank_code,
-            description=request_data.description or "External payment",
-            status=result["status"] or "pending",
-            payment_direction="outgoing",
-            source_account=from_account_id,
-            source_bank=from_bank_code,
-            source_bank_id=source_bank.id,
-            destination_bank_id=dest_bank.id,
-            external_payment_id=result["external_payment_id"],
-            creation_date_time=datetime.utcnow(),
-            status_update_date_time=datetime.utcnow()
-        )
-
-        db.add(new_payment)
-        await db.commit()
-
         logger.info(
-            f"External payment {payment_id} created successfully: "
+            f"External payment {result['payment_id']} created successfully: "
             f"external_id={result['external_payment_id']}, status={result['status']}"
         )
 
         return ExternalPaymentResponse(
             success=True,
-            payment_id=payment_id,
+            payment_id=result["payment_id"],
             external_payment_id=result["external_payment_id"],
             status=result["status"]
         )
