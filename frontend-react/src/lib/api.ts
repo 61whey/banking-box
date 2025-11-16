@@ -17,6 +17,10 @@ import type {
   VirtualAccountCreate,
   VirtualAccountUpdate,
   VirtualAccountListResponse,
+  BalanceAllocation,
+  BalanceAllocationCreate,
+  BalanceAllocationUpdate,
+  BalanceAllocationListResponse,
 } from '@/types/api'
 
 // Используем VITE_API_URL из переменных окружения (устанавливается во время сборки)
@@ -516,6 +520,32 @@ export const virtualAccountsAPI = {
 
   deleteVirtualAccount: async (accountId: number): Promise<void> => {
     await api.delete(`/virtual-accounts/${accountId}`)
+  },
+}
+
+export const balanceAllocationsAPI = {
+  getBalanceAllocations: async (): Promise<BalanceAllocation[]> => {
+    const response = await api.get<BalanceAllocationListResponse>('/balance-allocations')
+    return response.data?.data || []
+  },
+
+  getBalanceAllocation: async (allocationId: number): Promise<BalanceAllocation> => {
+    const response = await api.get<BalanceAllocation>(`/balance-allocations/${allocationId}`)
+    return response.data
+  },
+
+  createBalanceAllocation: async (data: BalanceAllocationCreate): Promise<BalanceAllocation> => {
+    const response = await api.post<BalanceAllocation>('/balance-allocations', data)
+    return response.data
+  },
+
+  updateBalanceAllocation: async (allocationId: number, data: BalanceAllocationUpdate): Promise<BalanceAllocation> => {
+    const response = await api.put<BalanceAllocation>(`/balance-allocations/${allocationId}`, data)
+    return response.data
+  },
+
+  deleteBalanceAllocation: async (allocationId: number): Promise<void> => {
+    await api.delete(`/balance-allocations/${allocationId}`)
   },
 }
 

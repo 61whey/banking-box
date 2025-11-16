@@ -163,3 +163,33 @@ export interface VirtualAccountListResponse {
   count: number
 }
 
+export interface BalanceAllocation {
+  id: number | null
+  client_id: number
+  bank_id: number
+  bank_code: string
+  bank_name: string
+  target_share: number | null
+  account_type: string
+  actual_amount: string
+  actual_share: number
+  created_at: string | null
+  updated_at: string | null
+}
+
+export interface BalanceAllocationCreate {
+  bank_id: number
+  target_share: number
+  account_type: string
+}
+
+export interface BalanceAllocationUpdate {
+  target_share?: number
+  account_type?: string
+}
+
+export interface BalanceAllocationListResponse {
+  data: BalanceAllocation[]
+  count: number
+}
+

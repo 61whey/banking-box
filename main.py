@@ -18,7 +18,7 @@ from api import (
     banker, product_agreements, product_agreement_consents,
     product_applications, customer_leads, product_offers, product_offer_consents,
     vrp_consents, vrp_payments, interbank, payment_consents, multibank_proxy, banks,
-    virtual_accounts
+    virtual_accounts, balance_allocations
 )
 
 # FastAPI Cache imports
@@ -166,6 +166,7 @@ app.include_router(product_offer_consents.router)
 app.include_router(vrp_consents.router)
 app.include_router(vrp_payments.router)
 app.include_router(virtual_accounts.router)
+app.include_router(balance_allocations.router)
 app.include_router(banker.router)
 app.include_router(admin.router)
 app.include_router(interbank.router)

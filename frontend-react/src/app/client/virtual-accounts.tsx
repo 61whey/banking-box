@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Skeleton } from '@/components/ui/skeleton'
 import { virtualAccountsAPI } from '@/lib/api'
 import { useToast } from '@/hooks/use-toast'
-import type { VirtualAccount, VirtualAccountCreate, VirtualAccountUpdate, AccountType, CalculationType } from '@/types/api'
+import type { VirtualAccount, VirtualAccountCreate, VirtualAccountUpdate } from '@/types/api'
 import { Plus, Edit2, Trash2, Wallet } from 'lucide-react'
 
 export default function VirtualAccounts() {
@@ -154,13 +154,14 @@ export default function VirtualAccounts() {
     }
   }
 
-  const getAccountTypeLabel = (type: string) => {
-    switch (type) {
-      case 'checking': return 'Расчетный'
-      case 'savings': return 'Сберегательный'
-      default: return type
-    }
-  }
+  // Helper function for future use
+  // const getAccountTypeLabel = (type: string) => {
+  //   switch (type) {
+  //     case 'checking': return 'Расчетный'
+  //     case 'savings': return 'Сберегательный'
+  //     default: return type
+  //   }
+  // }
 
   const getCalculationTypeLabel = (type: string) => {
     switch (type) {
