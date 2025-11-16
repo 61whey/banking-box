@@ -547,6 +547,35 @@ export const balanceAllocationsAPI = {
   deleteBalanceAllocation: async (allocationId: number): Promise<void> => {
     await api.delete(`/balance-allocations/${allocationId}`)
   },
+
+  refreshBalanceAllocations: async (): Promise<void> => {
+    // Invalidate cache first
+    await api.post('/balance-allocations/refresh', {}, {
+      headers: {
+        'Cache-Control': 'no-cache'
+      }
+    })
+  },
+
+  getBalanceAllocationsWithRefresh: async (): Promise<BalanceAllocation[]> => {
+    // First invalidate cache
+    await api.post('/balance-allocations/refresh', {}, {
+      headers: {
+        'Cache-Control': 'no-cache'
+      }
+    })
+
+    // Then fetch fresh data with cache-busting parameters
+    const timestamp = Date.now()
+    const response = await api.get<BalanceAllocationListResponse>(`/balance-allocations?_t=${timestamp}`, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
+      }
+    })
+
+    return response.data?.data || []
+  },
 }
 
 export default api

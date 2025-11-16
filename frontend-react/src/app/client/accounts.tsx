@@ -21,6 +21,7 @@ export default function ClientAccounts() {
   // Balance allocations state
   const [balanceAllocations, setBalanceAllocations] = useState<BalanceAllocation[]>([])
   const [loadingAllocations, setLoadingAllocations] = useState(true)
+  const [refreshingAllocations, setRefreshingAllocations] = useState(false)
   const [allocationDialogOpen, setAllocationDialogOpen] = useState(false)
   const [editingAllocation, setEditingAllocation] = useState<BalanceAllocation | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -94,6 +95,30 @@ export default function ClientAccounts() {
       })
     } finally {
       setLoadingExternal(false)
+    }
+  }
+
+  const handleRefreshBalanceAllocations = async () => {
+    setRefreshingAllocations(true)
+    try {
+      // Invalidate cache and fetch fresh data
+      const allocationsArray = await balanceAllocationsAPI.getBalanceAllocationsWithRefresh()
+      setBalanceAllocations(allocationsArray)
+      console.log('Balance allocations refreshed:', allocationsArray.length, 'allocations')
+      toast({
+        title: 'Обновлено',
+        description: `Загружено распределений: ${allocationsArray.length}`,
+      })
+    } catch (error: any) {
+      console.error('Failed to refresh balance allocations:', error)
+      const errorMessage = error.response?.data?.detail || 'Не удалось обновить распределение по банкам'
+      toast({
+        title: 'Ошибка обновления',
+        description: errorMessage,
+        variant: 'destructive',
+      })
+    } finally {
+      setRefreshingAllocations(false)
     }
   }
 
@@ -292,14 +317,27 @@ export default function ClientAccounts() {
       {/* Balance Bank Allocation Section */}
       <Card className="mb-6">
         <CardHeader>
-          <div className="flex items-center gap-2">
-            <PieChart className="h-5 w-5 text-primary" />
-            <CardTitle>Распределение по банкам</CardTitle>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <PieChart className="h-5 w-5 text-primary" />
+                <CardTitle>Распределение по банкам</CardTitle>
+              </div>
+              <CardDescription>Целевое и фактическое распределение средств по внешним банкам</CardDescription>
+            </div>
+            <button
+              onClick={handleRefreshBalanceAllocations}
+              disabled={loadingAllocations || refreshingAllocations}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10 rounded-md transition-colors disabled:opacity-50"
+              title="Обновить"
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshingAllocations ? 'animate-spin' : ''}`} />
+              Обновить
+            </button>
           </div>
-          <CardDescription>Целевое и фактическое распределение средств по внешним банкам</CardDescription>
         </CardHeader>
         <CardContent>
-          {loadingAllocations ? (
+          {loadingAllocations || refreshingAllocations ? (
             <p className="text-muted-foreground">Загрузка...</p>
           ) : balanceAllocations.length === 0 ? (
             <p className="text-muted-foreground">

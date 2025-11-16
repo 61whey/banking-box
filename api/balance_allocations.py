@@ -613,6 +613,59 @@ async def update_balance_allocation(
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
+@router.post("/refresh", summary="Обновить кэш распределений по банкам", include_in_schema=False)
+async def refresh_balance_allocations(
+    current_client: dict = Depends(get_current_client),
+):
+    """
+    Инвалидировать кэш распределений по банкам для текущего клиента
+
+    После вызова этого endpoint следующий запрос к /balance-allocations
+    получит свежие данные.
+    """
+    if not current_client:
+        logger.warning("Unauthorized request to refresh_balance_allocations")
+        raise HTTPException(401, "Unauthorized")
+
+    person_id = current_client["client_id"]
+    logger.info(f"Invalidating cache for balance allocations, client_id={person_id}")
+
+    redis_client = None
+    try:
+        # Create Redis connection
+        redis_client = await aioredis.from_url(
+            config.REDIS_URL,
+            encoding="utf-8",
+            decode_responses=True
+        )
+
+        # Invalidate cache for this client
+        deleted_keys = await invalidate_client_cache(redis_client, person_id)
+
+        logger.info(f"Cache invalidated for client_id={person_id}, deleted {deleted_keys} keys")
+
+        return {
+            "data": {
+                "message": "Cache invalidated successfully",
+                "client_id": person_id,
+                "deleted_keys": deleted_keys
+            },
+            "meta": {
+                "message": "Кэш успешно обновлен"
+            }
+        }
+    except Exception as e:
+        logger.error(f"Error invalidating cache for client_id={person_id}: {e}", exc_info=True)
+        raise HTTPException(500, f"Error invalidating cache: {str(e)}")
+    finally:
+        # Close Redis connection if it was created
+        if redis_client:
+            try:
+                await redis_client.close()
+            except Exception as close_error:
+                logger.warning(f"Error closing Redis connection: {close_error}")
+
+
 @router.delete("/{allocation_id}", response_model=DeleteResponse, summary="Удалить распределение")
 async def delete_balance_allocation(
     allocation_id: int,
